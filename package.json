@@ -1,0 +1,22 @@
+{
+  "name": "gas-e-agua-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files",
+    "dev": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/shared/infra/http/server.ts",
+    "test": "NODE_ENV=test jest --runInBand --detectOpenHandles"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "fastify": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/module-alias": "^2.0.4",
+    "@types/node": "^22.10.1",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.2"
+  }
+}
