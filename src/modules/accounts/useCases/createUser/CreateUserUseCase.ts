@@ -1,7 +1,8 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { ICreateUserDTO } from "@modules/accounts/types";
+import { createUserSchema, ICreateUserDTO } from "@modules/accounts/types";
 import { hash } from "bcrypt";
 import { inject, injectable } from "tsyringe";
+import { z } from "zod";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -18,26 +19,19 @@ export class CreateUserUseCase {
     password,
     telephone,
   }: ICreateUserDTO): Promise<void> {
-    const userAlreadyExists = await this.usersRepository.findByEmail(email);
+    try {
+      createUserSchema.parse({ username, email, password, telephone });
 
-    if (userAlreadyExists) {
-      throw new AppError("O usuário já existe!");
-    }
+      const userAlreadyExists = await this.usersRepository.findByEmail(email);
 
-    if (!username || password.length < 3) {
-      throw new AppError("Nome de usuário inválido");
-    }
-
-    if (!password || password?.length < 6) {
-      throw new AppError("A senha deve ter seis digitos ou mais");
-    }
-
-    if (!telephone || !(telephone?.length === 11)) {
-      throw new AppError("Número de telefone inválido");
-    }
-
-    if (!username && username?.length < 3) {
-      throw new AppError("Nome de usuário Inválido");
+      if (userAlreadyExists) {
+        throw new AppError("O usuário já existe!");
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new AppError(error.errors[0].message);
+      }
+      throw error;
     }
 
     const passwordHash = await hash(password, 8);

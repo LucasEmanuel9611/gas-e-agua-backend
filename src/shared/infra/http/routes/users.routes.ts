@@ -9,6 +9,6 @@ export const usersRoutes = Router();
 const createUserController = new CreateUserController();
 const profileUserController = new ProfileUserController();
 
-usersRoutes.post("/", createUserController.handle);
+usersRoutes.post("/create", createUserController.handle);
 
 usersRoutes.get("/profile", ensureAuthenticated, profileUserController.handle);
