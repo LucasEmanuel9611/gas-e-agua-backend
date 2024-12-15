@@ -1,0 +1,61 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id                 Int                 @id @default(autoincrement())
+  username           String
+  email              String
+  password           String
+  isAdmin            Boolean
+  telephone          String
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  address            Address?
+  notificationTokens NotificationToken[]
+  orders             Order[]
+}
+
+model NotificationToken {
+  id      Int    @id @default(autoincrement())
+  token   String
+  user_id Int
+  user    User   @relation(fields: [user_id], references: [id])
+
+  @@index([user_id], map: "NotificationToken_user_id_fkey")
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  street     String
+  reference  String
+  number     String?
+  user_id    Int      @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       User     @relation(fields: [user_id], references: [id])
+  Order      Order[]
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  user_id    Int      @unique
+  address_id Int
+  total      Float
+  status     String
+  date       DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  address    Address  @relation(fields: [address_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@index([address_id], map: "Order_address_id_fkey")
+  @@index([user_id], map: "Order_user_id_fkey")
+}

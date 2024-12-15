@@ -1,0 +1,64 @@
+export type NotificationTokenProps = {
+  id: number;
+  token: string;
+};
+
+export type AddressDates = {
+  id: number;
+  street: string;
+  reference: string;
+  number: string;
+  user_id: number;
+};
+
+export type UserDates = {
+  id: number;
+  username: string;
+  email: string;
+  password: string;
+  isAdmin: boolean;
+  created_at: Date;
+  telephone: string;
+  notificationTokens?: NotificationTokenProps[];
+  address: AddressDates;
+};
+
+export type ICreateUserTokenDTO = {
+  user_id: string;
+  expires_date: Date;
+  refresh_token: string;
+};
+
+export class UserTokens {
+  id: string;
+  user_id: string;
+  user: UserDates;
+  expires_date: Date;
+  created_at: Date;
+}
+
+export interface IUserResponseDTO {
+  email: string;
+  username: string;
+  id: number;
+  notificationTokens: NotificationTokenProps[];
+  isAdmin: boolean;
+}
+
+export type OrderStatusTextProps = "APROVADO" | "REPROVADO" | "AGUARDANDO";
+
+export interface ICreateUserDTO {
+  id?: string;
+  username: string;
+  email: string;
+  password: string;
+  telephone: string;
+}
+
+export interface ICreateAddressDTO {
+  id?: number;
+  street: string;
+  reference: string;
+  number: string;
+  user_id: number;
+}
