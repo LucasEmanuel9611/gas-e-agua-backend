@@ -13,22 +13,31 @@ export class OrdersRepository implements IOrdersRepository {
   orders: Order[] = [];
 
   async create({
-    date,
     user_id,
     address_id,
     status,
     total,
+    gasAmount,
+    waterAmount,
   }: ICreateOrderDTO): Promise<Order> {
     const order = {
       status,
       user_id,
       address_id,
-      date,
       total,
+      gasAmount,
+      waterAmount,
     };
 
     const createdOrder = await prisma.order.create({
-      data: order,
+      data: {
+        status,
+        user_id,
+        address_id,
+        total,
+        gasAmount,
+        waterAmount,
+      },
       include: {
         address: true,
         user: {
@@ -112,7 +121,7 @@ export class OrdersRepository implements IOrdersRepository {
   async findByDay(date: Date): Promise<Order[]> {
     const Orders = await prisma.order.findMany({
       where: {
-        date: {
+        updated_at: {
           gte: dayjs(date).startOf("day").toDate(),
           lt: dayjs(date).endOf("day").toDate(),
         },
@@ -162,7 +171,7 @@ export class OrdersRepository implements IOrdersRepository {
         id,
       },
       data: {
-        date,
+        updated_at: date,
         status: "AGUARDANDO",
       },
       include: {

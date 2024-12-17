@@ -1,6 +1,5 @@
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
-import dayjs from "dayjs";
 import "reflect-metadata";
 
 import { DayjsDateProvider } from "@shared/containers/DateProvider";
@@ -35,9 +34,9 @@ describe(CreateOrderUseCase.name, () => {
 
     const order = await createOrderUseCase.execute({
       user_id: String(user.id),
-      date: dayjsDateProvider.dateNow(),
       isAdmin: false,
-      total: 10,
+      gasAmount: 1,
+      waterAmount: 2,
     });
 
     expect(order).toHaveProperty("id");
@@ -61,17 +60,17 @@ describe(CreateOrderUseCase.name, () => {
 
     await createOrderUseCase.execute({
       user_id: String(user.id),
-      date: dayjsDateProvider.dateNow(),
       isAdmin: false,
-      total: 10,
+      gasAmount: 1,
+      waterAmount: 2,
     });
 
     await expect(
       createOrderUseCase.execute({
         user_id: String(secondUser.id),
-        date: dayjsDateProvider.dateNow(),
         isAdmin: false,
-        total: 10,
+        gasAmount: 1,
+        waterAmount: 2,
       })
     ).rejects.toEqual(
       new AppError("Já existe um agendamento em menos de 30min")
@@ -90,17 +89,17 @@ describe(CreateOrderUseCase.name, () => {
 
     await createOrderUseCase.execute({
       user_id: userId,
-      date: dayjsDateProvider.dateNow(),
       isAdmin: false,
-      total: 10,
+      gasAmount: 1,
+      waterAmount: 2,
     });
 
     await expect(
       createOrderUseCase.execute({
         user_id: userId,
-        date: dayjsDateProvider.dateNow(),
         isAdmin: false,
-        total: 10,
+        gasAmount: 1,
+        waterAmount: 2,
       })
     ).rejects.toEqual(new AppError("Você já tem um agendamento para hoje"));
   });
@@ -109,9 +108,9 @@ describe(CreateOrderUseCase.name, () => {
     await expect(
       createOrderUseCase.execute({
         user_id: "123",
-        date: dayjs().subtract(1, "day").toDate(),
         isAdmin: false,
-        total: 10,
+        gasAmount: 1,
+        waterAmount: 2,
       })
     ).rejects.toEqual(new AppError("A data tem que ser a superior a atual"));
   });

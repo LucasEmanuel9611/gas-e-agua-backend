@@ -1,34 +1,24 @@
 import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
-import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
+
+import { AppError } from "@shared/errors/AppError";
 
 import { SendNotificationUseCase } from "../sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
 import { CreateOrderUseCase } from "./CreateOrderUseCase";
 
 export class CreateOrderController {
   async handle(request: Request, response: Response) {
-    const { date, total } = request.body;
+    const { gasAmount, waterAmount } = request.body;
     const { id } = request.user;
 
     const createOrderUseCase = container.resolve(CreateOrderUseCase);
-    const profileUserUseCase = container.resolve(ProfileUserUseCase);
     const SendNotification = container.resolve(SendNotificationUseCase);
     const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
-    const AdminUser = await listAdminUserUseCase.execute();
-    const profileUser = await profileUserUseCase.execute(Number(id));
+    const adminUser = await listAdminUserUseCase.execute();
 
-    const isAdmin = Number(AdminUser.id) === Number(id);
-
-    const order = await createOrderUseCase.execute({
-      date,
-      user_id: id,
-      isAdmin,
-      total,
-    });
-
-    if (order) {
-      const pushTokens = profileUser.notificationTokens;
+    async function notifyNewOrder() {
+      const pushTokens = adminUser.notificationTokens;
 
       try {
         await SendNotification.execute({
@@ -42,6 +32,21 @@ export class CreateOrderController {
       }
     }
 
-    response.status(201).json(order);
+    try {
+      const isAdmin = Number(adminUser.id) === Number(id);
+
+      const order = await createOrderUseCase.execute({
+        user_id: id,
+        isAdmin,
+        gasAmount,
+        waterAmount,
+      });
+
+      if (order) notifyNewOrder();
+      response.status(201).json(order);
+    } catch (err) {
+      console.log({ err });
+      throw new AppError("Erro ao criar pedido", 500);
+    }
   }
 }

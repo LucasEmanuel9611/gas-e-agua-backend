@@ -6,15 +6,17 @@ export interface ICreateOrderDTO {
   user_id: number;
   address_id: number;
   status: OrderStatusProps;
-  date: Date;
   total: number;
+  gasAmount: number;
+  waterAmount: number;
 }
 
 export class Order {
   id: number;
   user_id: number;
   status: OrderStatusProps;
-  date: Date;
+  gasAmount: number;
+  waterAmount: number;
   created_at: Date;
   total: number;
   address: AddressDates;
