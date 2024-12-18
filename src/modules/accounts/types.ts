@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export type NotificationTokenProps = {
   id: number;
   token: string;
@@ -7,10 +5,11 @@ export type NotificationTokenProps = {
 
 export type AddressDates = {
   id: number;
-  street: string;
+  street?: string;
   reference: string;
-  number: string;
-  user_id: number;
+  local: string;
+  number?: string;
+  user_id?: number;
 };
 
 export type UserDates = {
@@ -49,31 +48,20 @@ export interface IUserResponseDTO {
 
 export type OrderStatusTextProps = "APROVADO" | "REPROVADO" | "AGUARDANDO";
 
-export const createUserSchema = z.object({
-  username: z
-    .string({ required_error: "O nome de usuário é obrigatório" })
-    .min(3, {
-      message: "O nome de usuário deve ter pelo menos 3 caracteres",
-    }),
-  email: z
-    .string({ required_error: "O e-mail é obrigatório" })
-    .email({ message: "O e-mail fornecido é inválido" }),
-  password: z
-    .string({ required_error: "A senha é obrigatória" })
-    .min(6, { message: "A senha deve ter pelo menos 6 dígitos" }),
-  telephone: z
-    .string({ required_error: "O número de telefone é obrigatório" })
-    .length(11, {
-      message: "O número de telefone deve ter exatamente 11 dígitos",
-    }),
-});
-
-export type ICreateUserDTO = z.infer<typeof createUserSchema>;
+export interface ICreateUserDTO {
+  id?: string;
+  username: string;
+  email: string;
+  password: string;
+  telephone: string;
+  address: AddressDates;
+}
 
 export interface ICreateAddressDTO {
   id?: number;
   street: string;
   reference: string;
+  local: string;
   number: string;
   user_id: number;
 }

@@ -1,6 +1,6 @@
 import { prisma } from "@shared/infra/database/prisma";
 
-import { ICreateUserDTO, UserDates } from "../../types";
+import { AddressDates, ICreateUserDTO, UserDates } from "../../types";
 import { IUsersRepository } from "../interfaces/IUserRepository";
 
 export class UsersRepository implements IUsersRepository {
@@ -9,6 +9,7 @@ export class UsersRepository implements IUsersRepository {
     email,
     password,
     telephone,
+    address,
   }: ICreateUserDTO): Promise<UserDates> {
     const user = {
       username,
@@ -19,7 +20,12 @@ export class UsersRepository implements IUsersRepository {
     };
 
     const createdUser = await prisma.user.create({
-      data: user,
+      data: {
+        ...user,
+        address: {
+          create: address as AddressDates,
+        },
+      },
       include: {
         address: true,
       },

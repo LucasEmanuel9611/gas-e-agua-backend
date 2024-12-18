@@ -23,7 +23,7 @@ export class UserAddressRepository implements IUserAddressRepository {
     return createdUserNotificationToken;
   }
 
-  async update(address: AddressDates): Promise<AddressDates> {
+  async update(address: ICreateAddressDTO): Promise<AddressDates> {
     const createdUserNotificationToken = await prisma.address.create({
       data: {
         ...address,

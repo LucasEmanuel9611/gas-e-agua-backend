@@ -34,8 +34,9 @@ model NotificationToken {
 
 model Address {
   id         Int      @id @default(autoincrement())
-  street     String
+  street     String?
   reference  String
+  local      String
   number     String?
   user_id    Int      @unique
   created_at DateTime @default(now())
