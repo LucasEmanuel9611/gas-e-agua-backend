@@ -1,5 +1,6 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { createUserSchema, ICreateUserDTO } from "@modules/accounts/types";
+import { createUserSchema } from "@modules/accounts/schemas";
+import { ICreateUserDTO } from "@modules/accounts/types";
 import { hash } from "bcrypt";
 import { inject, injectable } from "tsyringe";
 import { z } from "zod";
@@ -18,9 +19,10 @@ export class CreateUserUseCase {
     email,
     password,
     telephone,
+    address,
   }: ICreateUserDTO): Promise<void> {
     try {
-      createUserSchema.parse({ username, email, password, telephone });
+      createUserSchema.parse({ username, email, password, telephone, address });
 
       const userAlreadyExists = await this.usersRepository.findByEmail(email);
 
@@ -41,6 +43,7 @@ export class CreateUserUseCase {
       email,
       password: passwordHash,
       telephone,
+      address,
     });
   }
 }

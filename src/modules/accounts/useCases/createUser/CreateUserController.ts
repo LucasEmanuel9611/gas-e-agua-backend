@@ -6,7 +6,7 @@ import { CreateUserUseCase } from "./CreateUserUseCase";
 
 export class CreateUserController {
   async handle(req: Request, res: Response) {
-    const { username, email, password, telephone } = req.body;
+    const { username, email, password, telephone, address } = req.body;
 
     const createUserUseCase = container.resolve(CreateUserUseCase);
 
@@ -15,6 +15,7 @@ export class CreateUserController {
       email,
       password,
       telephone,
+      address,
     });
 
     return res.status(201).send({

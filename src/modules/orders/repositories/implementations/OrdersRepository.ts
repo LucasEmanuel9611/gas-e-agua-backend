@@ -30,14 +30,7 @@ export class OrdersRepository implements IOrdersRepository {
     };
 
     const createdOrder = await prisma.order.create({
-      data: {
-        status,
-        user_id,
-        address_id,
-        total,
-        gasAmount,
-        waterAmount,
-      },
+      data: order,
       include: {
         address: true,
         user: {
