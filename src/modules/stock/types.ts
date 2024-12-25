@@ -1,0 +1,18 @@
+export type StockItem = {
+  id: number;
+  value: number;
+  name: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type ICreateStockItemDTO = {
+  value: number;
+  name: string;
+  quantity: number;
+};
+
+export type IUpdateStockItemDTO = {
+  id?: number;
+  newData: Partial<ICreateStockItemDTO>;
+};

@@ -64,8 +64,8 @@ model Order {
 
 model Stock {
   id         Int      @id @default(autoincrement())
-  value      Int
-  type       String
+  value      Float
+  name       String
   quantity   Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

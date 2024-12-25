@@ -1,18 +1,24 @@
 import cors from "cors";
+
 import "dotenv/config";
-import express, { NextFunction, Request, Response } from "express";
 import "express-async-errors";
 import "reflect-metadata";
 
-import { AppError } from "@shared/errors/AppError";
+import express, { NextFunction, Request, Response } from "express";
+import swaggerUi from "swagger-ui-express";
 
+import { AppError } from "@shared/errors/AppError";
 import "../../containers/index";
+
+import swaggerFile from "../../../../swagger.json";
 import { router } from "./routes";
 
 const app = express();
+
+app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const port = 3333;
 
-// app.use(rateLimiter);
+// app.use(rateLimiter);fs/promises
 
 app.use(express.json());
 app.use(cors());
