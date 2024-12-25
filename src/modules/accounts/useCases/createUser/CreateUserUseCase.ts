@@ -29,21 +29,21 @@ export class CreateUserUseCase {
       if (userAlreadyExists) {
         throw new AppError("O usuário já existe!");
       }
+
+      const passwordHash = await hash(password, 8);
+
+      await this.usersRepository.create({
+        username,
+        email,
+        password: passwordHash,
+        telephone,
+        address,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new AppError(error.errors[0].message);
       }
       throw error;
     }
-
-    const passwordHash = await hash(password, 8);
-
-    await this.usersRepository.create({
-      username,
-      email,
-      password: passwordHash,
-      telephone,
-      address,
-    });
   }
 }
