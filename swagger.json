@@ -71,6 +71,104 @@
           }
         }
       }
+    },
+    "/stock/profile": {
+      "get": {
+        "summary": "Obtém os itens de estoque",
+        "tags": ["Stock"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retorna os itens de estoque",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "value": { "type": "number" },
+                      "name": { "type": "string" },
+                      "created_at": { "type": "string", "format": "date-time" },
+                      "updated_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        }
+      }
+    },
+    "/orders": {
+      "post": {
+        "summary": "Cria um novo pedido",
+        "tags": ["Orders"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "waterAmount": { "type": "number" },
+                  "gasAmount": { "type": "number" }
+                },
+                "required": ["waterAmount", "gasAmount"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "user_id": { "type": "integer" },
+                    "status": { "type": "string" },
+                    "gasAmount": { "type": "number" },
+                    "waterAmount": { "type": "number" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" },
+                    "total": { "type": "number" },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "street": { "type": "string" },
+                        "reference": { "type": "string" },
+                        "local": { "type": "string" },
+                        "number": { "type": "string" }
+                      }
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "username": { "type": "string" },
+                        "telephone": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação"
+          }
+        }
+      }
     }
   },
   "components": {
