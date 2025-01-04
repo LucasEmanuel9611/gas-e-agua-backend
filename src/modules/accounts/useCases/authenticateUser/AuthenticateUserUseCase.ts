@@ -5,6 +5,7 @@ import { sign } from "jsonwebtoken";
 import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
+import { AddressDates } from "@modules/accounts/types";
 
 interface IRequest {
   email: string;
@@ -17,6 +18,7 @@ interface IResponse {
     email: string;
     isAdmin: boolean;
     id: number;
+    address: AddressDates; 
   };
   token: string;
 }
@@ -55,6 +57,7 @@ export class AuthenticateUserUseCase {
         email: user.email,
         isAdmin: user.isAdmin,
         id: user.id,
+        address: user.address,
       },
     };
 
