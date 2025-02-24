@@ -1,4 +1,5 @@
 import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
+import { GetStockUseCase } from "@modules/stock/useCases/getStock/GetStockUseCase";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
 
@@ -32,8 +33,30 @@ export class CreateOrderController {
       }
     }
 
+    async function verifyStock() {
+      const getStockItemsUseCase = container.resolve(GetStockUseCase);
+
+      const allStockItems = await getStockItemsUseCase.execute();
+
+      const gasStock = allStockItems.find((item) => item.name === "gas");
+      const waterStock = allStockItems.find((item) => item.name === "water");
+
+      const isGasInsufficient = gasAmount >= gasStock.quantity;
+      const isWaterInsufficient = waterAmount >= waterStock.quantity;
+
+      if (isGasInsufficient && isWaterInsufficient) {
+        throw new AppError("Estoque insuficiente de gás e água", 400);
+      } else if (isGasInsufficient) {
+        throw new AppError("Estoque insuficiente de gás", 400);
+      } else if (isWaterInsufficient) {
+        throw new AppError("Estoque insuficiente de água", 400);
+      }
+    }
+
     try {
       const isAdmin = Number(adminUser.id) === Number(id);
+
+      await verifyStock();
 
       const order = await createOrderUseCase.execute({
         user_id: id,
@@ -42,7 +65,7 @@ export class CreateOrderController {
         waterAmount,
       });
 
-      if (order) notifyNewOrder();
+      if (order) await notifyNewOrder();
       response.status(201).json(order);
     } catch (err) {
       console.log({ err });

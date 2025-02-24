@@ -2,6 +2,7 @@ export type StockItem = {
   id: number;
   value: number;
   name: string;
+  quantity: number;
   created_at: Date;
   updated_at: Date;
 };
