@@ -1,6 +1,11 @@
 import { prisma } from "@shared/infra/database/prisma";
 
-import { AddressDates, ICreateUserDTO, UserDates } from "../../types";
+import {
+  AddressDates,
+  ICreateUserDTO,
+  IUpdateUserDTO,
+  UserDates,
+} from "../../types";
 import { IUsersRepository } from "../interfaces/IUserRepository";
 
 export class UsersRepository implements IUsersRepository {
@@ -64,6 +69,43 @@ export class UsersRepository implements IUsersRepository {
       include: {
         notificationTokens: true,
         address: true,
+      },
+    });
+
+    return foundUser;
+  }
+
+  async update({
+    id,
+    username,
+    email,
+    password,
+    telephone,
+    address,
+  }: IUpdateUserDTO) {
+    const user = {
+      id,
+      username,
+      email,
+      password,
+      telephone,
+    };
+
+    const foundUser = await prisma.user.update({
+      data: {
+        username,
+        email,
+        password,
+        telephone,
+        address: {
+          update: address as AddressDates,
+        },
+      },
+      include: {
+        address: true,
+      },
+      where: {
+        id,
       },
     });
 

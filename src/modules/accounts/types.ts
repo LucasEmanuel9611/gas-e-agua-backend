@@ -57,6 +57,15 @@ export interface ICreateUserDTO {
   address: AddressDates;
 }
 
+export interface IUpdateUserDTO {
+  id: number;
+  username?: string;
+  email?: string;
+  password?: string;
+  telephone?: string;
+  address?: AddressDates;
+}
+
 export interface ICreateAddressDTO {
   id?: number;
   street: string;
