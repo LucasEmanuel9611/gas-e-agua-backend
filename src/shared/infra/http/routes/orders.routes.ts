@@ -14,7 +14,7 @@ const listOrdersController = new ListOrdersController();
 const listOrdersByUserController = new ListOrdersByUserController();
 
 orderRoutes.post("/", ensureAuthenticated, createOrderController.handle);
-orderRoutes.delete("/", ensureAuthenticated, deleteOrderController.handle);
+orderRoutes.delete("/:id", ensureAuthenticated, deleteOrderController.handle);
 orderRoutes.get("/list/all", ensureAuthenticated, listOrdersController.handle);
 orderRoutes.get(
   "/user/list",
