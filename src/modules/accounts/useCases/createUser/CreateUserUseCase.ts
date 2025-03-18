@@ -40,6 +40,7 @@ export class CreateUserUseCase {
         address,
       });
     } catch (error) {
+      console.log({ error });
       if (error instanceof z.ZodError) {
         throw new AppError(error.errors[0].message);
       }

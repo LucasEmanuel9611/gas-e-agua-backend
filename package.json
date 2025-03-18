@@ -17,6 +17,7 @@
   "dependencies": {
     "@prisma/client": "^5.9.1",
     "@types/jsonwebtoken": "^9.0.1",
+    "@types/morgan": "^1.9.9",
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",
     "cors": "^2.8.5",
@@ -30,6 +31,7 @@
     "husky": "^9.1.7",
     "jsonwebtoken": "^9.0.0",
     "mime": "^3.0.0",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "pg": "^8.10.0",
     "prisma": "^5.9.1",
