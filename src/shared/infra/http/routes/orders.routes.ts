@@ -4,6 +4,7 @@ import { ListOrdersController } from "@modules/orders/useCases/listOrders/listOr
 import { ListOrdersByUserController } from "@modules/orders/useCases/listOrdersByUser/listOrdersByUserController";
 import { Router } from "express";
 
+import { ensureAdmin } from "../middlewares/ensureAdmin";
 import { ensureAuthenticated } from "../middlewares/ensureAuthenticated";
 
 export const orderRoutes = Router();
@@ -15,7 +16,12 @@ const listOrdersByUserController = new ListOrdersByUserController();
 
 orderRoutes.post("/", ensureAuthenticated, createOrderController.handle);
 orderRoutes.delete("/:id", ensureAuthenticated, deleteOrderController.handle);
-orderRoutes.get("/list/all", ensureAuthenticated, listOrdersController.handle);
+orderRoutes.get(
+  "/list/all",
+  ensureAuthenticated,
+  ensureAdmin,
+  listOrdersController.handle
+);
 orderRoutes.get(
   "/user/list",
   ensureAuthenticated,
