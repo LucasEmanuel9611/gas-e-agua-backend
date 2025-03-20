@@ -17,13 +17,13 @@ const listOrdersByUserController = new ListOrdersByUserController();
 orderRoutes.post("/", ensureAuthenticated, createOrderController.handle);
 orderRoutes.delete("/:id", ensureAuthenticated, deleteOrderController.handle);
 orderRoutes.get(
-  "/list/all",
+  "/list/all/:pageNumber/:pageSize",
   ensureAuthenticated,
   ensureAdmin,
   listOrdersController.handle
 );
 orderRoutes.get(
-  "/user/list",
+  "/user/list/:pageNumber/:pageSize",
   ensureAuthenticated,
   listOrdersByUserController.handle
 );
