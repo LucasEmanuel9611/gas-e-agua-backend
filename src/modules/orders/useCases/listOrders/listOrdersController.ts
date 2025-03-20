@@ -15,13 +15,13 @@ export class ListOrdersController {
 
     const allOrders = await listOrdersUseCase.execute();
 
-    const Orders = allOrders.slice(startIndex, endIndex);
+    const orders = allOrders.slice(startIndex, endIndex);
 
     // add have more Orders
     return response.json({
       page_number: pageInt,
       total_items_count: allOrders.length,
-      items: Orders,
+      items: orders,
     });
   }
 }

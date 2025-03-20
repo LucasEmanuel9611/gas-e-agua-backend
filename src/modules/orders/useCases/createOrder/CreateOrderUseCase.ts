@@ -46,6 +46,8 @@ export class CreateOrderUseCase {
 
     const total = waterTotalValue + gasTotalValue;
 
+    // TODO: diminuir a quantidade ao fazer pedido
+
     const order = await this.ordersRepository.create({
       username,
       status: "PENDENTE",
