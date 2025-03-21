@@ -38,8 +38,8 @@ export class CreateOrderController {
 
       const allStockItems = await getStockItemsUseCase.execute();
 
-      const gasStock = allStockItems.find((item) => item.name === "gas");
-      const waterStock = allStockItems.find((item) => item.name === "water");
+      const gasStock = allStockItems.find((item) => item.name === "Gás");
+      const waterStock = allStockItems.find((item) => item.name === "Água");
 
       const isGasInsufficient = gasAmount >= gasStock.quantity;
       const isWaterInsufficient = waterAmount >= waterStock.quantity;
