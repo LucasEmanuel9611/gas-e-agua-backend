@@ -27,6 +27,7 @@ export class OrdersRepository implements IOrdersRepository {
       total,
       gasAmount,
       waterAmount,
+      payment_status,
     };
 
     const createdOrder = await prisma.order.create({

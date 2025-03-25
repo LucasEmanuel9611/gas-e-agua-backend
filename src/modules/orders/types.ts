@@ -1,11 +1,13 @@
 import { AddressDates } from "@modules/accounts/types";
 
 export type OrderStatusProps = "INICIADO" | "PENDENTE" | "FINALIZADO";
+export type OrderPaymentStatus = "PENDENTE" | "PAGO";
 export interface ICreateOrderDTO {
   username: string;
   user_id: number;
   address_id: number;
   status: OrderStatusProps;
+  payment_status: OrderPaymentStatus;
   total: number;
   gasAmount: number;
   waterAmount: number;

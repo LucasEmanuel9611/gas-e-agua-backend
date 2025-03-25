@@ -17,3 +17,8 @@ export type IUpdateStockItemDTO = {
   id?: number;
   newData: Partial<ICreateStockItemDTO>;
 };
+
+export type IUpdateStockItemByNameDTO = {
+  name: string;
+  newData: Partial<ICreateStockItemDTO>;
+};
