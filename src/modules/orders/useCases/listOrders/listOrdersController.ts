@@ -17,6 +17,8 @@ export class ListOrdersController {
 
     const orders = allOrders.slice(startIndex, endIndex);
 
+    console.log({ orders });
+
     // add have more Orders
     return response.json({
       page_number: pageInt,
