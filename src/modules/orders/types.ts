@@ -3,7 +3,7 @@ import { AddressDates } from "@modules/accounts/types";
 export type OrderStatusProps = "INICIADO" | "PENDENTE" | "FINALIZADO";
 export type OrderPaymentStatus = "PENDENTE" | "PAGO";
 export interface ICreateOrderDTO {
-  username: string;
+  username?: string;
   user_id: number;
   address_id: number;
   status: OrderStatusProps;

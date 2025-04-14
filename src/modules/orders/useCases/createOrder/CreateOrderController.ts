@@ -68,7 +68,7 @@ export class CreateOrderController {
       if (order) await notifyNewOrder();
       response.status(201).json(order);
     } catch (err) {
-      console.log({ err });
+      console.log("teste", { err });
       throw new AppError("Erro ao criar pedido", 500);
     }
   }

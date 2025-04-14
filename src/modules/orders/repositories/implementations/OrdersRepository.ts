@@ -13,9 +13,9 @@ export class OrdersRepository implements IOrdersRepository {
   orders: Order[] = [];
 
   async create({
+    status,
     user_id,
     address_id,
-    status,
     total,
     gasAmount,
     waterAmount,

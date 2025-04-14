@@ -60,9 +60,7 @@ export class CreateOrderUseCase {
   }
 
   async execute({ user_id, gasAmount, waterAmount }: IRequest): Promise<Order> {
-    const { username, address } = await this.usersRepository.findById(
-      Number(user_id)
-    );
+    const { address } = await this.usersRepository.findById(Number(user_id));
 
     if (!address) {
       throw new AppError("Usuário sem endereço cadastrado");
@@ -90,7 +88,6 @@ export class CreateOrderUseCase {
     });
 
     const order = await this.ordersRepository.create({
-      username,
       status: "PENDENTE",
       payment_status: "PENDENTE",
       user_id: Number(user_id),
