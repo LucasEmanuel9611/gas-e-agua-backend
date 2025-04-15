@@ -17,7 +17,7 @@ export class Order {
   id: number;
   user_id: number;
   status: OrderStatusProps;
-  payment_status: OrderPaymentStatus;
+  payment_status?: OrderPaymentStatus;
   gasAmount: number;
   waterAmount: number;
   created_at: Date;
