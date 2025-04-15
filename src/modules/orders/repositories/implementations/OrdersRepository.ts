@@ -19,7 +19,7 @@ export class OrdersRepository implements IOrdersRepository {
     total,
     gasAmount,
     waterAmount,
-    payment_status,
+    payment_status = "PENDENTE",
   }: ICreateOrderDTO): Promise<Order> {
     const order = {
       status,

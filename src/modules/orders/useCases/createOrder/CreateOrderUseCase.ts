@@ -59,6 +59,31 @@ export class CreateOrderUseCase {
     }
   }
 
+  private async verifyStockQuantity({
+    waterStock,
+    gasStock,
+  }: {
+    waterStock: number;
+    gasStock: number;
+  }) {
+    if (gasStock <= 0) {
+      throw new AppError("Estoque insuficiente de gás");
+    }
+
+    if (waterStock <= 0) {
+      throw new AppError("Estoque insuficiente de água");
+    }
+  }
+
+  private async getStockData() {
+    const stockItems = await this.stockRepository.findAll();
+
+    const waterStock = stockItems.find((item) => item.name === "Água");
+    const gasStock = stockItems.find((item) => item.name === "Gás");
+
+    return { waterStock, gasStock };
+  }
+
   async execute({ user_id, gasAmount, waterAmount }: IRequest): Promise<Order> {
     const { address } = await this.usersRepository.findById(Number(user_id));
 
@@ -66,24 +91,20 @@ export class CreateOrderUseCase {
       throw new AppError("Usuário sem endereço cadastrado");
     }
 
-    const getProductsValueUseCase = async () => {
-      const stockItems = await this.stockRepository.findAll();
+    const { waterStock, gasStock } = await this.getStockData();
 
-      const waterItem = stockItems.find((item) => item.name === "Água");
-      const gasItem = stockItems.find((item) => item.name === "Gás");
-
-      return { waterValue: waterItem.quantity, gasValue: gasItem.quantity };
-    };
-
-    const { waterValue, gasValue } = await getProductsValueUseCase();
-
-    const waterTotalValue = Number(waterAmount) * waterValue;
-    const gasTotalValue = Number(gasAmount) * gasValue;
+    const waterTotalValue = Number(waterAmount) * waterStock.value;
+    const gasTotalValue = Number(gasAmount) * gasStock.value;
 
     const total = waterTotalValue + gasTotalValue;
 
+    this.verifyStockQuantity({
+      gasStock: waterStock.quantity,
+      waterStock: gasStock.quantity,
+    });
+
     await this.updateQuantityStockItems({
-      gasAmount: waterAmount,
+      gasAmount,
       waterAmount,
     });
 
