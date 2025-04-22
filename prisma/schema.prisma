@@ -54,6 +54,7 @@ model Order {
   total          Float
   status         String
   payment_status String
+  payment_state  String?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
   address        Address  @relation(fields: [address_id], references: [id])
