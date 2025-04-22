@@ -12,11 +12,26 @@ import { IOrdersRepository } from "../IOrdersRepository";
 export class OrdersRepository implements IOrdersRepository {
   orders: Order[] = [];
 
-  async create(order: ICreateOrderDTO): Promise<Order> {
+  async create({
+    user_id,
+    address_id,
+    gasAmount,
+    payment_state,
+    total,
+    status,
+    waterAmount,
+    payment_status,
+  }: ICreateOrderDTO): Promise<Order> {
     const createdOrder = await prisma.order.create({
       data: {
-        ...order,
-        payment_status: "PENDENTE",
+        user_id,
+        address_id,
+        gasAmount,
+        payment_state,
+        total,
+        status,
+        waterAmount,
+        payment_status,
       },
       include: {
         address: true,
