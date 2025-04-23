@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "meu-app-dev",
+      name: "gas-e-agua-api",
       script: "yarn",
       args: "dev",
       watch: true, // reinicia ao detectar alterações nos arquivos
