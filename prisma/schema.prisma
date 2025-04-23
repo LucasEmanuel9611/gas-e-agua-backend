@@ -46,19 +46,18 @@ model Address {
 }
 
 model Order {
-  id             Int      @id @default(autoincrement())
-  user_id        Int
-  gasAmount      Int
-  waterAmount    Int
-  address_id     Int
-  total          Float
-  status         String
-  payment_status String
-  payment_state  String?
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-  address        Address  @relation(fields: [address_id], references: [id])
-  user           User     @relation(fields: [user_id], references: [id])
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  gasAmount     Int
+  waterAmount   Int
+  address_id    Int
+  total         Float
+  status        String
+  payment_state String   @default("PENDENTE")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  address       Address  @relation(fields: [address_id], references: [id])
+  user          User     @relation(fields: [user_id], references: [id])
 
   @@index([address_id], map: "Order_address_id_fkey")
   @@index([user_id], map: "Order_user_id_fkey")
