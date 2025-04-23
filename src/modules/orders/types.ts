@@ -7,8 +7,7 @@ export interface ICreateOrderDTO {
   user_id: number;
   address_id: number;
   status: OrderStatusProps;
-  payment_state?: OrderPaymentStatus;
-  payment_status?: OrderPaymentStatus;
+  payment_state: OrderPaymentStatus;
   total: number;
   gasAmount: number;
   waterAmount: number;

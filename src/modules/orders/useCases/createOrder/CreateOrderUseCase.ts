@@ -111,7 +111,6 @@ export class CreateOrderUseCase {
     const order = await this.ordersRepository.create({
       status: "PENDENTE",
       payment_state: "PENDENTE",
-      payment_status: "PENDENTE",
       user_id: Number(user_id),
       address_id: address.id,
       gasAmount,
