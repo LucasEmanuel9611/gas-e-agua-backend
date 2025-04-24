@@ -4,7 +4,7 @@ module.exports = {
       name: "gas-e-agua-api",
       script: "yarn",
       args: "dev",
-      interpreter: "/bin/zsh",
+      interpreter: "/usr/bin/zsh",
       exec_mode: "fork",
       watch: true, // reinicia ao detectar alterações nos arquivos
       max_restarts: 10, // máximo de tentativas de restart
