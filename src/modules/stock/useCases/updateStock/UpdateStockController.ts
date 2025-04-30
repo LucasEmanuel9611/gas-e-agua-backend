@@ -1,6 +1,5 @@
 import { updateStockItemSchema } from "@modules/stock/schema";
 import { Request, Response } from "express";
-import "reflect-metadata";
 import { container } from "tsyringe";
 
 import { validateSchema } from "@shared/utils/schema";

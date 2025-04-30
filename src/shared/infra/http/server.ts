@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { runScheduledTasks } from "../tasks"; // importe seu index de jobs
 import { app, port } from "./app";
 
