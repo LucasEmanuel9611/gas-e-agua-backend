@@ -25,5 +25,6 @@ jobs:
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd gas-e-agua-backend/
             git pull
+            npm i
             pm2 restart gas-e-agua-api
           EOF
