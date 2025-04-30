@@ -9,4 +9,5 @@ export interface IOrdersRepository {
   updateStatus(id: number, status: OrderStatusProps): Promise<Order>;
   updateDate(id: number, date: string): Promise<Order>;
   delete(id: number): Promise<void>;
+  updateOverdueOrders(): Promise<number>;
 }
