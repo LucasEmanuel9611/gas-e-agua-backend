@@ -178,4 +178,14 @@ export class OrdersRepository implements IOrdersRepository {
 
     return updatedOrder as Order;
   }
+
+  async updateValue(total: number) {
+    const updatedOrder = await prisma.order.updateMany({
+      data: {
+        total,
+      },
+    });
+
+    return updatedOrder;
+  }
 }
