@@ -21,7 +21,7 @@ export class DayjsDateProvider implements IDateProvider {
   }
 
   dateNow(): Date {
-    return dayjs().toDate();
+    return dayjs().utc().local().toDate();
   }
 
   compareIfBefore(start_date: Date, end_date: Date): boolean {
@@ -41,5 +41,14 @@ export class DayjsDateProvider implements IDateProvider {
     const first_date_date_utc = this.convertToUTC(first_day);
 
     return dayjs(first_date_date_utc).isSame(second_day, "day");
+  }
+
+  getDaysDifference(start_date: Date, end_date: Date): number {
+    const end_date_utc = this.convertToUTC(end_date);
+    const start_date_utc = this.convertToUTC(start_date);
+
+    const daysDifference = dayjs(start_date_utc).diff(end_date_utc, "day");
+
+    return daysDifference;
   }
 }
