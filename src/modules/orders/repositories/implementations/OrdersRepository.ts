@@ -195,7 +195,7 @@ export class OrdersRepository implements IOrdersRepository {
     const result = await prisma.order.updateMany({
       where: {
         created_at: { lt: THIRTY_DAYS_AGO },
-        payment_state: { not: "VENCIDO" },
+        payment_state: { equals: "PENDENTE" },
       },
       data: { payment_state: "VENCIDO" },
     });
