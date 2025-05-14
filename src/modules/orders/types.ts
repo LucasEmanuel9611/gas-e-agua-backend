@@ -24,6 +24,8 @@ export class Order {
   updated_at: Date;
   total: number;
   address: AddressDates;
+  interest_allowed: boolean;
+  total_with_interest: number;
   user?: {
     username: string;
     telephone: string;
