@@ -178,4 +178,28 @@ export class OrdersRepository implements IOrdersRepository {
 
     return updatedOrder as Order;
   }
+
+  async updateValue(total: number) {
+    const updatedOrder = await prisma.order.updateMany({
+      data: {
+        total,
+      },
+    });
+
+    return updatedOrder;
+  }
+
+  async updateOverdueOrders(): Promise<number> {
+    const THIRTY_DAYS_AGO = dayjs().subtract(30, "days").toDate();
+
+    const result = await prisma.order.updateMany({
+      where: {
+        created_at: { lt: THIRTY_DAYS_AGO },
+        payment_state: { not: "VENCIDO" },
+      },
+      data: { payment_state: "VENCIDO" },
+    });
+
+    return result.count;
+  }
 }
