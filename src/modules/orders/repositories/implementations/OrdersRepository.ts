@@ -19,6 +19,8 @@ export class OrdersRepository implements IOrdersRepository {
     total,
     status,
     waterAmount,
+    created_at,
+    payment_state,
   }: ICreateOrderDTO): Promise<Order> {
     const createdOrder = await prisma.order.create({
       data: {
@@ -28,6 +30,8 @@ export class OrdersRepository implements IOrdersRepository {
         total,
         status,
         waterAmount,
+        created_at,
+        payment_state,
       },
       include: {
         address: true,
