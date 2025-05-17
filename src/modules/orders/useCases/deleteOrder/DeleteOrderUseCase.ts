@@ -3,7 +3,7 @@ import { Order } from "@modules/orders/types";
 import { inject, injectable } from "tsyringe";
 
 interface IRequest {
-  order_id: string;
+  order_id: number;
 }
 
 @injectable()

@@ -29,4 +29,5 @@ export default {
   testMatch: ["**/*.test.ts"],
 
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  globalSetup: "<rootDir>/jest.global-setup.ts",
 };

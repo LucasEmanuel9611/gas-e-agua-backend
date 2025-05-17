@@ -10,6 +10,7 @@ export const validateSchema = <T>(schema: ZodSchema<T>, data: unknown): T => {
       console.error(error.errors); // Log detalhado dos erros
       throw new AppError(error.errors[0].message);
     }
+    console.error("Unexpected error:", error); // Log de erro inesperado
     throw error;
   }
 };
