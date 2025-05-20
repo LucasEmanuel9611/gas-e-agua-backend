@@ -12,7 +12,7 @@ export class DeleteOrderController {
     const deleteOrderUseCase = container.resolve(DeleteOrderUseCase);
 
     const order = await deleteOrderUseCase.execute({
-      order_id: Number(id),
+      order_id: id,
     });
 
     response.status(201).json(order);

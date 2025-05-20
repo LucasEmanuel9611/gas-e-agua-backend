@@ -14,7 +14,7 @@ export class DeleteOrderUseCase {
   ) {}
 
   async execute({ order_id }: IRequest): Promise<Order> {
-    await this.ordersRepository.delete(Number(order_id));
+    await this.ordersRepository.delete(order_id);
 
     return null;
   }

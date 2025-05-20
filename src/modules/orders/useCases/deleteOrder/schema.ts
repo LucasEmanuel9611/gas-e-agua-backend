@@ -1,8 +1,7 @@
 import { z } from "zod";
 
+import { stringAsNumberSchema } from "@shared/utils/schema";
+
 export const deleteOrderSchema = z.object({
-  id: z.string({
-    invalid_type_error: "O id deve ser uma string",
-    required_error: "O id é obrigatório",
-  }),
+  id: stringAsNumberSchema("O id da ooder"),
 });

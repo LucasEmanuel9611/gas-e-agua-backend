@@ -1,4 +1,3 @@
-import express from "express";
 import request from "supertest";
 import { container } from "tsyringe";
 
@@ -27,14 +26,10 @@ jest.mock(
 );
 
 describe("DeleteOrderController", () => {
-  // const app = express();
-  app.use(express.json());
-
   const mockExecute = jest.fn();
   const mockDeleteOrderUseCase = { execute: mockExecute };
 
   beforeAll(() => {
-    // Registra a rota com o controller
     const controller = new DeleteOrderController();
     app.post("/delete-order", (req, res) => controller.handle(req, res));
   });
