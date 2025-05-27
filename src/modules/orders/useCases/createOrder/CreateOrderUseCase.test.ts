@@ -34,6 +34,7 @@ describe(CreateOrderUseCase.name, () => {
       password: "test",
       telephone: "81999999999",
       address: {
+        id: 10,
         local: "cidade de jaqueira",
         number: "10",
         reference: "teste de referência",

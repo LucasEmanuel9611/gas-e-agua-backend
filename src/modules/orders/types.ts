@@ -25,7 +25,7 @@ export class Order {
   payment_state: OrderPaymentStatus;
   gasAmount: number;
   waterAmount: number;
-  updated_at: Date;
+  updated_at: Date | string;
   total: number;
   address: AddressDates;
   user?: {
