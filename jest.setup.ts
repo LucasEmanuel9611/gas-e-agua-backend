@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import "reflect-metadata";
 
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
+import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
 
 import {
   mockCreateOrderUseCase,
@@ -10,6 +11,7 @@ import {
   mockListAdminUseCase,
   mockListOrdersUseCase,
   mockSendNotificationUseCase,
+  mockUpdateStockUseCase,
 } from "./jest/mocks/useCaseMocks";
 import { ListAdminUserUseCase } from "./src/modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
@@ -52,6 +54,9 @@ jest.mock("tsyringe", () => {
         }
         if (token === ListOrdersUseCase) {
           return { execute: mockListOrdersUseCase };
+        }
+        if (token === UpdateStockUseCase) {
+          return { execute: mockUpdateStockUseCase };
         }
         return null;
       }),
