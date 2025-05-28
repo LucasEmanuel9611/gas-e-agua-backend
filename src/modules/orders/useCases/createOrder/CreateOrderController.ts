@@ -76,6 +76,7 @@ export class CreateOrderController {
 
       response.status(201).json(order);
     } catch (err) {
+      // TODO: Colocar return no handle e remover o AppError
       handleControllerError(err, response);
       throw new AppError("Erro ao criar pedido", 500);
     }
