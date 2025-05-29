@@ -1,11 +1,11 @@
 import auth from "@config/auth";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { AddressDates } from "@modules/accounts/types";
 import { compare } from "bcrypt";
 import { sign } from "jsonwebtoken";
 import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
-import { AddressDates } from "@modules/accounts/types";
 
 interface IRequest {
   email: string;
@@ -18,7 +18,7 @@ interface IResponse {
     email: string;
     isAdmin: boolean;
     id: number;
-    address: AddressDates; 
+    address: AddressDates;
   };
   token: string;
 }
