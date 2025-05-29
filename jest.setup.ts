@@ -1,15 +1,17 @@
-import { PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";
 import "reflect-metadata";
 
+import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
+import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
 
 import {
   mockCreateOrderUseCase,
   mockGetStockUseCase,
   mockListAdminUseCase,
   mockListOrdersUseCase,
+  mockProfileUserUseCase,
   mockSendNotificationUseCase,
   mockUpdateStockUseCase,
 } from "./jest/mocks/useCaseMocks";
@@ -57,6 +59,9 @@ jest.mock("tsyringe", () => {
         }
         if (token === UpdateStockUseCase) {
           return { execute: mockUpdateStockUseCase };
+        }
+        if (token === ProfileUserUseCase) {
+          return { execute: mockProfileUserUseCase };
         }
         return null;
       }),

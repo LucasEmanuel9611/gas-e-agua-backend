@@ -1,4 +1,4 @@
-import { z, ZodError, ZodType } from "zod";
+import { ZodType, z } from "zod";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -6,14 +6,14 @@ import { AppError } from "@shared/errors/AppError";
  * Valida dados com um schema Zod de forma segura e retorna os dados validados e transformados.
  *
  * - Usa `schema.safeParse` para evitar exceções automáticas.
- * - Em caso de erro, lança explicitamente um `ZodError` com os detalhes.
+ * - Em caso de erro, lança explicitamente um `AppError` com mensagem amigável.
  * - Suporta schemas com transformações (`.transform()`), refinamentos, etc.
  *
  * @param schema - O schema Zod que será usado para validar os dados.
  * @param data - Os dados a serem validados (geralmente vindo de request params, body, etc).
  * @returns Os dados validados e possivelmente transformados, com tipo inferido de `z.infer<T>`.
  *
- * @throws {ZodError} Se a validação falhar.
+ * @throws {AppError} Se a validação falhar, com mensagem concatenada das falhas.
  *
  * @example
  * const schema = z.object({ id: z.string().transform(Number) });
@@ -26,14 +26,16 @@ export function validateSchema<T extends ZodType<any, any, any>>(
   const result = schema.safeParse(data);
 
   if (!result.success) {
-    const errorMessages = result.error.errors.map(
-      (error) => `${error.path.join(".")}: ${error.message}`
-    );
+    const messages = result.error.errors.map((error) => error.message);
 
-    const concatenatedMessages = errorMessages.join("; ");
+    const concatenatedMessages = `${messages.join(". ")}.`;
 
-    console.error(concatenatedMessages);
-    throw new AppError(concatenatedMessages);
+    const debugMessages = result.error.errors
+      .map((error) => `${error.path.join(".")}: ${error.message}`)
+      .join("; ");
+    console.error(`Validation failed: ${debugMessages}`);
+
+    throw new AppError(concatenatedMessages, 400);
   }
 
   return result.data;
