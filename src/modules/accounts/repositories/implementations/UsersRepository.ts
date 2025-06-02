@@ -83,14 +83,6 @@ export class UsersRepository implements IUsersRepository {
     telephone,
     address,
   }: IUpdateUserDTO) {
-    const user = {
-      id,
-      username,
-      email,
-      password,
-      telephone,
-    };
-
     const foundUser = await prisma.user.update({
       data: {
         username,

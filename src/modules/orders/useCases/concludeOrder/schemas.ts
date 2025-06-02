@@ -8,7 +8,7 @@ export const concludeOrderSchema = z.object({
   status: z.union(
     [z.literal("FINALIZADO"), z.literal("CANCELADO"), z.literal("PENDENTE")],
     {
-      errorMap: (issue, ctx) => {
+      errorMap: (issue) => {
         if (issue.code === "invalid_type") {
           return { message: "O status é obrigatório" };
         }

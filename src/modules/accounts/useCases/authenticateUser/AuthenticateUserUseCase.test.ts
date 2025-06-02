@@ -4,6 +4,7 @@ import { sign } from "jsonwebtoken";
 
 import { AppError } from "@shared/errors/AppError";
 
+import { IUsersRepository } from "../../repositories/interfaces/IUserRepository";
 import { AuthenticateUserUseCase } from "./AuthenticateUserUseCase";
 
 jest.mock("bcrypt", () => ({
@@ -14,14 +15,22 @@ jest.mock("jsonwebtoken", () => ({
   sign: jest.fn().mockReturnValue("fake_token"),
 }));
 
-describe("AuthenticateUserUseCase", () => {
-  let useCase: AuthenticateUserUseCase;
-  const mockUsersRepository = {
-    findByEmail: jest.fn(),
-  };
+interface IMockUsersRepository extends Partial<IUsersRepository> {
+  findByEmail: jest.Mock<Promise<UserDates | null>>;
+}
+
+describe("Authenticate User Use Case", () => {
+  let authenticateUserUseCase: AuthenticateUserUseCase;
+  let usersRepository: IMockUsersRepository;
 
   beforeEach(() => {
-    useCase = new AuthenticateUserUseCase(mockUsersRepository as any);
+    usersRepository = {
+      findByEmail: jest.fn(),
+    };
+
+    authenticateUserUseCase = new AuthenticateUserUseCase(
+      usersRepository as IUsersRepository
+    );
     jest.clearAllMocks();
   });
 
@@ -42,15 +51,15 @@ describe("AuthenticateUserUseCase", () => {
       },
     };
 
-    mockUsersRepository.findByEmail.mockResolvedValue(mockUser);
+    usersRepository.findByEmail.mockResolvedValue(mockUser);
     (compare as jest.Mock).mockResolvedValue(true);
 
-    const result = await useCase.execute({
+    const result = await authenticateUserUseCase.execute({
       email: "test@example.com",
       password: "123456",
     });
 
-    expect(mockUsersRepository.findByEmail).toHaveBeenCalledWith(
+    expect(usersRepository.findByEmail).toHaveBeenCalledWith(
       "test@example.com"
     );
     expect(compare).toHaveBeenCalledWith("123456", "hashed_password");
@@ -71,16 +80,16 @@ describe("AuthenticateUserUseCase", () => {
   });
 
   it("should throw error if user not found", async () => {
-    mockUsersRepository.findByEmail.mockResolvedValue(null);
+    usersRepository.findByEmail.mockResolvedValue(null);
 
     await expect(
-      useCase.execute({
+      authenticateUserUseCase.execute({
         email: "nonexistent@example.com",
         password: "123456",
       })
     ).rejects.toEqual(new AppError("Email ou senha incorretos", 401));
 
-    expect(mockUsersRepository.findByEmail).toHaveBeenCalledWith(
+    expect(usersRepository.findByEmail).toHaveBeenCalledWith(
       "nonexistent@example.com"
     );
     expect(compare).not.toHaveBeenCalled();
@@ -103,17 +112,17 @@ describe("AuthenticateUserUseCase", () => {
       },
     };
 
-    mockUsersRepository.findByEmail.mockResolvedValue(mockUser);
+    usersRepository.findByEmail.mockResolvedValue(mockUser);
     (compare as jest.Mock).mockResolvedValue(false);
 
     await expect(
-      useCase.execute({
+      authenticateUserUseCase.execute({
         email: "test@example.com",
         password: "wrong_password",
       })
     ).rejects.toEqual(new AppError("Email ou senha incorretos"));
 
-    expect(mockUsersRepository.findByEmail).toHaveBeenCalledWith(
+    expect(usersRepository.findByEmail).toHaveBeenCalledWith(
       "test@example.com"
     );
     expect(compare).toHaveBeenCalledWith("wrong_password", "hashed_password");
