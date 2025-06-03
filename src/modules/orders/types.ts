@@ -1,7 +1,11 @@
 import { AddressDates } from "@modules/accounts/types";
 
 export type OrderStatusProps = "INICIADO" | "PENDENTE" | "FINALIZADO";
-export type OrderPaymentStatus = "PENDENTE" | "PAGO";
+export type OrderPaymentStatus =
+  | "PENDENTE"
+  | "PAGO"
+  | "VENCIDO"
+  | "PARCIALMENTE_PAGO";
 export interface ICreateOrderDTO {
   username?: string;
   user_id: number;
@@ -11,6 +15,7 @@ export interface ICreateOrderDTO {
   total: number;
   gasAmount: number;
   waterAmount: number;
+  created_at?: Date;
 }
 
 export class Order {
@@ -20,8 +25,7 @@ export class Order {
   payment_state: OrderPaymentStatus;
   gasAmount: number;
   waterAmount: number;
-  created_at: Date;
-  updated_at: Date;
+  updated_at: Date | string;
   total: number;
   address: AddressDates;
   interest_allowed: boolean;

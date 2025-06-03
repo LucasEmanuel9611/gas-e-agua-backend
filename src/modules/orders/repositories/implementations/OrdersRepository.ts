@@ -19,6 +19,8 @@ export class OrdersRepository implements IOrdersRepository {
     total,
     status,
     waterAmount,
+    created_at,
+    payment_state,
   }: ICreateOrderDTO): Promise<Order> {
     const createdOrder = await prisma.order.create({
       data: {
@@ -28,6 +30,10 @@ export class OrdersRepository implements IOrdersRepository {
         total,
         status,
         waterAmount,
+        created_at,
+        payment_state,
+        total_with_interest: 0,
+        interest_allowed: true,
       },
       include: {
         address: true,
@@ -195,7 +201,7 @@ export class OrdersRepository implements IOrdersRepository {
     const result = await prisma.order.updateMany({
       where: {
         created_at: { lt: THIRTY_DAYS_AGO },
-        payment_state: { not: "VENCIDO" },
+        payment_state: { equals: "PENDENTE" },
       },
       data: { payment_state: "VENCIDO" },
     });
