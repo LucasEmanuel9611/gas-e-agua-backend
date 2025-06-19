@@ -26,6 +26,7 @@ export class Order {
   gasAmount: number;
   waterAmount: number;
   updated_at: Date | string;
+  created_at: Date | string;
   total: number;
   address: AddressDates;
   interest_allowed: boolean;

@@ -25,6 +25,7 @@ describe(ListOrdersUseCase.name, () => {
         gasAmount: 1,
         waterAmount: 2,
         updated_at: new Date(),
+        created_at: new Date(),
         total: 100,
         interest_allowed: true,
         total_with_interest: 100,

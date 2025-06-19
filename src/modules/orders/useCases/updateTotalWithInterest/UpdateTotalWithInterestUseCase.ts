@@ -3,6 +3,8 @@ import { inject, injectable } from "tsyringe";
 
 import { IDateProvider } from "@shared/containers/DateProvider/IDateProvider";
 
+import dayjs from "../../../../config/dayjs.config";
+
 @injectable()
 export class UpdateTotalWithInterestUseCase {
   constructor(
@@ -22,13 +24,14 @@ export class UpdateTotalWithInterestUseCase {
     const allowInterest = order.interest_allowed;
     const hasGas = order.gasAmount;
 
-    if (allowInterest || hasGas) {
+    if (!allowInterest || !hasGas) {
       return order.total;
     }
 
+    const createdDate = dayjs(order.created_at).toDate();
     const differenceDays = this.dayjsDateProvider.getDaysDifference(
       this.dayjsDateProvider.dateNow(),
-      order.created_at
+      createdDate
     );
 
     let interestValue = 0;
@@ -49,9 +52,15 @@ export class UpdateTotalWithInterestUseCase {
       await this.ordersRepository.findOrdersWithGasAndInterestAllowed();
 
     const updates = orders.map((order) => {
-      const newTotal = this.calculateTotalWithInterest(order);
+      const orderWithDate = {
+        ...order,
+        created_at: dayjs(order.created_at).toDate(),
+      };
+      const newTotal = this.calculateTotalWithInterest(orderWithDate);
 
-      if (newTotal !== order.total_with_interest) {
+      const needsUpdate = newTotal !== order.total_with_interest;
+
+      if (needsUpdate) {
         return this.ordersRepository.updateTotalWithInterest(
           order.id,
           newTotal
@@ -62,6 +71,5 @@ export class UpdateTotalWithInterestUseCase {
     });
 
     await Promise.all(updates.filter(Boolean));
-    console.log("Total with interest updated.");
   }
 }
