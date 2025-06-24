@@ -32,8 +32,6 @@ export class OrdersRepository implements IOrdersRepository {
         waterAmount,
         created_at,
         payment_state,
-        total_with_interest: 0,
-        interest_allowed: true,
       },
       include: {
         address: true,
