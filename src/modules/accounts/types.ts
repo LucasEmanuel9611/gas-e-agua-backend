@@ -4,7 +4,7 @@ export type NotificationTokenProps = {
 };
 
 export type AddressDates = {
-  id: number;
+  id?: number;
   street?: string;
   reference: string;
   local: string;

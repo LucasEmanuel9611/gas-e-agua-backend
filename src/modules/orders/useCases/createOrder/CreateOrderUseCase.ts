@@ -28,7 +28,7 @@ export class CreateOrderUseCase {
     @inject("UsersRepository")
     private usersRepository: IUsersRepository,
     @inject("StockRepository")
-    private stockRepository: IStockRepository // @inject("DayjsDateProvider") // private dateProvider: IDateProvider
+    private stockRepository: IStockRepository
   ) {}
 
   private async updateQuantityStockItems({
@@ -62,15 +62,19 @@ export class CreateOrderUseCase {
   private async verifyStockQuantity({
     waterStock,
     gasStock,
+    gasOrder,
+    waterOrder,
   }: {
     waterStock: number;
     gasStock: number;
+    waterOrder: number;
+    gasOrder: number;
   }) {
-    if (gasStock <= 0) {
+    if (gasStock < gasOrder) {
       throw new AppError("Estoque insuficiente de gás");
     }
 
-    if (waterStock <= 0) {
+    if (waterStock < waterOrder) {
       throw new AppError("Estoque insuficiente de água");
     }
   }
@@ -98,9 +102,11 @@ export class CreateOrderUseCase {
 
     const total = waterTotalValue + gasTotalValue;
 
-    this.verifyStockQuantity({
-      gasStock: waterStock.quantity,
-      waterStock: gasStock.quantity,
+    await this.verifyStockQuantity({
+      gasStock: gasStock.quantity,
+      gasOrder: gasAmount,
+      waterOrder: waterAmount,
+      waterStock: waterStock.quantity,
     });
 
     await this.updateQuantityStockItems({

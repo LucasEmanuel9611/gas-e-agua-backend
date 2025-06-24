@@ -1,5 +1,5 @@
 import { CreateUserController } from "@modules/accounts/useCases/createUser/CreateUserController";
-import { ProfileUserController } from "@modules/accounts/useCases/profileUserUseCase/profileUserController";
+import { ProfileUserController } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserController";
 import { UpdateUserController } from "@modules/accounts/useCases/updateUser/updateUserController";
 import { Router } from "express";
 
