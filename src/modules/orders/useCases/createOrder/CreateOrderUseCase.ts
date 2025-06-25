@@ -10,7 +10,6 @@ import { AppError } from "@shared/errors/AppError";
 
 interface IRequest {
   user_id: string;
-  isAdmin: boolean;
   gasAmount: number;
   waterAmount: number;
 }

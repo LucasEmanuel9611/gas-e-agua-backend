@@ -12,12 +12,14 @@ export type AddressDates = {
   user_id?: number;
 };
 
+export type UserRole = "USER" | "ADMIN" | "DELIVERY_MAN";
+
 export type UserDates = {
   id: number;
   username: string;
   email: string;
   password: string;
-  isAdmin: boolean;
+  role: UserRole;
   created_at: Date;
   telephone: string;
   notificationTokens?: NotificationTokenProps[];
@@ -43,7 +45,7 @@ export interface IUserResponseDTO {
   username: string;
   id: number;
   notificationTokens: NotificationTokenProps[];
-  isAdmin: boolean;
+  role: UserRole;
 }
 
 export type OrderStatusTextProps = "APROVADO" | "REPROVADO" | "AGUARDANDO";

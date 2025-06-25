@@ -27,7 +27,7 @@ describe("AuthenticateUserController", () => {
       user: {
         name: "testUser",
         email: "test@example.com",
-        isAdmin: false,
+        role: "USER",
         id: 123,
         address: {
           street: "Test Street",

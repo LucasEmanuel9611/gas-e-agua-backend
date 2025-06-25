@@ -69,7 +69,6 @@ describe("CreateOrderController", () => {
     // expect(mockGetStock).toHaveBeenCalled();
     expect(mockCreateOrderUseCase).toHaveBeenCalledWith({
       user_id: 5,
-      isAdmin: false,
       gasAmount: 2,
       waterAmount: 3,
     });

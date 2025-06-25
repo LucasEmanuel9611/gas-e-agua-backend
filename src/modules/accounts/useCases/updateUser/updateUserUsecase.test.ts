@@ -36,7 +36,7 @@ describe("UpdateUserUseCase", () => {
       username: "updatedUser",
       email: "updated@example.com",
       password: "hashed_password",
-      isAdmin: false,
+      role: "USER",
       created_at: new Date(),
       telephone: "81999999999",
       address: {
@@ -51,7 +51,7 @@ describe("UpdateUserUseCase", () => {
       id: 123,
       username: "updatedUser",
       email: "updated@example.com",
-      isAdmin: false,
+      role: "USER",
       notificationTokens: [],
     };
 

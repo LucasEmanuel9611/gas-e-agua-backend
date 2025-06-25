@@ -5,6 +5,7 @@ import {
   ICreateUserDTO,
   IUpdateUserDTO,
   UserDates,
+  UserRole,
 } from "../../types";
 import { IUsersRepository } from "../interfaces/IUserRepository";
 
@@ -19,7 +20,7 @@ export class UsersRepository implements IUsersRepository {
     const user = {
       username,
       email,
-      isAdmin: false,
+      role: "USER" as UserRole,
       password,
       telephone,
     };
@@ -64,7 +65,7 @@ export class UsersRepository implements IUsersRepository {
   async findAdmin() {
     const foundUser = await prisma.user.findFirst({
       where: {
-        isAdmin: true,
+        role: "ADMIN",
       },
       include: {
         notificationTokens: true,

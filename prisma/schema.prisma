@@ -9,12 +9,18 @@ datasource db {
   // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+  DELIVERY_MAN
+}
+
 model User {
   id                 Int                 @id @default(autoincrement())
   username           String
   email              String
   password           String
-  isAdmin            Boolean
+  role               UserRole            @default(USER)
   telephone          String
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
