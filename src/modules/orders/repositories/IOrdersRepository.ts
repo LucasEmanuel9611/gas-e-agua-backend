@@ -10,4 +10,6 @@ export interface IOrdersRepository {
   updateDate(id: number, date: string): Promise<Order>;
   delete(id: number): Promise<void>;
   updateOverdueOrders(): Promise<number>;
+  findOrdersWithGasAndInterestAllowed(): Promise<Order[]>;
+  updateTotalWithInterest: (id: number, total: number) => Promise<void>;
 }

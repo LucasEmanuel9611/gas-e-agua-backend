@@ -9,4 +9,5 @@ export interface IDateProvider {
     new_order_date: Date
   ): boolean;
   isSameDay(first_day: Date, second_day: Date): boolean;
+  getDaysDifference(inital_date: Date, end_date: Date): number;
 }

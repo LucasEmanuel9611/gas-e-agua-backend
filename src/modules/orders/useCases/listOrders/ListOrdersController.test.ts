@@ -53,7 +53,10 @@ describe("ListOrdersController", () => {
       gasAmount: 1,
       waterAmount: 2,
       updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       total: 100,
+      interest_allowed: true,
+      total_with_interest: 100,
       address: {
         id: 1,
         street: "Rua A",
@@ -75,7 +78,10 @@ describe("ListOrdersController", () => {
       gasAmount: 0,
       waterAmount: 3,
       updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       total: 90,
+      interest_allowed: true,
+      total_with_interest: 90,
       address: {
         id: 2,
         street: "Rua B",

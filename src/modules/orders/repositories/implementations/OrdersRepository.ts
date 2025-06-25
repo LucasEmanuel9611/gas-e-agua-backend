@@ -206,4 +206,34 @@ export class OrdersRepository implements IOrdersRepository {
 
     return result.count;
   }
+
+  async findOrdersWithGasAndInterestAllowed(): Promise<Order[]> {
+    const ordersWithGasAndInterestAllowed = await prisma.order.findMany({
+      where: {
+        gasAmount: { gt: 0 },
+        interest_allowed: true,
+      },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+          },
+        },
+      },
+    });
+
+    return ordersWithGasAndInterestAllowed as Order[];
+  }
+
+  async updateTotalWithInterest(
+    orderId: number,
+    totalWithInterest: number
+  ): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { total_with_interest: totalWithInterest },
+    });
+  }
 }

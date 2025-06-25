@@ -25,8 +25,11 @@ describe(ListOrdersByUserUseCase.name, () => {
         payment_state: "PAGO",
         gasAmount: 1,
         waterAmount: 2,
+        created_at: new Date(),
         updated_at: new Date(),
         total: 100,
+        interest_allowed: true,
+        total_with_interest: 100,
         address: {
           id: 1,
           reference: "Rua das Pedras",
