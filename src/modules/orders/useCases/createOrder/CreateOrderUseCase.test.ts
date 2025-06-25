@@ -66,7 +66,6 @@ describe(CreateOrderUseCase.name, () => {
 
     const order = await createOrderUseCase.execute({
       user_id: String(user.id),
-      isAdmin: false,
       gasAmount,
       waterAmount,
     });
@@ -87,7 +86,6 @@ describe(CreateOrderUseCase.name, () => {
     await expect(
       createOrderUseCase.execute({
         user_id: String(userWithoutAddress.id),
-        isAdmin: false,
         gasAmount: 1,
         waterAmount: 1,
       })
@@ -112,7 +110,6 @@ describe(CreateOrderUseCase.name, () => {
     await expect(
       createOrderUseCase.execute({
         user_id: String(user.id),
-        isAdmin: false,
         gasAmount: 1,
         waterAmount: 1,
       })
@@ -140,7 +137,6 @@ describe(CreateOrderUseCase.name, () => {
     await expect(
       createOrderUseCase.execute({
         user_id: String(user.id),
-        isAdmin: false,
         gasAmount: 1,
         waterAmount: 1,
       })
@@ -163,7 +159,6 @@ describe(CreateOrderUseCase.name, () => {
 
     const order = await createOrderUseCase.execute({
       user_id: String(user.id),
-      isAdmin: false,
       gasAmount,
       waterAmount,
     });

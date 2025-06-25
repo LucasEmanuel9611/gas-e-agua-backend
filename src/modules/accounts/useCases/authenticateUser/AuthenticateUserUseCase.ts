@@ -1,6 +1,6 @@
 import auth from "@config/auth";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { AddressDates } from "@modules/accounts/types";
+import { AddressDates, UserRole } from "@modules/accounts/types";
 import { compare } from "bcrypt";
 import { sign } from "jsonwebtoken";
 import { inject, injectable } from "tsyringe";
@@ -16,7 +16,7 @@ interface IResponse {
   user: {
     name: string;
     email: string;
-    isAdmin: boolean;
+    role: UserRole;
     id: number;
     address: AddressDates;
   };
@@ -55,7 +55,7 @@ export class AuthenticateUserUseCase {
       user: {
         name: user.username,
         email: user.email,
-        isAdmin: user.isAdmin,
+        role: user.role,
         id: user.id,
         address: user.address,
       },

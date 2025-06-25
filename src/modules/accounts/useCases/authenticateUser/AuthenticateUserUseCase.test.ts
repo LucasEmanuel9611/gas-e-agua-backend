@@ -40,7 +40,7 @@ describe("Authenticate User Use Case", () => {
       username: "testUser",
       email: "test@example.com",
       password: "hashed_password",
-      isAdmin: false,
+      role: "USER",
       created_at: new Date(),
       telephone: "81999999999",
       address: {
@@ -72,7 +72,7 @@ describe("Authenticate User Use Case", () => {
       user: {
         name: "testUser",
         email: "test@example.com",
-        isAdmin: false,
+        role: "USER",
         id: 123,
         address: mockUser.address,
       },
@@ -101,7 +101,7 @@ describe("Authenticate User Use Case", () => {
       username: "testUser",
       email: "test@example.com",
       password: "hashed_password",
-      isAdmin: false,
+      role: "USER",
       created_at: new Date(),
       telephone: "81999999999",
       address: {

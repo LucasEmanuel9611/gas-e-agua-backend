@@ -50,7 +50,7 @@ describe("UpdateUserController", () => {
         id: 123,
         username: "updatedUser",
         email: "updated@example.com",
-        isAdmin: false,
+        role: "USER",
         notificationTokens: [],
       }),
     }));
@@ -65,7 +65,7 @@ describe("UpdateUserController", () => {
       id: 123,
       username: "updatedUser",
       email: "updated@example.com",
-      isAdmin: false,
+      role: "USER",
       notificationTokens: [],
     });
   });

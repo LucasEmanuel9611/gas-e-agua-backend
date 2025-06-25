@@ -61,13 +61,10 @@ export class CreateOrderController {
       const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
       const adminUser = await listAdminUserUseCase.execute();
 
-      const isAdmin = Number(adminUser.id) === Number(id);
-
       await this.verifyStock(gasAmount, waterAmount);
 
       const order = await createOrderUseCase.execute({
         user_id: id,
-        isAdmin,
         gasAmount,
         waterAmount,
       });

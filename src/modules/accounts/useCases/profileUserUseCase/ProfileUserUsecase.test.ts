@@ -25,7 +25,7 @@ describe("ProfileUserUseCase", () => {
       id: 1,
       name: "John",
       email: "john@example.com",
-      isAdmin: false,
+      role: "USER",
       notificationTokens: [],
       username: "teste",
     } as IUserResponseDTO;
