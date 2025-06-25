@@ -15,6 +15,12 @@ enum UserRole {
   DELIVERY_MAN
 }
 
+enum TransactionType {
+  PAYMENT
+  INTEREST
+  CREATE
+}
+
 model User {
   id                 Int                 @id @default(autoincrement())
   username           String
@@ -52,23 +58,39 @@ model Address {
 }
 
 model Order {
-  id                  Int      @id @default(autoincrement())
-  user_id             Int
-  gasAmount           Int
-  waterAmount         Int
-  address_id          Int
-  total               Float
-  status              String
-  payment_state       String   @default("PENDENTE")
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
-  address             Address  @relation(fields: [address_id], references: [id])
-  user                User     @relation(fields: [user_id], references: [id])
-  interest_allowed    Boolean  @default(true)
-  total_with_interest Float    @default(0)
+  id               Int           @id @default(autoincrement())
+  user_id          Int
+  gasAmount        Int
+  waterAmount      Int
+  address_id       Int
+  total            Float
+  status           String
+  payment_state    String        @default("PENDENTE")
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  address          Address       @relation(fields: [address_id], references: [id])
+  user             User          @relation(fields: [user_id], references: [id])
+  interest_allowed Boolean       @default(true)
+  payments         Transaction[]
 
   @@index([address_id], map: "Order_address_id_fkey")
   @@index([user_id], map: "Order_user_id_fkey")
+}
+
+model Transaction {
+  id             Int             @id @default(autoincrement())
+  order_id       Int
+  type           TransactionType
+  amount         Float
+  old_value      Float
+  new_value      Float
+  payment_method String?
+  notes          String?
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  order          Order           @relation(fields: [order_id], references: [id])
+
+  @@index([order_id], map: "Transaction_order_id_fkey")
 }
 
 model Stock {
