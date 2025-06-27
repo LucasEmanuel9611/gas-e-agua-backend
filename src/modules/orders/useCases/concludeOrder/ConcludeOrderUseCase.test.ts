@@ -1,11 +1,11 @@
-import { Order } from "@modules/orders/types";
+import { OrderProps } from "@modules/orders/types";
 
 import { ConcludeOrderUseCase } from "./ConcludeOrderUseCase";
 
 describe("ConcludeOrderUseCase", () => {
   let useCase: ConcludeOrderUseCase;
   const mockOrdersRepository = {
-    updateStatus: jest.fn(),
+    updateById: jest.fn(),
   };
 
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe("ConcludeOrderUseCase", () => {
   });
 
   it("should update order status successfully", async () => {
-    const mockOrder: Order = {
+    const mockOrder: OrderProps = {
       id: 123,
       user_id: 456,
       status: "FINALIZADO",
@@ -25,7 +25,6 @@ describe("ConcludeOrderUseCase", () => {
       created_at: new Date(),
       total: 100,
       interest_allowed: true,
-      total_with_interest: 100,
       address: {
         street: "Test Street",
         number: "123",
@@ -38,22 +37,21 @@ describe("ConcludeOrderUseCase", () => {
       },
     };
 
-    mockOrdersRepository.updateStatus.mockResolvedValue(mockOrder);
+    mockOrdersRepository.updateById.mockResolvedValue(mockOrder);
 
     const result = await useCase.execute({
       order_id: "123",
       status: "FINALIZADO",
     });
 
-    expect(mockOrdersRepository.updateStatus).toHaveBeenCalledWith(
-      123,
-      "FINALIZADO"
-    );
+    expect(mockOrdersRepository.updateById).toHaveBeenCalledWith(123, {
+      status: "FINALIZADO",
+    });
     expect(result).toEqual(mockOrder);
   });
 
   it("should throw error if repository throws", async () => {
-    mockOrdersRepository.updateStatus.mockRejectedValue(
+    mockOrdersRepository.updateById.mockRejectedValue(
       new Error("Erro interno do servidor")
     );
 
@@ -64,9 +62,8 @@ describe("ConcludeOrderUseCase", () => {
       })
     ).rejects.toThrow("Erro interno do servidor");
 
-    expect(mockOrdersRepository.updateStatus).toHaveBeenCalledWith(
-      123,
-      "FINALIZADO"
-    );
+    expect(mockOrdersRepository.updateById).toHaveBeenCalledWith(123, {
+      status: "FINALIZADO",
+    });
   });
 });

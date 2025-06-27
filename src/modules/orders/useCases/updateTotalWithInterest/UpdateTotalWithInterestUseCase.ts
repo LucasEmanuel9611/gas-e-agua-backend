@@ -71,7 +71,7 @@ export class UpdateTotalWithInterestUseCase {
           new_value: newTotal,
           notes: "Juros por atraso",
         });
-        await this.ordersRepository.updateValueById(order.id, newTotal);
+        await this.ordersRepository.updateById(order.id, { total: newTotal });
       }
     });
 

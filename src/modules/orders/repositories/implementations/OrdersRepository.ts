@@ -1,8 +1,7 @@
 import {
   ICreateOrderDTO,
-  OrderPaymentStatus,
   OrderProps,
-  OrderStatusProps,
+  UpdateOrderDTO,
 } from "@modules/orders/types";
 
 import { prisma } from "@shared/infra/database/prisma";
@@ -42,7 +41,7 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: true,
+        transactions: true,
       },
     });
 
@@ -66,7 +65,7 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: true,
+        transactions: true,
       },
       orderBy: {
         updated_at: "desc",
@@ -87,7 +86,7 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: {
+        transactions: {
           orderBy: {
             created_at: "asc",
           },
@@ -113,7 +112,7 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: true,
+        transactions: true,
       },
       orderBy: {
         updated_at: "desc",
@@ -158,7 +157,7 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: true,
+        transactions: true,
       },
       orderBy: {
         updated_at: "desc",
@@ -168,17 +167,10 @@ export class OrdersRepository implements IOrdersRepository {
     return OrderPropss as OrderProps[];
   }
 
-  async updateStatus(
-    id: number,
-    status: OrderStatusProps
-  ): Promise<OrderProps> {
-    const updatedOrderProps = await prisma.order.update({
-      where: {
-        id,
-      },
-      data: {
-        status,
-      },
+  async updateById(id: number, data: UpdateOrderDTO): Promise<OrderProps> {
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data,
       include: {
         address: true,
         user: {
@@ -187,71 +179,10 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: true,
+        transactions: true,
       },
     });
-
-    return updatedOrderProps as OrderProps;
-  }
-
-  async updatePaymentState(
-    id: number,
-    payment_state: OrderPaymentStatus
-  ): Promise<OrderProps> {
-    const updatedOrderProps = await prisma.order.update({
-      where: {
-        id,
-      },
-      data: {
-        payment_state,
-      },
-      include: {
-        address: true,
-        user: {
-          select: {
-            username: true,
-            telephone: true,
-          },
-        },
-        payments: true,
-      },
-    });
-
-    return updatedOrderProps as OrderProps;
-  }
-
-  async updateDate(id: number, date: string): Promise<OrderProps> {
-    const updatedOrderProps = await prisma.order.update({
-      where: {
-        id,
-      },
-      data: {
-        updated_at: date,
-        status: "AGUARDANDO",
-      },
-      include: {
-        address: true,
-        user: {
-          select: {
-            username: true,
-            telephone: true,
-          },
-        },
-        payments: true,
-      },
-    });
-
-    return updatedOrderProps as OrderProps;
-  }
-
-  async updateValue(total: number) {
-    const updatedOrderProps = await prisma.order.updateMany({
-      data: {
-        total,
-      },
-    });
-
-    return updatedOrderProps;
+    return updatedOrder as OrderProps;
   }
 
   async updateOverdueOrders(): Promise<number> {
@@ -282,27 +213,10 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
-        payments: true,
+        transactions: true,
       },
     });
 
     return ordersWithGasAndInterestAllowed as OrderProps[];
-  }
-
-  async updateTotalWithInterest(
-    orderId: number,
-    totalWithInterest: number
-  ): Promise<void> {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { total_with_interest: totalWithInterest },
-    });
-  }
-
-  async updateValueById(order_id: number, total: number): Promise<void> {
-    await prisma.order.update({
-      where: { id: order_id },
-      data: { total },
-    });
   }
 }

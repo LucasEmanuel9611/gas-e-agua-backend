@@ -1,5 +1,5 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { Order } from "@modules/orders/types";
+import { OrderProps } from "@modules/orders/types";
 import { inject, injectable } from "tsyringe";
 
 interface IRequest {
@@ -14,10 +14,10 @@ export class EditOrderUseCase {
     private ordersRepository: IOrdersRepository
   ) {}
 
-  async execute({ order_id, date }: IRequest): Promise<Order> {
-    const updatedOrder = await this.ordersRepository.updateDate(
+  async execute({ order_id, date }: IRequest): Promise<OrderProps> {
+    const updatedOrder = await this.ordersRepository.updateById(
       Number(order_id),
-      date
+      { updated_at: date }
     );
 
     return updatedOrder;

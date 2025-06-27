@@ -1,5 +1,5 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { Order } from "@modules/orders/types";
+import { OrderProps } from "@modules/orders/types";
 
 import { ListOrdersByUserUseCase } from "./ListOrdersByUserUseCase";
 
@@ -17,7 +17,7 @@ describe(ListOrdersByUserUseCase.name, () => {
 
   it("should return orders for the given user_id", async () => {
     const user_id = "1";
-    const mockOrders: Order[] = [
+    const mockOrders: OrderProps[] = [
       {
         id: 1,
         user_id: 1,
@@ -29,7 +29,6 @@ describe(ListOrdersByUserUseCase.name, () => {
         updated_at: new Date(),
         total: 100,
         interest_allowed: true,
-        total_with_interest: 100,
         address: {
           id: 1,
           reference: "Rua das Pedras",

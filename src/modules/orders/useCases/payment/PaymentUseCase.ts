@@ -39,13 +39,11 @@ export class PaymentUseCase {
       notes
     );
 
-    // criar apenas um metodode repository para varios dadaosde order
-    await this.ordersRepository.updateValueById(order_id, newValue);
     const newPaymentState = this.calculateNewPaymentState(newValue);
-    const updatedOrder = await this.ordersRepository.updatePaymentState(
-      order_id,
-      newPaymentState
-    );
+    const updatedOrder = await this.ordersRepository.updateById(order_id, {
+      total: newValue,
+      payment_state: newPaymentState,
+    });
     return updatedOrder;
   }
 

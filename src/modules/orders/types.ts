@@ -87,3 +87,13 @@ export class Order {
 }
 
 export type OrderProps = Omit<Order, "total_paid" | "calculated_payment_state">;
+
+export type UpdateOrderDTO = Partial<{
+  total: number;
+  payment_state: OrderPaymentStatus;
+  status: OrderStatusProps;
+  updated_at: Date | string;
+  gasAmount: number;
+  waterAmount: number;
+  interest_allowed: boolean;
+}>;

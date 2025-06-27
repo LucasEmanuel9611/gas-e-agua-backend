@@ -15,9 +15,9 @@ export class ConcludeOrderUseCase {
   ) {}
 
   async execute({ order_id, status }: IRequest): Promise<OrderProps> {
-    const updatedOrder = await this.ordersRepository.updateStatus(
+    const updatedOrder = await this.ordersRepository.updateById(
       Number(order_id),
-      status
+      { status }
     );
 
     return updatedOrder;
