@@ -21,15 +21,6 @@ export interface ICreateOrderDTO {
   created_at?: Date;
 }
 
-export interface ICreatePaymentDTO {
-  order_id: number;
-  amount_paid: number;
-  new_value: number;
-  old_value: number;
-  payment_method?: PaymentMethod;
-  notes?: string;
-}
-
 export interface IPartialPaymentDTO {
   order_id: number;
   amount_paid: number;
@@ -37,12 +28,25 @@ export interface IPartialPaymentDTO {
   notes?: string;
 }
 
-export interface IPayment {
+export type TransactionType = "PAYMENT" | "INTEREST" | "ADJUSTMENT";
+
+export interface ICreateTransactionDTO {
+  order_id: number;
+  type: TransactionType;
+  amount: number;
+  old_value: number;
+  new_value: number;
+  payment_method?: PaymentMethod;
+  notes?: string;
+}
+
+export interface ITransaction {
   id: number;
   order_id: number;
-  amount_paid: number;
-  new_value: number;
+  type: TransactionType;
+  amount: number;
   old_value: number;
+  new_value: number;
   payment_method: PaymentMethod;
   notes?: string;
   created_at: Date;
@@ -65,11 +69,13 @@ export class Order {
     username: string;
     telephone: string;
   };
-  payments?: IPayment[];
+  transactions?: ITransaction[];
 
   get total_paid(): number {
     return (
-      this.payments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0
+      this.transactions
+        ?.filter((t) => t.type === "PAYMENT")
+        .reduce((sum, t) => sum + t.amount, 0) || 0
     );
   }
 

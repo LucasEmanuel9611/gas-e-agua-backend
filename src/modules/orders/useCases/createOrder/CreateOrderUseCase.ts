@@ -2,7 +2,7 @@
 /* eslint-disable array-callback-return */
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { Order } from "@modules/orders/types";
+import { OrderProps } from "@modules/orders/types";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { inject, injectable } from "tsyringe";
 
@@ -87,7 +87,11 @@ export class CreateOrderUseCase {
     return { waterStock, gasStock };
   }
 
-  async execute({ user_id, gasAmount, waterAmount }: IRequest): Promise<Order> {
+  async execute({
+    user_id,
+    gasAmount,
+    waterAmount,
+  }: IRequest): Promise<OrderProps> {
     const { address } = await this.usersRepository.findById(Number(user_id));
 
     if (!address) {

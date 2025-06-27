@@ -1,4 +1,5 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
+import { ITransactionsRepository } from "@modules/orders/repositories/ITransactionsRepository";
 import { inject, injectable } from "tsyringe";
 
 import { IDateProvider } from "@shared/containers/DateProvider/IDateProvider";
@@ -10,6 +11,8 @@ export class UpdateTotalWithInterestUseCase {
   constructor(
     @inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
+    @inject("TransactionsRepository")
+    private transactionsRepository: ITransactionsRepository,
     @inject("DayjsDateProvider")
     private dayjsDateProvider: IDateProvider
   ) {}
@@ -51,25 +54,27 @@ export class UpdateTotalWithInterestUseCase {
     const orders =
       await this.ordersRepository.findOrdersWithGasAndInterestAllowed();
 
-    const updates = orders.map((order) => {
+    const updates = orders.map(async (order) => {
       const orderWithDate = {
         ...order,
         created_at: dayjs(order.created_at).toDate(),
       };
       const newTotal = this.calculateTotalWithInterest(orderWithDate);
-
-      const needsUpdate = newTotal !== order.total_with_interest;
-
+      const needsUpdate = newTotal !== order.total;
       if (needsUpdate) {
-        return this.ordersRepository.updateTotalWithInterest(
-          order.id,
-          newTotal
-        );
+        const interestValue = newTotal - order.total;
+        await this.transactionsRepository.create({
+          order_id: order.id,
+          type: "INTEREST",
+          amount: interestValue,
+          old_value: order.total,
+          new_value: newTotal,
+          notes: "Juros por atraso",
+        });
+        await this.ordersRepository.updateValueById(order.id, newTotal);
       }
-
-      return null;
     });
 
-    await Promise.all(updates.filter(Boolean));
+    await Promise.all(updates);
   }
 }

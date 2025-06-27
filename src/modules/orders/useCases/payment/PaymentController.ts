@@ -4,10 +4,10 @@ import { container } from "tsyringe";
 import { handleControllerError } from "@shared/utils/controller";
 import { validateSchema } from "@shared/utils/schema";
 
-import { PartialPaymentUseCase } from "./PartialPaymentUseCase";
+import { PaymentUseCase } from "./PaymentUseCase";
 import { partialPaymentSchema } from "./schema";
 
-export class PartialPaymentController {
+export class PaymentController {
   handle = async (request: Request, response: Response) => {
     try {
       const { order_id, amount_paid, payment_method, notes } = validateSchema(
@@ -15,9 +15,9 @@ export class PartialPaymentController {
         request.body
       );
 
-      const partialPaymentUseCase = container.resolve(PartialPaymentUseCase);
+      const paymentUseCase = container.resolve(PaymentUseCase);
 
-      const updatedOrder = await partialPaymentUseCase.execute({
+      const updatedOrder = await paymentUseCase.execute({
         order_id,
         amount_paid,
         payment_method,

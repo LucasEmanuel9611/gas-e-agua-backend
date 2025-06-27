@@ -1,31 +1,28 @@
 import { prisma } from "@shared/infra/database/prisma";
 
-import { ICreatePaymentDTO, IPayment } from "../../types";
-import { IPaymentsRepository } from "../IPaymentsRepository";
+import { ICreateTransactionDTO, ITransaction } from "../../types";
+import { ITransactionsRepository } from "../ITransactionsRepository";
 
-export class PaymentsRepository implements IPaymentsRepository {
-  async create(data: ICreatePaymentDTO): Promise<IPayment> {
-    const payment = await prisma.payment.create({
+export class TransactionsRepository implements ITransactionsRepository {
+  async create(data: ICreateTransactionDTO): Promise<ITransaction> {
+    const transaction = await prisma.transaction.create({
       data,
     });
-
-    return payment as IPayment;
+    return transaction as ITransaction;
   }
 
-  async findByOrderId(order_id: number): Promise<IPayment[]> {
-    const payments = await prisma.payment.findMany({
+  async findByOrderId(order_id: number): Promise<ITransaction[]> {
+    const transactions = await prisma.transaction.findMany({
       where: { order_id },
       orderBy: { created_at: "asc" },
     });
-
-    return payments as IPayment[];
+    return transactions as ITransaction[];
   }
 
-  async findById(id: number): Promise<IPayment | null> {
-    const payment = await prisma.payment.findUnique({
+  async findById(id: number): Promise<ITransaction | null> {
+    const transaction = await prisma.transaction.findUnique({
       where: { id },
     });
-
-    return payment as IPayment;
+    return transaction as ITransaction;
   }
 }

@@ -1,4 +1,4 @@
-import { Order } from "@modules/orders/types";
+import { OrderProps } from "@modules/orders/types";
 import request from "supertest";
 import { container } from "tsyringe";
 
@@ -44,7 +44,7 @@ describe("ListOrdersController", () => {
     (container.resolve as jest.Mock).mockReturnValue(mockListOrdersUseCase);
   });
 
-  const mockOrders: Order[] = [
+  const mockOrders: OrderProps[] = [
     {
       id: 1,
       user_id: 10,
@@ -56,7 +56,7 @@ describe("ListOrdersController", () => {
       created_at: new Date().toISOString(),
       total: 100,
       interest_allowed: true,
-      total_with_interest: 100,
+
       address: {
         id: 1,
         street: "Rua A",
@@ -81,7 +81,7 @@ describe("ListOrdersController", () => {
       created_at: new Date().toISOString(),
       total: 90,
       interest_allowed: true,
-      total_with_interest: 90,
+
       address: {
         id: 2,
         street: "Rua B",
