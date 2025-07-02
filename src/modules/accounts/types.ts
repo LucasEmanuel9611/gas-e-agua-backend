@@ -62,10 +62,8 @@ export interface ICreateUserDTO {
 export interface IUpdateUserDTO {
   id: number;
   username?: string;
-  email?: string;
-  password?: string;
   telephone?: string;
-  address?: AddressDates;
+  address?: Partial<AddressDates>;
 }
 
 export interface ICreateAddressDTO {
