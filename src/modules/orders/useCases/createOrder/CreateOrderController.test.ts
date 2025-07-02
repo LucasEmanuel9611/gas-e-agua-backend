@@ -53,8 +53,8 @@ describe("CreateOrderController", () => {
     const mockOrder = {
       id: 1,
       user_id: 5,
-      gasAmount: "2",
-      waterAmount: "3",
+      gasAmount: 2,
+      waterAmount: 3,
       total: 50,
     };
     mockCreateOrderUseCase.mockResolvedValue(mockOrder);
@@ -62,7 +62,7 @@ describe("CreateOrderController", () => {
 
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: "2", waterAmount: "3" })
+      .send({ gasAmount: 2, waterAmount: 3 })
       .set("Authorization", "Bearer token");
 
     // expect(mockListAdmin).toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe("CreateOrderController", () => {
 
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: "2", waterAmount: "1" })
+      .send({ gasAmount: 2, waterAmount: 1 })
       .set("Authorization", "Bearer token");
 
     console.log(JSON.stringify(response.body));
@@ -104,7 +104,7 @@ describe("CreateOrderController", () => {
 
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: "1", waterAmount: "2" })
+      .send({ gasAmount: 1, waterAmount: 2 })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(400);
@@ -120,7 +120,7 @@ describe("CreateOrderController", () => {
 
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: "2", waterAmount: "2" })
+      .send({ gasAmount: 2, waterAmount: 2 })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(400);
