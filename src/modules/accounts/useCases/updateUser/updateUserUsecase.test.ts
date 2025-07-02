@@ -22,7 +22,7 @@ describe("UpdateUserUseCase", () => {
     const updateData: IUpdateUserDTO = {
       id: 123,
       username: "updatedUser",
-      email: "updated@example.com",
+      telephone: "11987654321",
       address: {
         street: "New Street",
         number: "456",
@@ -34,11 +34,11 @@ describe("UpdateUserUseCase", () => {
     const updatedUser: UserDates = {
       id: 123,
       username: "updatedUser",
-      email: "updated@example.com",
+      email: "existing@example.com",
       password: "hashed_password",
       role: "USER",
       created_at: new Date(),
-      telephone: "81999999999",
+      telephone: "11987654321",
       address: {
         street: "New Street",
         number: "456",
@@ -50,7 +50,45 @@ describe("UpdateUserUseCase", () => {
     const expectedDTO: IUserResponseDTO = {
       id: 123,
       username: "updatedUser",
-      email: "updated@example.com",
+      email: "existing@example.com",
+      role: "USER",
+      notificationTokens: [],
+    };
+
+    mockUsersRepository.update.mockResolvedValue(updatedUser);
+    const toDTOSpy = jest.spyOn(UserMap, "toDTO").mockReturnValue(expectedDTO);
+
+    const result = await useCase.execute(updateData);
+
+    expect(mockUsersRepository.update).toHaveBeenCalledWith(updateData);
+    expect(toDTOSpy).toHaveBeenCalledWith(updatedUser);
+    expect(result).toEqual(expectedDTO);
+  });
+
+  it("should update only username when only username is provided", async () => {
+    const updateData: IUpdateUserDTO = {
+      id: 123,
+      username: "newUsername",
+    };
+
+    const updatedUser: UserDates = {
+      id: 123,
+      username: "newUsername",
+      email: "existing@example.com",
+      password: "hashed_password",
+      role: "USER",
+      created_at: new Date(),
+      telephone: "81999999999",
+      address: {
+        reference: "Old Reference",
+        local: "Old City",
+      },
+    };
+
+    const expectedDTO: IUserResponseDTO = {
+      id: 123,
+      username: "newUsername",
+      email: "existing@example.com",
       role: "USER",
       notificationTokens: [],
     };
@@ -69,7 +107,6 @@ describe("UpdateUserUseCase", () => {
     const updateData: IUpdateUserDTO = {
       id: 123,
       username: "updatedUser",
-      email: "updated@example.com",
     };
 
     mockUsersRepository.update.mockRejectedValue(
