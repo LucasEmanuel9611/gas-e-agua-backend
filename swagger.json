@@ -145,23 +145,16 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "id": {
-                    "type": "integer"
-                  },
-                  "username": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "telephone": {
-                    "type": "string"
-                  },
+                  "username": { "type": "string" },
+                  "telephone": { "type": "string" },
                   "address": {
-                    "$ref": "#/components/schemas/AddressDates"
+                    "type": "object",
+                    "properties": {
+                      "street": { "type": "string" },
+                      "number": { "type": "string" },
+                      "reference": { "type": "string" },
+                      "local": { "type": "string" }
+                    }
                   }
                 },
                 "additionalProperties": false
