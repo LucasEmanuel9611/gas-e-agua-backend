@@ -23,6 +23,7 @@ export class PaymentController {
         payment_method,
         notes,
       });
+      console.log("TESTE 4");
 
       return response.status(200).json({
         message: "Pagamento registrado com sucesso",

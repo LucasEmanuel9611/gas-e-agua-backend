@@ -5,3 +5,6 @@ export const mockGetStockUseCase = jest.fn();
 export const mockListOrdersUseCase = jest.fn();
 export const mockUpdateStockUseCase = jest.fn();
 export const mockProfileUserUseCase = jest.fn();
+export const mockAuthenticateUserUseCase = jest.fn();
+export const mockCreateUserUseCase = jest.fn();
+export const mockPaymentUseCase = jest.fn();

@@ -18,7 +18,6 @@ enum UserRole {
 enum TransactionType {
   PAYMENT
   INTEREST
-  CREATE
 }
 
 model User {

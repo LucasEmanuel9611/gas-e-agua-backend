@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@shared/infra/database/prisma";
 
 import { ICreateTransactionDTO, ITransaction } from "../../types";
@@ -6,7 +8,7 @@ import { ITransactionsRepository } from "../ITransactionsRepository";
 export class TransactionsRepository implements ITransactionsRepository {
   async create(data: ICreateTransactionDTO): Promise<ITransaction> {
     const transaction = await prisma.transaction.create({
-      data,
+      data: data as Prisma.TransactionUncheckedCreateInput,
     });
     return transaction as ITransaction;
   }

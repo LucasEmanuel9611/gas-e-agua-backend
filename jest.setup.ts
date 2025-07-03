@@ -1,16 +1,22 @@
 import "reflect-metadata";
 
+import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserUseCase";
+import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
+import { PaymentUseCase } from "@modules/orders/useCases/payment/PaymentUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 
 import {
+  mockAuthenticateUserUseCase,
   mockCreateOrderUseCase,
+  mockCreateUserUseCase,
   mockGetStockUseCase,
   mockListAdminUseCase,
   mockListOrdersUseCase,
+  mockPaymentUseCase,
   mockProfileUserUseCase,
   mockSendNotificationUseCase,
   mockUpdateStockUseCase,
@@ -62,6 +68,15 @@ jest.mock("tsyringe", () => {
         }
         if (token === ProfileUserUseCase) {
           return { execute: mockProfileUserUseCase };
+        }
+        if (token === AuthenticateUserUseCase) {
+          return { execute: mockAuthenticateUserUseCase };
+        }
+        if (token === CreateUserUseCase) {
+          return { execute: mockCreateUserUseCase };
+        }
+        if (token === PaymentUseCase) {
+          return { execute: mockPaymentUseCase };
         }
         return null;
       }),

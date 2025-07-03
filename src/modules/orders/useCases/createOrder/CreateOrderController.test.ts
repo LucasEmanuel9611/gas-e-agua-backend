@@ -89,8 +89,6 @@ describe("CreateOrderController", () => {
       .send({ gasAmount: "2", waterAmount: "1" })
       .set("Authorization", "Bearer token");
 
-    console.log(JSON.stringify(response.body));
-
     expect(response.status).toBe(400);
     expect(response.body.message).toContain("gás");
   });
