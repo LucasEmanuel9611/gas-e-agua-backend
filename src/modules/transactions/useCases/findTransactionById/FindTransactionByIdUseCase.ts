@@ -1,5 +1,5 @@
-import { ITransactionsRepository } from "@modules/orders/repositories/ITransactionsRepository";
-import { ITransaction } from "@modules/orders/types";
+import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
+import { ITransaction } from "@modules/transactions/types/types";
 import { inject, injectable } from "tsyringe";
 
 @injectable()

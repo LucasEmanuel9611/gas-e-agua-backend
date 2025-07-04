@@ -1,4 +1,4 @@
-import { ICreateOrderDTO, OrderProps } from "../types";
+import { ICreateOrderDTO, OrderProps } from "@modules/orders/types";
 
 export interface IOrdersRepository {
   create(data: ICreateOrderDTO): Promise<OrderProps>;

@@ -1,5 +1,5 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { ITransactionsRepository } from "@modules/orders/repositories/ITransactionsRepository";
+import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { inject, injectable } from "tsyringe";
 
 import { IDateProvider } from "@shared/containers/DateProvider/IDateProvider";

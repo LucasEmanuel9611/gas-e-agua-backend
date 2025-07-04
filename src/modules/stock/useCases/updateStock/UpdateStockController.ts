@@ -1,4 +1,4 @@
-import { updateStockItemSchema } from "@modules/stock/schema";
+import { updateStockItemSchema } from "@modules/stock/useCases/createItem/schema";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
 

@@ -1,4 +1,7 @@
-import { ICreateTransactionDTO, ITransaction } from "../types";
+import {
+  ICreateTransactionDTO,
+  ITransaction,
+} from "@modules/transactions/types/types";
 
 export interface ITransactionsRepository {
   create(data: ICreateTransactionDTO): Promise<ITransaction>;

@@ -4,8 +4,8 @@ import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticate
 import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
-import { PaymentUseCase } from "@modules/orders/useCases/payment/PaymentUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
+import { PaymentUseCase } from "@modules/transactions/useCases/payment/PaymentUseCase";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 

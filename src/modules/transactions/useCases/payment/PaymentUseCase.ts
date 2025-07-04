@@ -1,15 +1,13 @@
+import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
+import { OrderPaymentStatus, OrderProps } from "@modules/orders/types";
+import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
+import {
+  IPartialPaymentDTO,
+  PaymentMethod,
+} from "@modules/transactions/types/types";
 import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
-
-import { IOrdersRepository } from "../../repositories/IOrdersRepository";
-import { ITransactionsRepository } from "../../repositories/ITransactionsRepository";
-import {
-  IPartialPaymentDTO,
-  OrderPaymentStatus,
-  OrderProps,
-  PaymentMethod,
-} from "../../types";
 
 @injectable()
 export class PaymentUseCase {
