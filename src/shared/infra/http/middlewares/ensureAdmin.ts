@@ -12,7 +12,11 @@ export async function ensureAdmin(
   res: Response,
   next: NextFunction
 ) {
-  const { id } = req.user;
+  const id = req?.user?.id;
+
+  if (!id) {
+    throw new AppError("User id doest is undefined");
+  }
 
   const usersRepository = new UsersRepository();
 

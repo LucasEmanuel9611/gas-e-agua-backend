@@ -80,4 +80,172 @@ describe("Update Overdue Orders", () => {
     expect(overdueOrders.length).toBe(1);
     expect(overdueOrders[0].total).toBe(50);
   });
+
+  it("should return 0 if there are no overdue orders", async () => {
+    const user = await usersRepository.create({
+      email: "user2@example.com",
+      username: "user2",
+      password: "123456",
+      telephone: "81999999998",
+      address: {
+        id: 2,
+        local: "Cidade Teste 2",
+        number: "456",
+        reference: "Referência teste 2",
+        street: "Rua B",
+      },
+    });
+    const address_id = user.address.id;
+
+    // Pedido recente, não deve ser alterado
+    await ordersRepository.create({
+      user_id: user.id,
+      address_id,
+      status: "FINALIZADO",
+      payment_state: "PENDENTE",
+      total: 60,
+      gasAmount: 2,
+      waterAmount: 1,
+      created_at: dayjs().utc().local().subtract(29, "days").toDate(),
+    });
+
+    const count = await updateOverdueOrdersUseCase.execute();
+    const allOrders = await ordersRepository.findAll();
+    const overdueOrders = allOrders.filter(
+      (order) => order.payment_state === "VENCIDO"
+    );
+    expect(count).toBe(0);
+    expect(overdueOrders.length).toBe(0);
+  });
+
+  it("should return 0 if all overdue orders are already marked as VENCIDO", async () => {
+    const user = await usersRepository.create({
+      email: "user3@example.com",
+      username: "user3",
+      password: "123456",
+      telephone: "81999999997",
+      address: {
+        id: 3,
+        local: "Cidade Teste 3",
+        number: "789",
+        reference: "Referência teste 3",
+        street: "Rua C",
+      },
+    });
+    const address_id = user.address.id;
+
+    await ordersRepository.create({
+      user_id: user.id,
+      address_id,
+      status: "FINALIZADO",
+      payment_state: "VENCIDO",
+      total: 70,
+      gasAmount: 1,
+      waterAmount: 1,
+      created_at: dayjs().utc().local().subtract(40, "days").toDate(),
+    });
+
+    const count = await updateOverdueOrdersUseCase.execute();
+    const allOrders = await ordersRepository.findAll();
+    const overdueOrders = allOrders.filter(
+      (order) => order.payment_state === "VENCIDO"
+    );
+    expect(count).toBe(0);
+    expect(overdueOrders.length).toBe(1);
+  });
+
+  it("should not mark orders as overdue if payment_state is not PENDENTE", async () => {
+    const user = await usersRepository.create({
+      email: "user5@example.com",
+      username: "user5",
+      password: "123456",
+      telephone: "81999999995",
+      address: {
+        id: 5,
+        local: "Cidade Teste 5",
+        number: "202",
+        reference: "Referência teste 5",
+        street: "Rua E",
+      },
+    });
+    const address_id = user.address.id;
+
+    await ordersRepository.create({
+      user_id: user.id,
+      address_id,
+      status: "FINALIZADO",
+      payment_state: "PARCIALMENTE_PAGO",
+      total: 90,
+      gasAmount: 1,
+      waterAmount: 1,
+      created_at: dayjs().utc().local().subtract(40, "days").toDate(),
+    });
+
+    const count = await updateOverdueOrdersUseCase.execute();
+    const allOrders = await ordersRepository.findAll();
+    const overdueOrders = allOrders.filter(
+      (order) => order.payment_state === "VENCIDO"
+    );
+    expect(count).toBe(0);
+    expect(overdueOrders.length).toBe(0);
+  });
+
+  it("should mark multiple overdue orders as VENCIDO and return correct count", async () => {
+    const user = await usersRepository.create({
+      email: "user6@example.com",
+      username: "user6",
+      password: "123456",
+      telephone: "81999999994",
+      address: {
+        id: 6,
+        local: "Cidade Teste 6",
+        number: "303",
+        reference: "Referência teste 6",
+        street: "Rua F",
+      },
+    });
+    const address_id = user.address.id;
+
+    // Dois pedidos vencidos
+    await ordersRepository.create({
+      user_id: user.id,
+      address_id,
+      status: "FINALIZADO",
+      payment_state: "PENDENTE",
+      total: 100,
+      gasAmount: 1,
+      waterAmount: 1,
+      created_at: dayjs().utc().local().subtract(35, "days").toDate(),
+    });
+    await ordersRepository.create({
+      user_id: user.id,
+      address_id,
+      status: "FINALIZADO",
+      payment_state: "PENDENTE",
+      total: 110,
+      gasAmount: 1,
+      waterAmount: 1,
+      created_at: dayjs().utc().local().subtract(50, "days").toDate(),
+    });
+    // Um pedido não vencido
+    await ordersRepository.create({
+      user_id: user.id,
+      address_id,
+      status: "FINALIZADO",
+      payment_state: "PAGO",
+      total: 120,
+      gasAmount: 1,
+      waterAmount: 1,
+      created_at: dayjs().utc().local().subtract(60, "days").toDate(),
+    });
+
+    const count = await updateOverdueOrdersUseCase.execute();
+    const allOrders = await ordersRepository.findAll();
+    const overdueOrders = allOrders.filter(
+      (order) => order.payment_state === "VENCIDO"
+    );
+    expect(count).toBe(2);
+    expect(overdueOrders.length).toBe(2);
+    expect(overdueOrders.map((o) => o.total).sort()).toEqual([100, 110]);
+  });
 });

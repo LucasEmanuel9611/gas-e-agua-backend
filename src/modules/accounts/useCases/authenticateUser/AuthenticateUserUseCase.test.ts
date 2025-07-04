@@ -7,19 +7,11 @@ import { AppError } from "@shared/errors/AppError";
 import { IUsersRepository } from "../../repositories/interfaces/IUserRepository";
 import { AuthenticateUserUseCase } from "./AuthenticateUserUseCase";
 
-jest.mock("bcrypt", () => ({
-  compare: jest.fn(),
-}));
-
-jest.mock("jsonwebtoken", () => ({
-  sign: jest.fn().mockReturnValue("fake_token"),
-}));
-
 interface IMockUsersRepository extends Partial<IUsersRepository> {
   findByEmail: jest.Mock<Promise<UserDates | null>>;
 }
 
-describe("Authenticate User Use Case", () => {
+describe("AuthenticateUserUseCase", () => {
   let authenticateUserUseCase: AuthenticateUserUseCase;
   let usersRepository: IMockUsersRepository;
 
@@ -31,7 +23,6 @@ describe("Authenticate User Use Case", () => {
     authenticateUserUseCase = new AuthenticateUserUseCase(
       usersRepository as IUsersRepository
     );
-    jest.clearAllMocks();
   });
 
   it("should authenticate user and return token", async () => {
@@ -68,7 +59,7 @@ describe("Authenticate User Use Case", () => {
       expiresIn: expect.any(String),
     });
     expect(result).toEqual({
-      token: "fake_token",
+      token: "mocked_token",
       user: {
         name: "testUser",
         email: "test@example.com",

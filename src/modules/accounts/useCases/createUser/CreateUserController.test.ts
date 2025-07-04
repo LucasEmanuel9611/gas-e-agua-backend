@@ -55,6 +55,12 @@ describe("CreateUserController", () => {
       username: "validUser",
       email: "valid@example.com",
       password: "123456",
+      address: {
+        street: "Av Teste",
+        reference: "Perto do mercado",
+        local: "Cidade X",
+        number: "123",
+      },
     });
   });
 

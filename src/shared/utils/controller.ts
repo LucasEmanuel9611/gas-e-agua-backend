@@ -8,6 +8,14 @@ export function handleControllerError(err: unknown, response: Response) {
     return response.status(err.statusCode).json({ message: err.message });
   }
 
+  if (err instanceof Error) {
+    console.error("Erro padrão:", err);
+    return response.status(500).json({
+      message: "Erro interno do servidor",
+      unexpectedErrorMsg: err.message || "Erro interno do servidor",
+    });
+  }
+
   console.error("Erro interno:", err);
   return response.status(500).json({ message: "Erro interno do servidor" });
 }

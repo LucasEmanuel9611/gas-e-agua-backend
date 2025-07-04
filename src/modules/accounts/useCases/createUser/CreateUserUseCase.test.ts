@@ -5,9 +5,7 @@ import { AppError } from "@shared/errors/AppError";
 
 import { CreateUserUseCase } from "./CreateUserUseCase";
 
-jest.mock("bcrypt", () => ({
-  hash: jest.fn().mockResolvedValue("hashed_password"),
-}));
+jest.mock("bcrypt");
 
 describe("CreateUserUseCase", () => {
   let usersRepository: jest.Mocked<IUsersRepository>;
