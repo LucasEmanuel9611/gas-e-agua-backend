@@ -8,6 +8,7 @@ import { ensureAuthenticated } from "@shared/infra/http/middlewares/ensureAuthen
 import { ensureAdmin } from "../middlewares/ensureAdmin";
 
 const transactionsRoutes = Router();
+
 const paymentController = new PaymentController();
 const findTransactionByIdController = new FindTransactionByIdController();
 const findTransactionsByOrderIdController =
