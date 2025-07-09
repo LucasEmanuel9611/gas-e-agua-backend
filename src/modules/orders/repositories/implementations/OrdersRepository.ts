@@ -1,7 +1,7 @@
 import {
   ICreateOrderDTO,
-  Order,
-  OrderStatusProps,
+  OrderProps,
+  UpdateOrderDTO,
 } from "@modules/orders/types";
 
 import { prisma } from "@shared/infra/database/prisma";
@@ -10,7 +10,7 @@ import dayjs from "../../../../config/dayjs.config";
 import { IOrdersRepository } from "../IOrdersRepository";
 
 export class OrdersRepository implements IOrdersRepository {
-  orders: Order[] = [];
+  orders: OrderProps[] = [];
 
   async create({
     user_id,
@@ -21,8 +21,8 @@ export class OrdersRepository implements IOrdersRepository {
     waterAmount,
     created_at,
     payment_state,
-  }: ICreateOrderDTO): Promise<Order> {
-    const createdOrder = await prisma.order.create({
+  }: ICreateOrderDTO): Promise<OrderProps> {
+    const createdOrderProps = await prisma.order.create({
       data: {
         user_id,
         address_id,
@@ -41,10 +41,11 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
+        transactions: true,
       },
     });
 
-    return createdOrder as Order;
+    return createdOrderProps as OrderProps;
   }
 
   async delete(id: number) {
@@ -53,8 +54,8 @@ export class OrdersRepository implements IOrdersRepository {
     });
   }
 
-  async findById(id: number): Promise<Order> {
-    const foundOrder = await prisma.order.findFirst({
+  async findById(id: number): Promise<OrderProps> {
+    const foundOrderProps = await prisma.order.findFirst({
       where: { id },
       include: {
         address: true,
@@ -64,18 +65,44 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
+        transactions: true,
       },
       orderBy: {
         updated_at: "desc",
       },
     });
 
-    return foundOrder as Order;
+    return foundOrderProps as OrderProps;
   }
 
-  async findByUser(user_id: string): Promise<Order[]> {
+  async findByIdWithPayments(id: number): Promise<OrderProps> {
+    const foundOrderProps = await prisma.order.findFirst({
+      where: { id },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+          },
+        },
+        transactions: {
+          orderBy: {
+            created_at: "asc",
+          },
+        },
+      },
+      orderBy: {
+        updated_at: "desc",
+      },
+    });
+
+    return foundOrderProps as OrderProps;
+  }
+
+  async findByUser(user_id: string): Promise<OrderProps[]> {
     const id = Number(user_id);
-    const foundUserOrders = await prisma.order.findMany({
+    const foundUserOrderPropss = await prisma.order.findMany({
       where: { user_id: id },
       include: {
         address: true,
@@ -85,17 +112,18 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
+        transactions: true,
       },
       orderBy: {
         updated_at: "desc",
       },
     });
 
-    return foundUserOrders as Order[];
+    return foundUserOrderPropss as OrderProps[];
   }
 
-  async findAll(): Promise<Order[]> {
-    const foundUserOrders = await prisma.order.findMany({
+  async findAll(): Promise<OrderProps[]> {
+    const foundUserOrderPropss = await prisma.order.findMany({
       orderBy: {
         updated_at: "desc",
       },
@@ -110,11 +138,11 @@ export class OrdersRepository implements IOrdersRepository {
       },
     });
 
-    return foundUserOrders as Order[];
+    return foundUserOrderPropss as OrderProps[];
   }
 
-  async findByDay(date: Date): Promise<Order[]> {
-    const Orders = await prisma.order.findMany({
+  async findByDay(date: Date): Promise<OrderProps[]> {
+    const OrderPropss = await prisma.order.findMany({
       where: {
         updated_at: {
           gte: dayjs(date).startOf("day").toDate(),
@@ -129,23 +157,20 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
+        transactions: true,
       },
       orderBy: {
         updated_at: "desc",
       },
     });
 
-    return Orders as Order[];
+    return OrderPropss as OrderProps[];
   }
 
-  async updateStatus(id: number, status: OrderStatusProps): Promise<Order> {
+  async updateById(id: number, data: UpdateOrderDTO): Promise<OrderProps> {
     const updatedOrder = await prisma.order.update({
-      where: {
-        id,
-      },
-      data: {
-        status,
-      },
+      where: { id },
+      data,
       include: {
         address: true,
         user: {
@@ -154,43 +179,10 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
+        transactions: true,
       },
     });
-
-    return updatedOrder as Order;
-  }
-
-  async updateDate(id: number, date: string): Promise<Order> {
-    const updatedOrder = await prisma.order.update({
-      where: {
-        id,
-      },
-      data: {
-        updated_at: date,
-        status: "AGUARDANDO",
-      },
-      include: {
-        address: true,
-        user: {
-          select: {
-            username: true,
-            telephone: true,
-          },
-        },
-      },
-    });
-
-    return updatedOrder as Order;
-  }
-
-  async updateValue(total: number) {
-    const updatedOrder = await prisma.order.updateMany({
-      data: {
-        total,
-      },
-    });
-
-    return updatedOrder;
+    return updatedOrder as OrderProps;
   }
 
   async updateOverdueOrders(): Promise<number> {
@@ -207,7 +199,7 @@ export class OrdersRepository implements IOrdersRepository {
     return result.count;
   }
 
-  async findOrdersWithGasAndInterestAllowed(): Promise<Order[]> {
+  async findOrdersWithGasAndInterestAllowed(): Promise<OrderProps[]> {
     const ordersWithGasAndInterestAllowed = await prisma.order.findMany({
       where: {
         gasAmount: { gt: 0 },
@@ -221,19 +213,10 @@ export class OrdersRepository implements IOrdersRepository {
             telephone: true,
           },
         },
+        transactions: true,
       },
     });
 
-    return ordersWithGasAndInterestAllowed as Order[];
-  }
-
-  async updateTotalWithInterest(
-    orderId: number,
-    totalWithInterest: number
-  ): Promise<void> {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { total_with_interest: totalWithInterest },
-    });
+    return ordersWithGasAndInterestAllowed as OrderProps[];
   }
 }

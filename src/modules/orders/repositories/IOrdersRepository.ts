@@ -1,15 +1,14 @@
-import { ICreateOrderDTO, Order, OrderStatusProps } from "../types";
+import { ICreateOrderDTO, OrderProps } from "@modules/orders/types";
 
 export interface IOrdersRepository {
-  create(data: ICreateOrderDTO): Promise<Order>;
-  findById(id: number): Promise<Order>;
-  findByUser(user_id: string): Promise<Order[]>;
-  findAll(): Promise<Order[]>;
-  findByDay(date: Date): Promise<Order[]>;
-  updateStatus(id: number, status: OrderStatusProps): Promise<Order>;
-  updateDate(id: number, date: string): Promise<Order>;
+  create(data: ICreateOrderDTO): Promise<OrderProps>;
+  findById(id: number): Promise<OrderProps>;
+  findByIdWithPayments(id: number): Promise<OrderProps>;
+  findByUser(user_id: string): Promise<OrderProps[]>;
+  findAll(): Promise<OrderProps[]>;
+  findByDay(date: Date): Promise<OrderProps[]>;
+  updateById(id: number, data: Partial<OrderProps>): Promise<OrderProps>;
   delete(id: number): Promise<void>;
   updateOverdueOrders(): Promise<number>;
-  findOrdersWithGasAndInterestAllowed(): Promise<Order[]>;
-  updateTotalWithInterest: (id: number, total: number) => Promise<void>;
+  findOrdersWithGasAndInterestAllowed(): Promise<OrderProps[]>;
 }

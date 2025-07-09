@@ -1,11 +1,14 @@
 import { AddressDates } from "@modules/accounts/types";
+import { ITransaction } from "@modules/transactions/types/types";
 
 export type OrderStatusProps = "INICIADO" | "PENDENTE" | "FINALIZADO";
+
 export type OrderPaymentStatus =
   | "PENDENTE"
   | "PAGO"
   | "VENCIDO"
   | "PARCIALMENTE_PAGO";
+
 export interface ICreateOrderDTO {
   username?: string;
   user_id: number;
@@ -30,9 +33,21 @@ export class Order {
   total: number;
   address: AddressDates;
   interest_allowed: boolean;
-  total_with_interest: number;
   user?: {
     username: string;
     telephone: string;
   };
+  transactions?: ITransaction[];
 }
+
+export type OrderProps = Omit<Order, "total_paid" | "calculated_payment_state">;
+
+export type UpdateOrderDTO = Partial<{
+  total: number;
+  payment_state: string;
+  status: OrderStatusProps;
+  updated_at: Date | string;
+  gasAmount: number;
+  waterAmount: number;
+  interest_allowed: boolean;
+}>;

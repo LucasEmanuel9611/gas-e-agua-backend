@@ -1,5 +1,5 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { Order, OrderStatusProps } from "@modules/orders/types";
+import { OrderProps, OrderStatusProps } from "@modules/orders/types";
 import { inject, injectable } from "tsyringe";
 
 interface IRequest {
@@ -14,10 +14,10 @@ export class ConcludeOrderUseCase {
     private ordersRepository: IOrdersRepository
   ) {}
 
-  async execute({ order_id, status }: IRequest): Promise<Order> {
-    const updatedOrder = await this.ordersRepository.updateStatus(
+  async execute({ order_id, status }: IRequest): Promise<OrderProps> {
+    const updatedOrder = await this.ordersRepository.updateById(
       Number(order_id),
-      status
+      { status }
     );
 
     return updatedOrder;

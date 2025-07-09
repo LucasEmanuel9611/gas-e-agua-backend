@@ -73,6 +73,7 @@ export class CreateOrderController {
 
       return response.status(201).json(order);
     } catch (err) {
+      console.log({ err });
       // TODO: Colocar return no handle e remover o AppError
       return handleControllerError(err, response);
     }

@@ -45,7 +45,7 @@ describe("CreateOrderController", () => {
 
   it("should create an order and notify admins, returning 201", async () => {
     const adminUser = { id: 1, notificationTokens: ["token1", "token2"] };
-    mockListAdminUseCase.mockResolvedValue(adminUser);
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
     mockGetStockUseCase.mockResolvedValue([
       { name: "Gás", quantity: 10 },
       { name: "Água", quantity: 20 },
@@ -58,7 +58,7 @@ describe("CreateOrderController", () => {
       total: 50,
     };
     mockCreateOrderUseCase.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.mockResolvedValue(undefined);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -72,13 +72,16 @@ describe("CreateOrderController", () => {
       gasAmount: 2,
       waterAmount: 3,
     });
-    expect(mockSendNotificationUseCase).toHaveBeenCalled();
+    expect(mockSendNotificationUseCase.execute).toHaveBeenCalled();
     expect(response.status).toBe(201);
     expect(response.body).toEqual(mockOrder);
   }, 10000);
 
   it("should return 400 if gas stock is insufficient", async () => {
-    mockListAdminUseCase.mockResolvedValue({ id: 1, notificationTokens: [] });
+    mockListAdminUseCase.execute.mockResolvedValue({
+      id: 1,
+      notificationTokens: [],
+    });
     mockGetStockUseCase.mockResolvedValue([
       { name: "Gás", quantity: 1 },
       { name: "Água", quantity: 5 },
@@ -89,14 +92,15 @@ describe("CreateOrderController", () => {
       .send({ gasAmount: 2, waterAmount: 1 })
       .set("Authorization", "Bearer token");
 
-    console.log(JSON.stringify(response.body));
-
     expect(response.status).toBe(400);
     expect(response.body.message).toContain("gás");
   });
 
   it("should return 400 if water stock is insufficient", async () => {
-    mockListAdminUseCase.mockResolvedValue({ id: 1, notificationTokens: [] });
+    mockListAdminUseCase.execute.mockResolvedValue({
+      id: 1,
+      notificationTokens: [],
+    });
     mockGetStockUseCase.mockResolvedValue([
       { name: "Gás", quantity: 5 },
       { name: "Água", quantity: 1 },
@@ -112,7 +116,10 @@ describe("CreateOrderController", () => {
   });
 
   it("should return 400 if both stocks are insufficient", async () => {
-    mockListAdminUseCase.mockResolvedValue({ id: 1, notificationTokens: [] });
+    mockListAdminUseCase.execute.mockResolvedValue({
+      id: 1,
+      notificationTokens: [],
+    });
     mockGetStockUseCase.mockResolvedValue([
       { name: "Gás", quantity: 1 },
       { name: "Água", quantity: 1 },

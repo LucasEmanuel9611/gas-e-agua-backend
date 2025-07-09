@@ -26,5 +26,6 @@ jobs:
             cd gas-e-agua-backend/
             git pull
             npm i
+            npx prisma migrate deploy
             pm2 restart gas-e-agua-api
           EOF

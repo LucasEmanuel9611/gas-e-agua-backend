@@ -1,22 +1,30 @@
 import "reflect-metadata";
 
+import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserUseCase";
+import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
+import { PaymentUseCase } from "@modules/transactions/useCases/payment/PaymentUseCase";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 
 import {
+  mockAuthenticateUserUseCase,
   mockCreateOrderUseCase,
+  mockCreateUserUseCase,
+  mockEditOrderUseCase,
   mockGetStockUseCase,
   mockListAdminUseCase,
   mockListOrdersUseCase,
+  mockPaymentUseCase,
   mockProfileUserUseCase,
   mockSendNotificationUseCase,
   mockUpdateStockUseCase,
 } from "./jest/mocks/useCaseMocks";
 import { ListAdminUserUseCase } from "./src/modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
+import { EditOrderUseCase } from "./src/modules/orders/useCases/editOrderUseCase/EditOrderUseCase";
 import { SendNotificationUseCase } from "./src/modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
 import { GetStockUseCase } from "./src/modules/stock/useCases/getStock/GetStockUseCase";
 
@@ -35,6 +43,7 @@ beforeEach(async () => {
 afterAll(async () => {
   await prisma.$disconnect();
 });
+
 jest.mock("tsyringe", () => {
   const actual = jest.requireActual("tsyringe");
 
@@ -46,10 +55,10 @@ jest.mock("tsyringe", () => {
           return { execute: mockCreateOrderUseCase };
         }
         if (token === SendNotificationUseCase) {
-          return { execute: mockSendNotificationUseCase };
+          return mockSendNotificationUseCase;
         }
         if (token === ListAdminUserUseCase) {
-          return { execute: mockListAdminUseCase };
+          return mockListAdminUseCase;
         }
         if (token === GetStockUseCase) {
           return { execute: mockGetStockUseCase };
@@ -63,9 +72,27 @@ jest.mock("tsyringe", () => {
         if (token === ProfileUserUseCase) {
           return { execute: mockProfileUserUseCase };
         }
+        if (token === AuthenticateUserUseCase) {
+          return { execute: mockAuthenticateUserUseCase };
+        }
+        if (token === CreateUserUseCase) {
+          return { execute: mockCreateUserUseCase };
+        }
+        if (token === PaymentUseCase) {
+          return { execute: mockPaymentUseCase };
+        }
+        if (token === EditOrderUseCase) {
+          return mockEditOrderUseCase;
+        }
         return null;
       }),
       registerSingleton: jest.fn(),
     },
   };
 });
+
+jest.mock("bcrypt");
+
+jest.mock("jsonwebtoken", () => ({
+  sign: jest.fn().mockReturnValue("mocked_token"),
+}));

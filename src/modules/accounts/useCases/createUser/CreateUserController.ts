@@ -34,6 +34,7 @@ export class CreateUserController {
         username,
         email,
         password,
+        address,
       });
     } catch (error) {
       return handleControllerError(error, res);
