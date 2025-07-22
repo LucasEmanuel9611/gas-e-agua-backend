@@ -13,6 +13,34 @@ import { CreateOrderUseCase } from "./CreateOrderUseCase";
 import { createOrderSchema } from "./schema";
 
 export class CreateOrderController {
+  handle = async (request: Request, response: Response) => {
+    try {
+      const { gasAmount, waterAmount, waterWithBottle, gasWithBottle } =
+        validateSchema(createOrderSchema, request.body);
+      const { id } = request.user;
+
+      const createOrderUseCase = container.resolve(CreateOrderUseCase);
+      const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
+      const adminUser = await listAdminUserUseCase.execute();
+
+      await this.verifyStock(gasAmount, waterAmount);
+
+      const order = await createOrderUseCase.execute({
+        user_id: id,
+        gasAmount,
+        waterAmount,
+        waterWithBottle,
+        gasWithBottle,
+      });
+
+      if (order) await this.notifyNewOrder(adminUser);
+
+      return response.status(201).json(order);
+    } catch (err) {
+      return handleControllerError(err, response);
+    }
+  };
+
   private async notifyNewOrder(adminUser: IUserResponseDTO) {
     const SendNotification = container.resolve(SendNotificationUseCase);
     const pushTokens = adminUser.notificationTokens;
@@ -48,34 +76,4 @@ export class CreateOrderController {
       throw new AppError("Estoque insuficiente de água", 400);
     }
   }
-
-  handle = async (request: Request, response: Response) => {
-    try {
-      const { gasAmount, waterAmount } = validateSchema(
-        createOrderSchema,
-        request.body
-      );
-      const { id } = request.user;
-
-      const createOrderUseCase = container.resolve(CreateOrderUseCase);
-      const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
-      const adminUser = await listAdminUserUseCase.execute();
-
-      await this.verifyStock(gasAmount, waterAmount);
-
-      const order = await createOrderUseCase.execute({
-        user_id: id,
-        gasAmount,
-        waterAmount,
-      });
-
-      if (order) await this.notifyNewOrder(adminUser);
-
-      return response.status(201).json(order);
-    } catch (err) {
-      console.log({ err });
-      // TODO: Colocar return no handle e remover o AppError
-      return handleControllerError(err, response);
-    }
-  };
 }

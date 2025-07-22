@@ -14,4 +14,6 @@ export const createOrderSchema = z.object({
       invalid_type_error: "A quantidade Água deve ser um número",
     })
     .min(1, { message: "A quantidade Água deve ser maior que zero" }),
+  waterWithBottle: z.boolean().optional().default(false),
+  gasWithBottle: z.boolean().optional().default(false),
 });

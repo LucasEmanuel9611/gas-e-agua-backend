@@ -12,6 +12,8 @@ interface IRequest {
   user_id: string;
   gasAmount: number;
   waterAmount: number;
+  waterWithBottle?: boolean;
+  gasWithBottle?: boolean;
 }
 
 interface IUpdateQuantityStockItemsProps {
@@ -87,10 +89,65 @@ export class CreateOrderUseCase {
     return { waterStock, gasStock };
   }
 
+  private async mapBottleFlagsToAddonIds(
+    waterWithBottle: boolean,
+    gasWithBottle: boolean
+  ): Promise<number[]> {
+    const addonIds: number[] = [];
+
+    if (waterWithBottle) {
+      const waterBottleAddon = await this.ordersRepository.getAddonByName(
+        "Botijão para Água"
+      );
+      if (waterBottleAddon) {
+        addonIds.push(waterBottleAddon.id);
+      }
+    }
+
+    if (gasWithBottle) {
+      const gasBottleAddon = await this.ordersRepository.getAddonByName(
+        "Botijão para Gás"
+      );
+      if (gasBottleAddon) {
+        addonIds.push(gasBottleAddon.id);
+      }
+    }
+
+    return addonIds;
+  }
+
+  private async calculateTotalWithAddons(
+    baseTotal: number,
+    addonIds: number[]
+  ): Promise<number> {
+    if (addonIds.length === 0) {
+      return baseTotal;
+    }
+
+    const addonsData = await this.ordersRepository.getAddonsByIds(addonIds);
+    const addonsTotal = addonsData.reduce((sum, addon) => sum + addon.value, 0);
+
+    return baseTotal + addonsTotal;
+  }
+
+  private async calculateBaseTotal(
+    gasAmount: number,
+    waterAmount: number
+  ): Promise<number> {
+    const { waterStock, gasStock } = await this.getStockData();
+
+    const waterTotalValue = Number(waterAmount) * waterStock.value;
+    const gasTotalValue = Number(gasAmount) * gasStock.value;
+
+    return waterTotalValue + gasTotalValue;
+  }
+
   async execute({
     user_id,
     gasAmount,
     waterAmount,
+    waterWithBottle = false,
+    gasWithBottle = false,
   }: IRequest): Promise<OrderProps> {
     const { address } = await this.usersRepository.findById(Number(user_id));
 
@@ -98,12 +155,8 @@ export class CreateOrderUseCase {
       throw new AppError("Usuário sem endereço cadastrado");
     }
 
+    const baseTotal = await this.calculateBaseTotal(gasAmount, waterAmount);
     const { waterStock, gasStock } = await this.getStockData();
-
-    const waterTotalValue = Number(waterAmount) * waterStock.value;
-    const gasTotalValue = Number(gasAmount) * gasStock.value;
-
-    const total = waterTotalValue + gasTotalValue;
 
     await this.verifyStockQuantity({
       gasStock: gasStock.quantity,
@@ -117,12 +170,19 @@ export class CreateOrderUseCase {
       waterAmount,
     });
 
+    const addonIds = await this.mapBottleFlagsToAddonIds(
+      waterWithBottle,
+      gasWithBottle
+    );
+    const total = await this.calculateTotalWithAddons(baseTotal, addonIds);
+
     const order = await this.ordersRepository.create({
       status: "PENDENTE",
       user_id: Number(user_id),
       address_id: address.id,
       gasAmount,
       waterAmount,
+      addonIds,
       total,
     });
 

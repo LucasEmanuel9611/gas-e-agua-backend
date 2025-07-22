@@ -11,4 +11,14 @@ export interface IOrdersRepository {
   delete(id: number): Promise<void>;
   updateOverdueOrders(): Promise<number>;
   findOrdersWithGasAndInterestAllowed(): Promise<OrderProps[]>;
+  getAddonsByIds(addonIds: number[]): Promise<any[]>;
+  getAddonByName(name: string): Promise<any>;
+  getOrderAddons(orderId: number): Promise<any>;
+  addAddonsToOrder(orderId: number, addonIds: number[]): Promise<void>;
+  removeAddonsFromOrder(orderId: number): Promise<void>;
+  removeSpecificAddonsFromOrder(
+    orderId: number,
+    addonIds: number[]
+  ): Promise<void>;
+  getStockData(): Promise<any[]>;
 }

@@ -1,6 +1,7 @@
 import { ConcludeOrderController } from "@modules/orders/useCases/concludeOrder/ConcludeOrderController";
 import { CreateOrderController } from "@modules/orders/useCases/createOrder/CreateOrderController";
 import { DeleteOrderController } from "@modules/orders/useCases/deleteOrder/DeleteOrderController";
+import { EditOrderController } from "@modules/orders/useCases/editOrderUseCase/EditOrderController";
 import { ListOrdersController } from "@modules/orders/useCases/listOrders/listOrdersController";
 import { ListOrdersByUserController } from "@modules/orders/useCases/listOrdersByUser/listOrdersByUserController";
 import { Router } from "express";
@@ -12,11 +13,13 @@ export const orderRoutes = Router();
 
 const createOrderController = new CreateOrderController();
 const deleteOrderController = new DeleteOrderController();
+const editOrderController = new EditOrderController();
 const listOrdersController = new ListOrdersController();
 const listOrdersByUserController = new ListOrdersByUserController();
 const concludeOrderController = new ConcludeOrderController();
 
 orderRoutes.post("/", ensureAuthenticated, createOrderController.handle);
+orderRoutes.put("/:id", ensureAuthenticated, editOrderController.handle);
 orderRoutes.delete("/:id", ensureAuthenticated, deleteOrderController.handle);
 orderRoutes.get(
   "/list/all/:pageNumber/:pageSize",

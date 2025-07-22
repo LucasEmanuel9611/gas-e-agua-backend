@@ -18,6 +18,7 @@ export interface ICreateOrderDTO {
   total: number;
   gasAmount: number;
   waterAmount: number;
+  addonIds?: number[];
   created_at?: Date;
 }
 
