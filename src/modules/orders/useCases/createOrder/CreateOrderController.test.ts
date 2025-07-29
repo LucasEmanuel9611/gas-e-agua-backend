@@ -65,12 +65,12 @@ describe("CreateOrderController", () => {
       .send({ gasAmount: 2, waterAmount: 3 })
       .set("Authorization", "Bearer token");
 
-    // expect(mockListAdmin).toHaveBeenCalled();
-    // expect(mockGetStock).toHaveBeenCalled();
     expect(mockCreateOrderUseCase).toHaveBeenCalledWith({
       user_id: 5,
       gasAmount: 2,
       waterAmount: 3,
+      gasWithBottle: false,
+      waterWithBottle: false,
     });
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalled();
     expect(response.status).toBe(201);

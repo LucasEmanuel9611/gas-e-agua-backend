@@ -76,19 +76,11 @@ export class UsersRepository implements IUsersRepository {
     return foundUser;
   }
 
-  async update({
-    id,
-    username,
-    email,
-    password,
-    telephone,
-    address,
-  }: IUpdateUserDTO) {
+  async update({ id, username, telephone, address }: IUpdateUserDTO) {
     const foundUser = await prisma.user.update({
       data: {
         username,
-        email,
-        password,
+
         telephone,
         address: {
           update: address as AddressDates,

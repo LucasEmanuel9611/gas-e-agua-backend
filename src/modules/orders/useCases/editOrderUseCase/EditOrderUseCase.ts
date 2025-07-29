@@ -116,6 +116,7 @@ export class EditOrderUseCase {
     if (!order) {
       throw new AppError("Pedido não encontrado");
     }
+
     if (order.status !== "PENDENTE") {
       throw new AppError("Só é possível editar pedidos com status PENDENTE");
     }

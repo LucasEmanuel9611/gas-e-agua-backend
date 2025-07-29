@@ -1,6 +1,6 @@
-import dayjs from "dayjs";
 import request from "supertest";
 
+import { AppError } from "@shared/errors/AppError";
 import { app } from "@shared/infra/http/app";
 
 import {
@@ -23,7 +23,6 @@ jest.mock("tsyringe", () => {
 describe("EditOrderController", () => {
   beforeAll(() => {
     const controller = new EditOrderController();
-    //
     app.put("/orders/:id/edit", controller.handle.bind(controller));
   });
 
@@ -69,17 +68,20 @@ describe("EditOrderController", () => {
       .set("Authorization", "Bearer token")
       .send({ date: newDate });
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
-      date: newDate,
+      gasAmount: undefined,
+      gasWithBottle: undefined,
+      waterAmount: undefined,
+      waterWithBottle: undefined,
     });
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
       notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Edição no agendamento",
-      notificationBody: "Edição de agendamento solicitada no app",
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
     });
   });
 
@@ -159,33 +161,22 @@ describe("EditOrderController", () => {
     expect(response.body.message).toBe("Erro interno do servidor");
   });
 
-  it("should return 201 if order is null/undefined", async () => {
-    mockEditOrderUseCase.execute.mockResolvedValue(null);
+  it("should return 400 if order is null/undefined", async () => {
+    mockEditOrderUseCase.execute.mockRejectedValue(
+      new AppError("Pedido não encontrado", 400)
+    );
     mockListAdminUserUseCase.execute.mockResolvedValue({
       notificationTokens: [],
     });
     mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
-      .put("/orders/123/edit")
+      .put("/orders/12/edit")
       .set("Authorization", "Bearer token")
       .send({ date: new Date().toISOString() });
 
-    expect(response.status).toBe(201);
-    expect(response.body).toBeNull();
-  });
-
-  it("should return 400 if date is missing", async () => {
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({
-        data: dayjs().toDate().toISOString(),
-      });
-
     expect(response.status).toBe(400);
-    expect(response.body.message).toBeDefined();
-    expect(response.body.message).toContain("data é obrigatória");
+    expect(response.body.message).toBe("Pedido não encontrado");
   });
 
   it("should return 400 if id is missing", async () => {
