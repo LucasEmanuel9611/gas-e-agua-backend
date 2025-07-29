@@ -77,8 +77,8 @@ describe("EditOrderController", () => {
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
       notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Edição no agendamento",
-      notificationBody: "Edição de agendamento solicitada no app",
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
     });
   });
 
