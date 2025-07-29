@@ -1,5 +1,6 @@
 import request from "supertest";
 
+import { AppError } from "@shared/errors/AppError";
 import { app } from "@shared/infra/http/app";
 
 import {
@@ -82,10 +83,9 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockGetStockUseCase.mockResolvedValue([
-      { name: "Gás", quantity: 1 },
-      { name: "Água", quantity: 5 },
-    ]);
+    mockCreateOrderUseCase.mockRejectedValue(
+      new AppError("Estoque insuficiente de gás")
+    );
 
     const response = await request(app)
       .post("/orders/")
@@ -101,10 +101,9 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockGetStockUseCase.mockResolvedValue([
-      { name: "Gás", quantity: 5 },
-      { name: "Água", quantity: 1 },
-    ]);
+    mockCreateOrderUseCase.mockRejectedValue(
+      new AppError("Estoque insuficiente de água")
+    );
 
     const response = await request(app)
       .post("/orders/")
@@ -120,10 +119,9 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockGetStockUseCase.mockResolvedValue([
-      { name: "Gás", quantity: 1 },
-      { name: "Água", quantity: 1 },
-    ]);
+    mockCreateOrderUseCase.mockRejectedValue(
+      new AppError("Estoque insuficiente de gás e água")
+    );
 
     const response = await request(app)
       .post("/orders/")
