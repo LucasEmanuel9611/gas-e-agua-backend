@@ -35,7 +35,7 @@ jobs:
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd gas-e-agua-backend/            # Navega até o diretório do projeto na VPS
             git pull                          # Atualiza o código com o que foi enviado para o GitHub
-            npm i                             # Instala dependências
+            npm ci                             # Instala dependências
             npx prisma migrate deploy         # Aplica as migrações do banco de dados
             pm2 restart gas-e-agua-api        # Reinicia o processo com PM2 (gerenciador de processos Node.js)
           EOF
