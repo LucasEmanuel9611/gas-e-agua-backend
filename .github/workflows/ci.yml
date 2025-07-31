@@ -31,10 +31,10 @@ jobs:
       - name: Instalar Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18"
+          node-version: "22.14.0"
 
       - name: Instalar dependências
-        run: yarn install # ou npm install
+        run: npm install # ou npm install
 
       - name: Definir DATABASE_URL para o container MySQL
         run: echo "DATABASE_URL=mysql://root:root@localhost:3306/test_db" >> $GITHUB_ENV
