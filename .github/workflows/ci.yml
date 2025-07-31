@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop # ou o nome da sua branch principal
+      - master
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18" # ou a versão que você usa
+
+      - name: Instalar dependências
+        run: yarn install # ou npm install
+
+      - name: Rodar linter
+        run: yarn lint # ou npm run lint
+
+      - name: Rodar testes
+        run: yarn test --ci --passWithNoTests
