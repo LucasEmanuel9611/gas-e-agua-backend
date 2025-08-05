@@ -80,7 +80,6 @@ export class UsersRepository implements IUsersRepository {
     const foundUser = await prisma.user.update({
       data: {
         username,
-
         telephone,
         address: {
           update: address as AddressDates,

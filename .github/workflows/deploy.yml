@@ -1,31 +1,41 @@
+# Nome do workflow que aparecerá na aba "Actions" do GitHub
 name: Deploy to VPS
 
+# Quando esse workflow será executado
 on:
   push:
     branches:
-      - develop
+      - develop # Sempre que houver um push para o branch 'develop'
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  deploy: # Nome do job
+    runs-on: ubuntu-latest # O job rodará em uma máquina virtual Ubuntu
 
     steps:
+      # Etapa 1: Fazer checkout (clonar) o código do repositório
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Etapa 2: Configurar SSH para poder se conectar com o servidor VPS
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh
+          mkdir -p ~/.ssh  # Cria o diretório .ssh, se não existir
+
+          # Salva a chave privada nas Actions Secrets em um arquivo chamado id_rsa
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+
+          chmod 600 ~/.ssh/id_rsa  # Garante que só o dono pode ler o arquivo (boa prática de segurança)
+
+          # Adiciona a chave pública da VPS à lista de hosts conhecidos (evita prompts de confirmação SSH)
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      # Etapa 3: Conectar por SSH na VPS, fazer pull do código e reiniciar a aplicação
       - name: Pull latest code and restart app
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd gas-e-agua-backend/
-            git pull
-            npm i
-            npx prisma migrate deploy
-            pm2 restart gas-e-agua-api
+            cd gas-e-agua-backend/            # Navega até o diretório do projeto na VPS
+            git pull                          # Atualiza o código com o que foi enviado para o GitHub
+            npm ci                             # Instala dependências
+            npx prisma migrate deploy         # Aplica as migrações do banco de dados
+            pm2 restart gas-e-agua-api        # Reinicia o processo com PM2 (gerenciador de processos Node.js)
           EOF
