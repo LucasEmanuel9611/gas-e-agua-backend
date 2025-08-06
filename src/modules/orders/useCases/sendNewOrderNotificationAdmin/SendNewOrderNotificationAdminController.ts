@@ -8,7 +8,7 @@ import { validateSchema } from "@shared/utils/schema";
 import { sendNotificationSchema } from "./schema";
 import { SendNotificationUseCase } from "./SendNewOrderNotificationAdminUseCase";
 
-export class sendNewOrderNotificationAdminController {
+export class SendNewOrderNotificationAdminController {
   async handle(request: Request, response: Response) {
     try {
       const { title, message } = validateSchema(

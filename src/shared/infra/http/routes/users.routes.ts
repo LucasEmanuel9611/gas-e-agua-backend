@@ -5,7 +5,7 @@ import { Router } from "express";
 
 import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { UpdateUserNotificationTokensController } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensController";
-import { sendNewOrderNotificationAdminController } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminController";
+import { SendNewOrderNotificationAdminController } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminController";
 import { ensureAuthenticated } from "../middlewares/ensureAuthenticated";
 
 export const usersRoutes = Router();
@@ -14,7 +14,7 @@ const createUserController = new CreateUserController();
 const profileUserController = new ProfileUserController();
 const updateUserController = new UpdateUserController();
 const sendNotificationController =
-  new sendNewOrderNotificationAdminController();
+  new SendNewOrderNotificationAdminController();
 const updateUserNotificationTokensController =
   new UpdateUserNotificationTokensController();
 const listUserNotificationController = new ListUserNotificationController();

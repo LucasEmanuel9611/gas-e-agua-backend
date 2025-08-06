@@ -1,17 +1,17 @@
 import { Request, Response } from "express";
 import { container } from "tsyringe";
 
-import { sendNewOrderNotificationAdminController } from "./SendNewOrderNotificationAdminController";
+import { SendNewOrderNotificationAdminController } from "./SendNewOrderNotificationAdminController";
 
 describe("SendNewOrderNotificationAdminController", () => {
-  let sendNotificationController: sendNewOrderNotificationAdminController;
+  let sendNotificationController: SendNewOrderNotificationAdminController;
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let statusMock: jest.Mock;
   let jsonMock: jest.Mock;
 
   beforeEach(() => {
-    sendNotificationController = new sendNewOrderNotificationAdminController();
+    sendNotificationController = new SendNewOrderNotificationAdminController();
 
     statusMock = jest.fn().mockReturnThis();
     jsonMock = jest.fn();
