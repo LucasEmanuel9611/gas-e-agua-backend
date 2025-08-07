@@ -44,7 +44,7 @@ export class CreateOrderController {
     try {
       await SendNotification.execute({
         notificationTokens: pushTokens,
-        notificationTitle: "Novo pedido",
+        notificationTitle: "Novo pedido!",
         notificationBody: "Novo pedido solicitado no app",
       });
     } catch (err) {
