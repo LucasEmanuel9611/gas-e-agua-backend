@@ -55,19 +55,19 @@ export class OrdersRepository implements IOrdersRepository {
   }
 
   async getAddonsByIds(addonIds: number[]) {
-    return prisma.addon.findMany({
+    return prisma.addons.findMany({
       where: { id: { in: addonIds } },
     });
   }
 
   async getAddonByName(name: string) {
-    return prisma.addon.findFirst({
+    return prisma.addons.findFirst({
       where: { name },
     });
   }
 
   async getOrderAddons(orderId: number) {
-    return prisma.orderAddon.findMany({
+    return prisma.orderAddons.findMany({
       where: { orderId },
       include: {
         addon: true,
@@ -78,7 +78,7 @@ export class OrdersRepository implements IOrdersRepository {
   async addAddonsToOrder(orderId: number, addonIds: number[]) {
     await Promise.all(
       addonIds.map((addonId) =>
-        prisma.orderAddon.create({
+        prisma.orderAddons.create({
           data: {
             orderId,
             addonId,
@@ -89,7 +89,7 @@ export class OrdersRepository implements IOrdersRepository {
   }
 
   async addAddonToOrderIfNotExists(orderId: number, addonId: number) {
-    const existingAddon = await prisma.orderAddon.findFirst({
+    const existingAddon = await prisma.orderAddons.findFirst({
       where: {
         orderId,
         addonId,
@@ -97,7 +97,7 @@ export class OrdersRepository implements IOrdersRepository {
     });
 
     if (!existingAddon) {
-      await prisma.orderAddon.create({
+      await prisma.orderAddons.create({
         data: {
           orderId,
           addonId,
@@ -107,13 +107,13 @@ export class OrdersRepository implements IOrdersRepository {
   }
 
   async removeAddonsFromOrder(orderId: number) {
-    await prisma.orderAddon.deleteMany({
+    await prisma.orderAddons.deleteMany({
       where: { orderId },
     });
   }
 
   async removeSpecificAddonsFromOrder(orderId: number, addonIds: number[]) {
-    await prisma.orderAddon.deleteMany({
+    await prisma.orderAddons.deleteMany({
       where: {
         orderId,
         addonId: { in: addonIds },
@@ -122,7 +122,7 @@ export class OrdersRepository implements IOrdersRepository {
   }
 
   async removeAddonFromOrder(orderId: number, addonId: number) {
-    await prisma.orderAddon.deleteMany({
+    await prisma.orderAddons.deleteMany({
       where: {
         orderId,
         addonId,

@@ -73,7 +73,7 @@ model Order {
   user             User          @relation(fields: [user_id], references: [id])
   interest_allowed Boolean       @default(true)
   transactions     Transaction[]
-  orderAddons      OrderAddon[]
+  orderAddons      OrderAddons[]
 
   @@index([address_id], map: "Order_address_id_fkey")
   @@index([user_id], map: "Order_user_id_fkey")
@@ -104,17 +104,17 @@ model Stock {
   updated_at DateTime @updatedAt
 }
 
-model Addon {
-  id          Int          @id @default(autoincrement())
+model Addons {
+  id          Int           @id @default(autoincrement())
   name        String
   value       Float
-  orderAddons OrderAddon[]
+  orderAddons OrderAddons[]
 }
 
-model OrderAddon {
-  id      Int   @id @default(autoincrement())
-  order   Order @relation(fields: [orderId], references: [id])
+model OrderAddons {
+  id      Int    @id @default(autoincrement())
+  order   Order  @relation(fields: [orderId], references: [id])
   orderId Int
-  addon   Addon @relation(fields: [addonId], references: [id])
+  addon   Addons @relation(fields: [addonId], references: [id])
   addonId Int
 }
