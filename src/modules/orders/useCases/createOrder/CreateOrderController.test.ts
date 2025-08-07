@@ -77,6 +77,68 @@ describe("CreateOrderController", () => {
     expect(response.body).toEqual(mockOrder);
   }, 10000);
 
+  it("should create an order with gasAmount = 0 and waterAmount > 0", async () => {
+    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 5,
+      gasAmount: 0,
+      waterAmount: 2,
+      total: 20,
+    };
+    mockCreateOrderUseCase.mockResolvedValue(mockOrder);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({ gasAmount: 0, waterAmount: 2 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual(mockOrder);
+  });
+
+  it("should create an order with gasAmount > 0 and waterAmount = 0", async () => {
+    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 5,
+      gasAmount: 2,
+      waterAmount: 0,
+      total: 30,
+    };
+    mockCreateOrderUseCase.mockResolvedValue(mockOrder);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({ gasAmount: 2, waterAmount: 0 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual(mockOrder);
+  });
+
+  it("should return 400 when both gasAmount and waterAmount are 0", async () => {
+    const response = await request(app)
+      .post("/orders/")
+      .send({ gasAmount: 0, waterAmount: 0 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain("Pelo menos um dos valores");
+  });
+
   it("should return 400 if gas stock is insufficient", async () => {
     mockListAdminUseCase.execute.mockResolvedValue({
       id: 1,
