@@ -30,14 +30,14 @@ describe("EditOrderController", () => {
     jest.clearAllMocks();
   });
 
-  it("should update order date successfully and return 201", async () => {
+  it("should update order successfully and return 200", async () => {
     const mockOrder = {
       id: 123,
       user_id: 456,
-      status: "FINALIZADO",
+      status: "PENDENTE",
       payment_state: "PENDENTE",
-      gasAmount: 1,
-      waterAmount: 2,
+      gasAmount: 2,
+      waterAmount: 3,
       total: 50,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -62,20 +62,17 @@ describe("EditOrderController", () => {
     mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
     mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
-    const newDate = new Date().toISOString();
     const response = await request(app)
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
-      .send({ date: newDate });
+      .send({ gasAmount: 2, waterAmount: 3 });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
-      gasAmount: undefined,
-      gasWithBottle: undefined,
-      waterAmount: undefined,
-      waterWithBottle: undefined,
+      gasAmount: 2,
+      waterAmount: 3,
     });
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
@@ -95,7 +92,7 @@ describe("EditOrderController", () => {
     const response = await request(app)
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
-      .send({ date: new Date().toISOString() });
+      .send({ gasAmount: 1 });
 
     expect(response.status).toBe(500);
     expect(response.body.message).toBe("Erro interno do servidor");
@@ -111,7 +108,7 @@ describe("EditOrderController", () => {
     const response = await request(app)
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
-      .send({ date: new Date().toISOString() });
+      .send({ gasAmount: 1 });
 
     expect(response.status).toBe(500);
     expect(response.body.message).toBe("Erro interno do servidor");
@@ -121,7 +118,7 @@ describe("EditOrderController", () => {
     const mockOrder = {
       id: 123,
       user_id: 456,
-      status: "FINALIZADO",
+      status: "PENDENTE",
       payment_state: "PENDENTE",
       gasAmount: 1,
       waterAmount: 2,
@@ -151,17 +148,16 @@ describe("EditOrderController", () => {
       new Error("Notification error")
     );
 
-    const newDate = new Date().toISOString();
     const response = await request(app)
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
-      .send({ date: newDate });
+      .send({ gasAmount: 1 });
 
     expect(response.status).toBe(500);
     expect(response.body.message).toBe("Erro interno do servidor");
   });
 
-  it("should return 400 if order is null/undefined", async () => {
+  it("should return 400 if order is not found", async () => {
     mockEditOrderUseCase.execute.mockRejectedValue(
       new AppError("Pedido não encontrado", 400)
     );
@@ -173,17 +169,37 @@ describe("EditOrderController", () => {
     const response = await request(app)
       .put("/orders/12/edit")
       .set("Authorization", "Bearer token")
-      .send({ date: new Date().toISOString() });
+      .send({ gasAmount: 1 });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe("Pedido não encontrado");
+  });
+
+  it("should return 400 if order status is not PENDENTE", async () => {
+    mockEditOrderUseCase.execute.mockRejectedValue(
+      new AppError("Só é possível editar pedidos com status PENDENTE", 400)
+    );
+    mockListAdminUserUseCase.execute.mockResolvedValue({
+      notificationTokens: [],
+    });
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .put("/orders/123/edit")
+      .set("Authorization", "Bearer token")
+      .send({ gasAmount: 1 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      "Só é possível editar pedidos com status PENDENTE"
+    );
   });
 
   it("should return 400 if id is missing", async () => {
     const response = await request(app)
       .put("/orders/ /edit")
       .set("Authorization", "Bearer token")
-      .send({ date: new Date().toISOString() });
+      .send({ gasAmount: 1 });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBeDefined();

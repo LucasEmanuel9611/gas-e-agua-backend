@@ -1,5 +1,6 @@
 import request from "supertest";
 
+import { AppError } from "@shared/errors/AppError";
 import { app } from "@shared/infra/http/app";
 
 import {
@@ -65,12 +66,12 @@ describe("CreateOrderController", () => {
       .send({ gasAmount: 2, waterAmount: 3 })
       .set("Authorization", "Bearer token");
 
-    // expect(mockListAdmin).toHaveBeenCalled();
-    // expect(mockGetStock).toHaveBeenCalled();
     expect(mockCreateOrderUseCase).toHaveBeenCalledWith({
       user_id: 5,
       gasAmount: 2,
       waterAmount: 3,
+      gasWithBottle: false,
+      waterWithBottle: false,
     });
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalled();
     expect(response.status).toBe(201);
@@ -144,10 +145,9 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockGetStockUseCase.mockResolvedValue([
-      { name: "Gás", quantity: 1 },
-      { name: "Água", quantity: 5 },
-    ]);
+    mockCreateOrderUseCase.mockRejectedValue(
+      new AppError("Estoque insuficiente de gás")
+    );
 
     const response = await request(app)
       .post("/orders/")
@@ -163,10 +163,9 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockGetStockUseCase.mockResolvedValue([
-      { name: "Gás", quantity: 5 },
-      { name: "Água", quantity: 1 },
-    ]);
+    mockCreateOrderUseCase.mockRejectedValue(
+      new AppError("Estoque insuficiente de água")
+    );
 
     const response = await request(app)
       .post("/orders/")
@@ -182,10 +181,9 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockGetStockUseCase.mockResolvedValue([
-      { name: "Gás", quantity: 1 },
-      { name: "Água", quantity: 1 },
-    ]);
+    mockCreateOrderUseCase.mockRejectedValue(
+      new AppError("Estoque insuficiente de gás e água")
+    );
 
     const response = await request(app)
       .post("/orders/")

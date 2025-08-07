@@ -19,6 +19,7 @@ export class OrdersRepository implements IOrdersRepository {
     total,
     status,
     waterAmount,
+    addonIds = [],
     created_at,
     payment_state,
   }: ICreateOrderDTO): Promise<OrderProps> {
@@ -32,6 +33,11 @@ export class OrdersRepository implements IOrdersRepository {
         waterAmount,
         created_at,
         payment_state,
+        orderAddons: {
+          create: addonIds.map((addonId) => ({
+            addonId,
+          })),
+        },
       },
       include: {
         address: true,
@@ -46,6 +52,86 @@ export class OrdersRepository implements IOrdersRepository {
     });
 
     return createdOrderProps as OrderProps;
+  }
+
+  async getAddonsByIds(addonIds: number[]) {
+    return prisma.addons.findMany({
+      where: { id: { in: addonIds } },
+    });
+  }
+
+  async getAddonByName(name: string) {
+    return prisma.addons.findFirst({
+      where: { name },
+    });
+  }
+
+  async getOrderAddons(orderId: number) {
+    return prisma.orderAddons.findMany({
+      where: { orderId },
+      include: {
+        addon: true,
+      },
+    });
+  }
+
+  async addAddonsToOrder(orderId: number, addonIds: number[]) {
+    await Promise.all(
+      addonIds.map((addonId) =>
+        prisma.orderAddons.create({
+          data: {
+            orderId,
+            addonId,
+          },
+        })
+      )
+    );
+  }
+
+  async addAddonToOrderIfNotExists(orderId: number, addonId: number) {
+    const existingAddon = await prisma.orderAddons.findFirst({
+      where: {
+        orderId,
+        addonId,
+      },
+    });
+
+    if (!existingAddon) {
+      await prisma.orderAddons.create({
+        data: {
+          orderId,
+          addonId,
+        },
+      });
+    }
+  }
+
+  async removeAddonsFromOrder(orderId: number) {
+    await prisma.orderAddons.deleteMany({
+      where: { orderId },
+    });
+  }
+
+  async removeSpecificAddonsFromOrder(orderId: number, addonIds: number[]) {
+    await prisma.orderAddons.deleteMany({
+      where: {
+        orderId,
+        addonId: { in: addonIds },
+      },
+    });
+  }
+
+  async removeAddonFromOrder(orderId: number, addonId: number) {
+    await prisma.orderAddons.deleteMany({
+      where: {
+        orderId,
+        addonId,
+      },
+    });
+  }
+
+  async getStockData() {
+    return prisma.stock.findMany();
   }
 
   async delete(id: number) {

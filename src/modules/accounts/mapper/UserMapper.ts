@@ -9,6 +9,7 @@ export class UserMap {
     id,
     notificationTokens,
     role,
+    telephone,
   }: UserDates): IUserResponseDTO {
     const user = instanceToInstance({
       email,
@@ -16,6 +17,7 @@ export class UserMap {
       id,
       notificationTokens,
       role,
+      telephone,
     });
     return user;
   }
