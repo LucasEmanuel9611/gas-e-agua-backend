@@ -130,8 +130,58 @@ export class OrdersRepository implements IOrdersRepository {
     });
   }
 
-  async getStockData() {
+  async getStockData(): Promise<any[]> {
     return prisma.stock.findMany();
+  }
+
+  async findOrdersByDateRange(params: {
+    startDate: Date;
+    endDate: Date;
+    paymentState: string;
+  }): Promise<OrderProps[]> {
+    const orders = await prisma.order.findMany({
+      where: {
+        created_at: {
+          gte: params.startDate,
+          lte: params.endDate,
+        },
+        payment_state: params.paymentState,
+      },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+            notificationTokens: true,
+          },
+        },
+        transactions: true,
+      },
+    });
+
+    return orders as OrderProps[];
+  }
+
+  async findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]> {
+    const orders = await prisma.order.findMany({
+      where: {
+        payment_state: paymentState,
+      },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+            notificationTokens: true,
+          },
+        },
+        transactions: true,
+      },
+    });
+
+    return orders as OrderProps[];
   }
 
   async delete(id: number) {

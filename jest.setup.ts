@@ -20,12 +20,14 @@ import {
   mockPaymentUseCase,
   mockProfileUserUseCase,
   mockSendNotificationUseCase,
+  mockSendOrderPaymentNotificationsUseCase,
   mockUpdateStockUseCase,
 } from "./jest/mocks/useCaseMocks";
 import { ListAdminUserUseCase } from "./src/modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
 import { EditOrderUseCase } from "./src/modules/orders/useCases/editOrderUseCase/EditOrderUseCase";
 import { SendNotificationUseCase } from "./src/modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
+import { SendOrderPaymentNotificationsUseCase } from "./src/modules/orders/useCases/sendOrderPaymentNotifications/SendOrderPaymentNotificationsUseCase";
 import { GetStockUseCase } from "./src/modules/stock/useCases/getStock/GetStockUseCase";
 
 dotenv.config({ path: ".env.test" });
@@ -86,6 +88,9 @@ jest.mock("tsyringe", () => {
         }
         if (token === EditOrderUseCase) {
           return mockEditOrderUseCase;
+        }
+        if (token === SendOrderPaymentNotificationsUseCase) {
+          return mockSendOrderPaymentNotificationsUseCase;
         }
         return null;
       }),

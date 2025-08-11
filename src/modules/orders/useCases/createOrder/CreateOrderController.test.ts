@@ -32,8 +32,14 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return res.status(401).json({ message: "Token de acesso requerido" });
+        }
+
         req.user = { id: 5 };
-        next();
+        return next();
       },
     };
   }
@@ -80,7 +86,10 @@ describe("CreateOrderController", () => {
     });
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalled();
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
   }, 10000);
 
   it("should create an order with water bottle addon", async () => {
@@ -117,7 +126,10 @@ describe("CreateOrderController", () => {
       waterWithBottle: true,
     });
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
   });
 
   it("should create an order with gas bottle addon", async () => {
@@ -154,7 +166,10 @@ describe("CreateOrderController", () => {
       waterWithBottle: false,
     });
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
   });
 
   it("should create an order with both bottle addons", async () => {
@@ -192,7 +207,10 @@ describe("CreateOrderController", () => {
       waterWithBottle: true,
     });
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
   });
 
   it("should create an order with gasAmount = 0 and waterAmount > 0", async () => {
@@ -218,7 +236,10 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
   });
 
   it("should create an order with gasAmount > 0 and waterAmount = 0", async () => {
@@ -244,7 +265,10 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
   });
 
   it("should return 400 when both gasAmount and waterAmount are 0", async () => {
@@ -332,6 +356,40 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
-    expect(response.body).toEqual(mockOrder);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message:
+        "Pedido criado com sucesso, mas houve falha no envio da notificação",
+    });
+  });
+
+  it("should return success message when notification succeeds", async () => {
+    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.execute.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 5,
+      gasAmount: 1,
+      waterAmount: 1,
+      total: 20,
+    };
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({ gasAmount: 1, waterAmount: 1 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso!",
+    });
+    expect(response.body).not.toHaveProperty("notificationStatus");
   });
 });

@@ -2,6 +2,8 @@ import { UsersRepository } from "@modules/accounts/repositories/implementations/
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
+import { SendNotificationUseCase } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
+import { SendOrderPaymentNotificationsUseCase } from "@modules/orders/useCases/sendOrderPaymentNotifications/SendOrderPaymentNotificationsUseCase";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { TransactionsRepository } from "@modules/transactions/repositories/implementations/TransactionsRepository";
@@ -34,4 +36,10 @@ container.registerSingleton<IStockRepository>(
 container.registerSingleton<ITransactionsRepository>(
   "TransactionsRepository",
   TransactionsRepository
+);
+
+container.registerSingleton<SendNotificationUseCase>(SendNotificationUseCase);
+
+container.registerSingleton<SendOrderPaymentNotificationsUseCase>(
+  SendOrderPaymentNotificationsUseCase
 );

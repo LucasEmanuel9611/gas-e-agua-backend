@@ -20,6 +20,7 @@ export class CreateOrderController {
       const createOrderUseCase = container.resolve(CreateOrderUseCase);
       const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
       const adminUser = await listAdminUserUseCase.execute();
+      let notificationSent;
 
       const order = await createOrderUseCase.execute({
         user_id: id,
@@ -29,9 +30,24 @@ export class CreateOrderController {
         gasWithBottle,
       });
 
-      if (order) await this.notifyNewOrder(adminUser);
+      if (order) {
+        try {
+          await this.notifyNewOrder(adminUser);
+          notificationSent = true;
+        } catch (err) {
+          console.error("Falha ao enviar notificação de novo pedido:", err);
+          notificationSent = false;
+        }
+      }
 
-      return response.status(201).json(order);
+      const notificationMessage = notificationSent
+        ? "Pedido criado com sucesso!"
+        : "Pedido criado com sucesso, mas houve falha no envio da notificação";
+
+      return response.status(201).json({
+        ...order,
+        message: notificationMessage,
+      });
     } catch (err) {
       return handleControllerError(err, response);
     }
@@ -41,15 +57,10 @@ export class CreateOrderController {
     const SendNotification = container.resolve(SendNotificationUseCase);
     const pushTokens = adminUser.notificationTokens;
 
-    try {
-      await SendNotification.execute({
-        notificationTokens: pushTokens,
-        notificationTitle: "Novo pedido",
-        notificationBody: "Novo pedido solicitado no app",
-      });
-    } catch (err) {
-      console.log(err);
-      throw new Error(err);
-    }
+    await SendNotification.execute({
+      notificationTokens: pushTokens,
+      notificationTitle: "Novo pedido",
+      notificationBody: "Novo pedido solicitado no app",
+    });
   }
 }
