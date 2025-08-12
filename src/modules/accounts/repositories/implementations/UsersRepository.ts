@@ -95,4 +95,43 @@ export class UsersRepository implements IUsersRepository {
 
     return foundUser;
   }
+
+  async findAll({
+    page,
+    limit,
+    offset,
+    search,
+  }: {
+    page: number;
+    limit: number;
+    offset: number;
+    search?: string;
+  }): Promise<{ users: UserDates[]; total: number }> {
+    const where = search
+      ? {
+          OR: [
+            { username: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+            { telephone: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {};
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          address: true,
+        },
+        skip: offset,
+        take: limit,
+        orderBy: {
+          created_at: "desc",
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return { users, total };
+  }
 }

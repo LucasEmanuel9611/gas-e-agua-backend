@@ -1,6 +1,9 @@
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
+import { OrderCreationService } from "@modules/orders/services/OrderCreationService";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
+import { TransactionsRepository } from "@modules/transactions/repositories/implementations/TransactionsRepository";
+import { container } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -10,6 +13,7 @@ let createOrderUseCase: CreateOrderUseCase;
 let usersRepository: UsersRepository;
 let ordersRepository: OrdersRepository;
 let stockRepository: StockRepository;
+let transactionsRepository: TransactionsRepository;
 
 let mockedUser;
 
@@ -21,12 +25,26 @@ describe(CreateOrderUseCase.name, () => {
     ordersRepository = new OrdersRepository();
     usersRepository = new UsersRepository();
     stockRepository = new StockRepository();
+    transactionsRepository = new TransactionsRepository();
 
-    createOrderUseCase = new CreateOrderUseCase(
-      ordersRepository,
-      usersRepository,
-      stockRepository
+    container.registerInstance("OrdersRepository", ordersRepository);
+    container.registerInstance("UsersRepository", usersRepository);
+    container.registerInstance("StockRepository", stockRepository);
+    container.registerInstance(
+      "TransactionsRepository",
+      transactionsRepository
     );
+    container.registerInstance(
+      "OrderCreationService",
+      new OrderCreationService(
+        ordersRepository,
+        usersRepository,
+        stockRepository,
+        transactionsRepository
+      )
+    );
+
+    createOrderUseCase = container.resolve(CreateOrderUseCase);
 
     mockedUser = {
       email: "test@example.com",
@@ -152,7 +170,6 @@ describe(CreateOrderUseCase.name, () => {
     const gasAmount = 3;
     const waterAmount = 4;
 
-    // Calculando os totais de gás e água
     const waterTotalValue = waterAmount * WATER_VALUE;
     const gasTotalValue = gasAmount * GAS_VALUE;
     const expectedTotal = waterTotalValue + gasTotalValue;
