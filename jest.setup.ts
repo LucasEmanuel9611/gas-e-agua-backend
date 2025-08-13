@@ -4,6 +4,8 @@ import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticate
 import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
+import { ListOrdersByDayUseCase } from "@modules/orders/useCases/listOrdersByDay/ListOrdersByDayUseCase";
+import { ListOrdersByUserUseCase } from "@modules/orders/useCases/listOrdersByUser/ListOrdersByUserUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
 import { PaymentUseCase } from "@modules/transactions/useCases/payment/PaymentUseCase";
 import { PrismaClient } from "@prisma/client";
@@ -16,6 +18,8 @@ import {
   mockEditOrderUseCase,
   mockGetStockUseCase,
   mockListAdminUseCase,
+  mockListOrdersByDayUseCase,
+  mockListOrdersByUserUseCase,
   mockListOrdersUseCase,
   mockPaymentUseCase,
   mockProfileUserUseCase,
@@ -68,6 +72,12 @@ jest.mock("tsyringe", () => {
         }
         if (token === ListOrdersUseCase) {
           return mockListOrdersUseCase;
+        }
+        if (token === ListOrdersByDayUseCase) {
+          return mockListOrdersByDayUseCase;
+        }
+        if (token === ListOrdersByUserUseCase) {
+          return mockListOrdersByUserUseCase;
         }
         if (token === UpdateStockUseCase) {
           return mockUpdateStockUseCase;

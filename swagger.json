@@ -225,6 +225,64 @@
       }
     },
     "/orders": {
+      "get": {
+        "summary": "Lista pedidos (unificado)",
+        "tags": ["Orders"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["me", "all"],
+              "default": "me"
+            },
+            "description": "me = meus pedidos (padrão); all = todos (requer admin)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Número da página (0-based)"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Tamanho da página"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" },
+            "required": false,
+            "description": "Filtra por dia (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retorna lista paginada de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "page_number": { "type": "integer" },
+                    "total_items_count": { "type": "integer" },
+                    "items": { "type": "array", "items": { "type": "object" } }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Não autorizado" },
+          "403": { "description": "Requer admin para scope=all" }
+        }
+      },
       "post": {
         "summary": "Cria um novo pedido",
         "tags": ["Orders"],

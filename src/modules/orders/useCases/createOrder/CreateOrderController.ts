@@ -29,7 +29,13 @@ export class CreateOrderController {
         gasWithBottle,
       });
 
-      if (order) await this.notifyNewOrder(adminUser);
+      if (order) {
+        try {
+          await this.notifyNewOrder(adminUser);
+        } catch (err) {
+          console.error("Falha ao enviar notificação de novo pedido:", err);
+        }
+      }
 
       return response.status(201).json(order);
     } catch (err) {
@@ -41,15 +47,10 @@ export class CreateOrderController {
     const SendNotification = container.resolve(SendNotificationUseCase);
     const pushTokens = adminUser.notificationTokens;
 
-    try {
-      await SendNotification.execute({
-        notificationTokens: pushTokens,
-        notificationTitle: "Novo pedido",
-        notificationBody: "Novo pedido solicitado no app",
-      });
-    } catch (err) {
-      console.log(err);
-      throw new Error(err);
-    }
+    await SendNotification.execute({
+      notificationTokens: pushTokens,
+      notificationTitle: "Novo pedido",
+      notificationBody: "Novo pedido solicitado no app",
+    });
   }
 }
