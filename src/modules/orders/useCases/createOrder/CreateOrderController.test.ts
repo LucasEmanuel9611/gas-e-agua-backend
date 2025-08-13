@@ -32,8 +32,14 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          return res.status(401).json({ message: "Token de acesso requerido" });
+        }
+
         req.user = { id: 5 };
-        next();
+        return next();
       },
     };
   }
