@@ -1,44 +1,47 @@
-/* eslint-disable consistent-return */
-/* eslint-disable array-callback-return */
 import { OrderProps } from "@modules/orders/types";
 import { inject, injectable } from "tsyringe";
 
 import {
   IOrderCreationData,
-  OrderCreationService,
-} from "../../services/OrderCreationService";
+  IOrderCreationService,
+} from "../../services/IOrderCreationService";
 
 interface IRequest {
-  user_id: string;
+  user_id: string | number;
   gasAmount: number;
   waterAmount: number;
   waterWithBottle?: boolean;
   gasWithBottle?: boolean;
+  status?: "INICIADO" | "PENDENTE" | "FINALIZADO";
+  payment_state?: "PENDENTE" | "PAGO" | "VENCIDO" | "PARCIALMENTE_PAGO";
+  total?: number;
+  interest_allowed?: boolean;
+  overdue_amount?: number;
+  overdue_description?: string;
+  due_date?: Date;
 }
 
 @injectable()
 export class CreateOrderUseCase {
   constructor(
     @inject("OrderCreationService")
-    private orderCreationService: OrderCreationService
+    private orderCreationService: IOrderCreationService
   ) {}
 
-  async execute({
-    user_id,
-    gasAmount,
-    waterAmount,
-    waterWithBottle = false,
-    gasWithBottle = false,
-  }: IRequest): Promise<OrderProps> {
+  async execute(request: IRequest): Promise<OrderProps> {
     const orderData: IOrderCreationData = {
-      user_id: Number(user_id),
-      gasAmount,
-      waterAmount,
-      waterWithBottle,
-      gasWithBottle,
-      status: "PENDENTE",
-      payment_state: "PENDENTE",
-      interest_allowed: true,
+      user_id: Number(request.user_id),
+      gasAmount: request.gasAmount,
+      waterAmount: request.waterAmount,
+      waterWithBottle: request.waterWithBottle,
+      gasWithBottle: request.gasWithBottle,
+      status: request.status,
+      payment_state: request.payment_state,
+      total: request.total,
+      interest_allowed: request.interest_allowed,
+      overdue_amount: request.overdue_amount,
+      overdue_description: request.overdue_description,
+      due_date: request.due_date,
     };
 
     return this.orderCreationService.createOrder(orderData);

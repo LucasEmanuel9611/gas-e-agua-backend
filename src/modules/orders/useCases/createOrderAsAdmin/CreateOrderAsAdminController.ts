@@ -4,7 +4,7 @@ import { container } from "tsyringe";
 import { handleControllerError } from "@shared/utils/controller";
 import { validateSchema } from "@shared/utils/schema";
 
-import { CreateOrderAsAdminUseCase } from "./CreateOrderAsAdminUseCase";
+import { CreateOrderUseCase } from "../createOrder/CreateOrderUseCase";
 import { createOrderAsAdminSchema } from "./schema";
 
 export class CreateOrderAsAdminController {
@@ -25,11 +25,9 @@ export class CreateOrderAsAdminController {
         due_date,
       } = validateSchema(createOrderAsAdminSchema, request.body);
 
-      const createOrderAsAdminUseCase = container.resolve(
-        CreateOrderAsAdminUseCase
-      );
+      const createOrderUseCase = container.resolve(CreateOrderUseCase);
 
-      const order = await createOrderAsAdminUseCase.execute({
+      const order = await createOrderUseCase.execute({
         user_id,
         gasAmount,
         waterAmount,

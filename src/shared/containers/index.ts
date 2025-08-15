@@ -2,6 +2,7 @@ import { UsersRepository } from "@modules/accounts/repositories/implementations/
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
+import { IOrderCreationService } from "@modules/orders/services/IOrderCreationService";
 import { OrderCreationService } from "@modules/orders/services/OrderCreationService";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
@@ -37,7 +38,7 @@ container.registerSingleton<ITransactionsRepository>(
   TransactionsRepository
 );
 
-container.registerSingleton<OrderCreationService>(
+container.registerSingleton<IOrderCreationService>(
   "OrderCreationService",
   OrderCreationService
 );

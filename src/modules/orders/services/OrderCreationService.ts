@@ -7,23 +7,13 @@ import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
-export interface IOrderCreationData {
-  user_id: number;
-  gasAmount: number;
-  waterAmount: number;
-  waterWithBottle?: boolean;
-  gasWithBottle?: boolean;
-  status?: "INICIADO" | "PENDENTE" | "FINALIZADO";
-  payment_state?: "PENDENTE" | "PAGO" | "VENCIDO" | "PARCIALMENTE_PAGO";
-  total?: number;
-  interest_allowed?: boolean;
-  overdue_amount?: number;
-  overdue_description?: string;
-  due_date?: Date;
-}
+import {
+  IOrderCreationData,
+  IOrderCreationService,
+} from "./IOrderCreationService";
 
 @injectable()
-export class OrderCreationService {
+export class OrderCreationService implements IOrderCreationService {
   constructor(
     @inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
@@ -119,6 +109,10 @@ export class OrderCreationService {
 
     const waterStock = stockItems.find((item) => item.name === "Água");
     const gasStock = stockItems.find((item) => item.name === "Gás");
+
+    if (!waterStock || !gasStock) {
+      throw new AppError("Produtos de estoque não encontrados");
+    }
 
     return { waterStock, gasStock };
   }
