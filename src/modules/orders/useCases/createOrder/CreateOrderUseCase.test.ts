@@ -1,5 +1,3 @@
-import { container } from "tsyringe";
-
 import { AppError } from "@shared/errors/AppError";
 
 import { IOrderCreationService } from "../../services/IOrderCreationService";
@@ -31,12 +29,7 @@ describe(CreateOrderUseCase.name, () => {
       createOrder: jest.fn(),
     };
 
-    container.registerInstance(
-      "OrderCreationService",
-      mockOrderCreationService
-    );
-
-    createOrderUseCase = container.resolve(CreateOrderUseCase);
+    createOrderUseCase = new CreateOrderUseCase(mockOrderCreationService);
   });
 
   it("should be able to create a new order", async () => {
@@ -71,11 +64,15 @@ describe(CreateOrderUseCase.name, () => {
       user_id: mockedUser.id,
       gasAmount,
       waterAmount,
-      waterWithBottle: false,
-      gasWithBottle: false,
-      status: "PENDENTE",
-      payment_state: "PENDENTE",
-      interest_allowed: true,
+      waterWithBottle: undefined,
+      gasWithBottle: undefined,
+      status: undefined,
+      payment_state: undefined,
+      total: undefined,
+      interest_allowed: undefined,
+      overdue_amount: undefined,
+      overdue_description: undefined,
+      due_date: undefined,
     });
   });
 

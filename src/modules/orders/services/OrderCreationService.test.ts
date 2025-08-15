@@ -2,7 +2,6 @@ import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUse
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
-import { container } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -106,19 +105,16 @@ describe(OrderCreationService.name, () => {
 
     mockTransactionsRepository = {
       create: jest.fn(),
-      findByOrderId: jest.fn(),
       findById: jest.fn(),
+      findByOrderId: jest.fn(),
     };
 
-    container.registerInstance("UsersRepository", mockUsersRepository);
-    container.registerInstance("OrdersRepository", mockOrdersRepository);
-    container.registerInstance("StockRepository", mockStockRepository);
-    container.registerInstance(
-      "TransactionsRepository",
+    orderCreationService = new OrderCreationService(
+      mockOrdersRepository,
+      mockUsersRepository,
+      mockStockRepository,
       mockTransactionsRepository
     );
-
-    orderCreationService = container.resolve(OrderCreationService);
   });
 
   describe("createOrder", () => {
