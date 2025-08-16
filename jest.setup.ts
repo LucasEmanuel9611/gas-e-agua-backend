@@ -2,7 +2,9 @@ import "reflect-metadata";
 
 import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserUseCase";
 import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
+import { ListUserNotificationTokensUseCase } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensUseCase";
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
+import { UpdateUserNotificationTokensUseCase } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensUseCase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
 import { ListOrdersByDayUseCase } from "@modules/orders/useCases/listOrdersByDay/ListOrdersByDayUseCase";
 import { ListOrdersByUserUseCase } from "@modules/orders/useCases/listOrdersByUser/ListOrdersByUserUseCase";
@@ -21,10 +23,12 @@ import {
   mockListOrdersByDayUseCase,
   mockListOrdersByUserUseCase,
   mockListOrdersUseCase,
+  mockListUserNotificationTokensUseCase,
   mockPaymentUseCase,
   mockProfileUserUseCase,
   mockSendNotificationUseCase,
   mockUpdateStockUseCase,
+  mockUpdateUserNotificationTokensUseCase,
 } from "./jest/mocks/useCaseMocks";
 import { ListAdminUserUseCase } from "./src/modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
@@ -96,6 +100,12 @@ jest.mock("tsyringe", () => {
         }
         if (token === EditOrderUseCase) {
           return mockEditOrderUseCase;
+        }
+        if (token === UpdateUserNotificationTokensUseCase) {
+          return { execute: mockUpdateUserNotificationTokensUseCase };
+        }
+        if (token === ListUserNotificationTokensUseCase) {
+          return { execute: mockListUserNotificationTokensUseCase };
         }
         return null;
       }),

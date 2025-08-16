@@ -208,7 +208,7 @@ describe("UpdateUserController", () => {
     ],
   ])(
     "should return 400 when trying to update forbidden or extra fields: %s",
-    async (mockUserData, description) => {
+    async (mockUserData, _) => {
       const response = await request(app)
         .put("/users/profile")
         .set("Authorization", "Bearer token")
