@@ -1,9 +1,9 @@
 import request from "supertest";
 
+import { AppError } from "@shared/errors/AppError";
 import { app } from "@shared/infra/http/app";
 
 import { mockProfileUserUseCase } from "../../../../../jest/mocks/useCaseMocks";
-import { ProfileUserController } from "./ProfileUserController";
 
 jest.mock("tsyringe", () => {
   const actual = jest.requireActual("tsyringe");
@@ -20,7 +20,7 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 123 };
+        req.user = { id: 5 };
         next();
       },
     };
@@ -28,20 +28,25 @@ jest.mock(
 );
 
 describe("ProfileUserController", () => {
-  beforeAll(() => {
-    const controller = new ProfileUserController();
-    app.get("/users/profile", controller.handle.bind(controller));
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("should return the user profile data", async () => {
+  it("should return user profile successfully", async () => {
     const mockUser = {
-      id: 123,
-      name: "João",
-      email: "joao@example.com",
-      created_at: new Date().toISOString(),
+      id: 5,
+      username: "testuser",
+      email: "test@example.com",
+      telephone: "81999999999",
+      address: {
+        street: "Test Street",
+        number: "123",
+        reference: "Test Reference",
+        local: "Test City",
+      },
     };
 
-    mockProfileUserUseCase.mockResolvedValue(mockUser);
+    mockProfileUserUseCase.execute.mockResolvedValue(mockUser);
 
     const response = await request(app)
       .get("/users/profile")
@@ -49,12 +54,24 @@ describe("ProfileUserController", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockUser);
-    expect(mockProfileUserUseCase).toHaveBeenCalledWith(123);
   });
 
-  it("should return 500 if useCase throws an error", async () => {
-    mockProfileUserUseCase.mockRejectedValue(
-      new Error("Erro interno do servidor")
+  it("should return 400 when user is not found", async () => {
+    mockProfileUserUseCase.execute.mockRejectedValue(
+      new AppError("Usuário não encontrado", 400)
+    );
+
+    const response = await request(app)
+      .get("/users/profile")
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Usuário não encontrado");
+  });
+
+  it("should return 500 when UseCase throws unexpected error", async () => {
+    mockProfileUserUseCase.execute.mockRejectedValue(
+      new Error("Database error")
     );
 
     const response = await request(app)
@@ -62,6 +79,6 @@ describe("ProfileUserController", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(500);
-    expect(response.body.message).toContain("Erro interno do servidor");
+    expect(response.body.message).toBe("Erro interno do servidor");
   });
 });

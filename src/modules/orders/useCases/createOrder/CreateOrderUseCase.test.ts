@@ -3,6 +3,7 @@ import { OrdersRepository } from "@modules/orders/repositories/implementations/O
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
 
 import { AppError } from "@shared/errors/AppError";
+import { prisma } from "@shared/infra/database/prisma";
 
 import { CreateOrderUseCase } from "./CreateOrderUseCase";
 
@@ -12,9 +13,13 @@ let ordersRepository: OrdersRepository;
 let stockRepository: StockRepository;
 
 let mockedUser;
+let waterBottleAddonId: number;
+let gasBottleAddonId: number;
 
 const GAS_VALUE = 10;
 const WATER_VALUE = 5;
+const WATER_BOTTLE_VALUE = 15;
+const GAS_BOTTLE_VALUE = 20;
 
 describe(CreateOrderUseCase.name, () => {
   beforeEach(async () => {
@@ -52,6 +57,22 @@ describe(CreateOrderUseCase.name, () => {
       quantity: 5,
       value: GAS_VALUE,
     });
+
+    const waterBottleAddon = await prisma.addons.create({
+      data: {
+        name: "Botijão para Água",
+        value: WATER_BOTTLE_VALUE,
+      },
+    });
+    waterBottleAddonId = waterBottleAddon.id;
+
+    const gasBottleAddon = await prisma.addons.create({
+      data: {
+        name: "Botijão para Gás",
+        value: GAS_BOTTLE_VALUE,
+      },
+    });
+    gasBottleAddonId = gasBottleAddon.id;
   });
 
   it("should be able to create a new order", async () => {
@@ -74,6 +95,110 @@ describe(CreateOrderUseCase.name, () => {
     expect(order.gasAmount).toBe(gasAmount);
     expect(order.waterAmount).toBe(waterAmount);
     expect(order.total).toBe(expectedTotal);
+  });
+
+  it("should create order with water bottle addon", async () => {
+    const user = await usersRepository.create(mockedUser);
+
+    const gasAmount = 1;
+    const waterAmount = 2;
+
+    const baseTotal = waterAmount * WATER_VALUE + gasAmount * GAS_VALUE;
+    const expectedTotal = baseTotal + WATER_BOTTLE_VALUE;
+
+    const order = await createOrderUseCase.execute({
+      user_id: String(user.id),
+      gasAmount,
+      waterAmount,
+      waterWithBottle: true,
+    });
+
+    expect(order).toHaveProperty("id");
+    expect(order.gasAmount).toBe(gasAmount);
+    expect(order.waterAmount).toBe(waterAmount);
+    expect(order.total).toBe(expectedTotal);
+
+    const orderAddons = await ordersRepository.getOrderAddons(order.id);
+    expect(orderAddons).toHaveLength(1);
+    expect(orderAddons[0].addon.name).toBe("Botijão para Água");
+  });
+
+  it("should create order with gas bottle addon", async () => {
+    const user = await usersRepository.create(mockedUser);
+
+    const gasAmount = 1;
+    const waterAmount = 2;
+
+    const baseTotal = waterAmount * WATER_VALUE + gasAmount * GAS_VALUE;
+    const expectedTotal = baseTotal + GAS_BOTTLE_VALUE;
+
+    const order = await createOrderUseCase.execute({
+      user_id: String(user.id),
+      gasAmount,
+      waterAmount,
+      gasWithBottle: true,
+    });
+
+    expect(order).toHaveProperty("id");
+    expect(order.gasAmount).toBe(gasAmount);
+    expect(order.waterAmount).toBe(waterAmount);
+    expect(order.total).toBe(expectedTotal);
+
+    const orderAddons = await ordersRepository.getOrderAddons(order.id);
+    expect(orderAddons).toHaveLength(1);
+    expect(orderAddons[0].addon.name).toBe("Botijão para Gás");
+  });
+
+  it("should create order with both bottle addons", async () => {
+    const user = await usersRepository.create(mockedUser);
+
+    const gasAmount = 1;
+    const waterAmount = 2;
+
+    const baseTotal = waterAmount * WATER_VALUE + gasAmount * GAS_VALUE;
+    const expectedTotal = baseTotal + WATER_BOTTLE_VALUE + GAS_BOTTLE_VALUE;
+
+    const order = await createOrderUseCase.execute({
+      user_id: String(user.id),
+      gasAmount,
+      waterAmount,
+      waterWithBottle: true,
+      gasWithBottle: true,
+    });
+
+    expect(order).toHaveProperty("id");
+    expect(order.gasAmount).toBe(gasAmount);
+    expect(order.waterAmount).toBe(waterAmount);
+    expect(order.total).toBe(expectedTotal);
+
+    const orderAddons = await ordersRepository.getOrderAddons(order.id);
+    expect(orderAddons).toHaveLength(2);
+
+    const addonNames = orderAddons.map((oa) => oa.addon.name);
+    expect(addonNames).toContain("Botijão para Água");
+    expect(addonNames).toContain("Botijão para Gás");
+  });
+
+  it("should create order without addons when flags are false", async () => {
+    const user = await usersRepository.create(mockedUser);
+
+    const gasAmount = 1;
+    const waterAmount = 2;
+
+    const expectedTotal = waterAmount * WATER_VALUE + gasAmount * GAS_VALUE;
+
+    const order = await createOrderUseCase.execute({
+      user_id: String(user.id),
+      gasAmount,
+      waterAmount,
+      waterWithBottle: false,
+      gasWithBottle: false,
+    });
+
+    expect(order.total).toBe(expectedTotal);
+
+    const orderAddons = await ordersRepository.getOrderAddons(order.id);
+    expect(orderAddons).toHaveLength(0);
   });
 
   it("should not create an order if the user has no address", async () => {

@@ -6,6 +6,8 @@ import { ListUserNotificationTokensUseCase } from "@modules/accounts/useCases/Li
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { UpdateUserNotificationTokensUseCase } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensUseCase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
+import { ListOrdersByDayUseCase } from "@modules/orders/useCases/listOrdersByDay/ListOrdersByDayUseCase";
+import { ListOrdersByUserUseCase } from "@modules/orders/useCases/listOrdersByUser/ListOrdersByUserUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
 import { PaymentUseCase } from "@modules/transactions/useCases/payment/PaymentUseCase";
 import { PrismaClient } from "@prisma/client";
@@ -18,6 +20,8 @@ import {
   mockEditOrderUseCase,
   mockGetStockUseCase,
   mockListAdminUseCase,
+  mockListOrdersByDayUseCase,
+  mockListOrdersByUserUseCase,
   mockListOrdersUseCase,
   mockListUserNotificationTokensUseCase,
   mockPaymentUseCase,
@@ -38,10 +42,13 @@ const prisma = new PrismaClient();
 
 beforeEach(async () => {
   await prisma.notificationToken.deleteMany();
+  await prisma.transaction.deleteMany();
+  await prisma.orderAddons.deleteMany();
   await prisma.order.deleteMany();
   await prisma.address.deleteMany();
   await prisma.user.deleteMany();
   await prisma.stock.deleteMany();
+  await prisma.addons.deleteMany();
 });
 
 afterAll(async () => {
@@ -56,7 +63,7 @@ jest.mock("tsyringe", () => {
     container: {
       resolve: jest.fn((token: any) => {
         if (token === CreateOrderUseCase) {
-          return { execute: mockCreateOrderUseCase };
+          return mockCreateOrderUseCase;
         }
         if (token === SendNotificationUseCase) {
           return mockSendNotificationUseCase;
@@ -65,25 +72,31 @@ jest.mock("tsyringe", () => {
           return mockListAdminUseCase;
         }
         if (token === GetStockUseCase) {
-          return { execute: mockGetStockUseCase };
+          return mockGetStockUseCase;
         }
         if (token === ListOrdersUseCase) {
-          return { execute: mockListOrdersUseCase };
+          return mockListOrdersUseCase;
+        }
+        if (token === ListOrdersByDayUseCase) {
+          return mockListOrdersByDayUseCase;
+        }
+        if (token === ListOrdersByUserUseCase) {
+          return mockListOrdersByUserUseCase;
         }
         if (token === UpdateStockUseCase) {
-          return { execute: mockUpdateStockUseCase };
+          return mockUpdateStockUseCase;
         }
         if (token === ProfileUserUseCase) {
-          return { execute: mockProfileUserUseCase };
+          return mockProfileUserUseCase;
         }
         if (token === AuthenticateUserUseCase) {
-          return { execute: mockAuthenticateUserUseCase };
+          return mockAuthenticateUserUseCase;
         }
         if (token === CreateUserUseCase) {
-          return { execute: mockCreateUserUseCase };
+          return mockCreateUserUseCase;
         }
         if (token === PaymentUseCase) {
-          return { execute: mockPaymentUseCase };
+          return mockPaymentUseCase;
         }
         if (token === EditOrderUseCase) {
           return mockEditOrderUseCase;
