@@ -67,7 +67,7 @@ describe("PaymentController", () => {
     mockPaymentUseCase.execute.mockResolvedValue(mockOrder);
 
     const response = await request(app)
-      .post("/transactions/payment")
+      .post("/transactions")
       .send({
         order_id: 1,
         amount_paid: 25,
@@ -82,7 +82,7 @@ describe("PaymentController", () => {
 
   it("should return 400 for invalid data", async () => {
     const response = await request(app)
-      .post("/transactions/payment")
+      .post("/transactions")
       .send({ amount_paid: -10 })
       .set("Authorization", "Bearer token");
 
@@ -95,7 +95,7 @@ describe("PaymentController", () => {
     });
 
     const response = await request(app)
-      .post("/transactions/payment")
+      .post("/transactions")
       .send({
         order_id: 1,
         amount_paid: 25,

@@ -71,7 +71,7 @@
         }
       }
     },
-    "/users/create": {
+    "/users": {
       "post": {
         "summary": "Cria um novo usuário",
         "tags": ["Users"],
@@ -550,7 +550,7 @@
         }
       }
     },
-    "/stock/create": {
+    "/stock": {
       "post": {
         "summary": "Cria um novo item de estoque",
         "tags": ["Stock"],
@@ -597,7 +597,7 @@
         }
       }
     },
-    "/stock/update/{id}": {
+    "/stock/{id}": {
       "put": {
         "summary": "Atualiza um item de estoque",
         "tags": ["Stock"],
@@ -651,7 +651,7 @@
         }
       }
     },
-    "/transactions/payment": {
+    "/transactions": {
       "post": {
         "summary": "Processa um pagamento",
         "tags": ["Transactions"],

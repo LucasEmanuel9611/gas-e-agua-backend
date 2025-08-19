@@ -1,11 +1,11 @@
 import { CreateUserController } from "@modules/accounts/useCases/createUser/CreateUserController";
+import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { ProfileUserController } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserController";
 import { UpdateUserController } from "@modules/accounts/useCases/updateUser/updateUserController";
-import { Router } from "express";
-
-import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { UpdateUserNotificationTokensController } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensController";
 import { SendNewOrderNotificationAdminController } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminController";
+import { Router } from "express";
+
 import { ensureAuthenticated } from "../middlewares/ensureAuthenticated";
 
 export const usersRoutes = Router();
@@ -19,7 +19,7 @@ const updateUserNotificationTokensController =
   new UpdateUserNotificationTokensController();
 const listUserNotificationController = new ListUserNotificationController();
 
-usersRoutes.post("/create", createUserController.handle);
+usersRoutes.post("/", createUserController.handle);
 
 usersRoutes.get("/profile", ensureAuthenticated, profileUserController.handle);
 

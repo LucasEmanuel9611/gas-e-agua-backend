@@ -45,7 +45,7 @@ describe("UpdateStockController", () => {
     mockUpdateStockUseCase.execute.mockResolvedValue(updatedItem);
 
     const response = await request(app)
-      .put("/stock/update/1")
+      .put("/stock/1")
       .send({ quantity: 15, value: 10.0 })
       .set("Authorization", "Bearer token");
 
@@ -55,7 +55,7 @@ describe("UpdateStockController", () => {
 
   it("should return 400 for invalid data", async () => {
     const response = await request(app)
-      .put("/stock/update/1")
+      .put("/stock/1")
       .send({ quantity: -1 })
       .set("Authorization", "Bearer token");
 
@@ -68,7 +68,7 @@ describe("UpdateStockController", () => {
     });
 
     const response = await request(app)
-      .put("/stock/update/999")
+      .put("/stock/999")
       .send({ quantity: 10 })
       .set("Authorization", "Bearer token");
 
@@ -82,7 +82,7 @@ describe("UpdateStockController", () => {
     );
 
     const response = await request(app)
-      .put("/stock/update/1")
+      .put("/stock/1")
       .send({ quantity: 10 })
       .set("Authorization", "Bearer token");
 
