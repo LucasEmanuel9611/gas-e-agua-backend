@@ -82,7 +82,294 @@ describe("EditOrderController", () => {
     });
   });
 
-  it("should return 500 if EditOrderUseCase throws an error", async () => {
+  it("should edit order with water bottle addon", async () => {
+    const mockOrder = {
+      id: 123,
+      user_id: 456,
+      status: "PENDENTE",
+      payment_state: "PENDENTE",
+      gasAmount: 1,
+      waterAmount: 2,
+      total: 35,
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      address: {
+        street: "Test Street",
+        number: "123",
+        reference: "Test Reference",
+        local: "Test City",
+      },
+      user: {
+        username: "testUser",
+        telephone: "81999999999",
+      },
+    };
+
+    const mockAdminUser = {
+      id: 1,
+      notificationTokens: ["token1"],
+    };
+
+    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .put("/orders/123/edit")
+      .set("Authorization", "Bearer token")
+      .send({
+        gasAmount: 1,
+        waterAmount: 2,
+        waterWithBottle: true,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockOrder);
+    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+      order_id: "123",
+      gasAmount: 1,
+      waterAmount: 2,
+      waterWithBottle: true,
+    });
+    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
+    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
+      notificationTokens: mockAdminUser.notificationTokens,
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
+    });
+  });
+
+  it("should edit order with gas bottle addon", async () => {
+    const mockOrder = {
+      id: 123,
+      user_id: 456,
+      status: "PENDENTE",
+      payment_state: "PENDENTE",
+      gasAmount: 2,
+      waterAmount: 1,
+      total: 45,
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      address: {
+        street: "Test Street",
+        number: "123",
+        reference: "Test Reference",
+        local: "Test City",
+      },
+      user: {
+        username: "testUser",
+        telephone: "81999999999",
+      },
+    };
+
+    const mockAdminUser = {
+      id: 1,
+      notificationTokens: ["token1"],
+    };
+
+    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .put("/orders/123/edit")
+      .set("Authorization", "Bearer token")
+      .send({
+        gasAmount: 2,
+        waterAmount: 1,
+        gasWithBottle: true,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockOrder);
+    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+      order_id: "123",
+      gasAmount: 2,
+      waterAmount: 1,
+      gasWithBottle: true,
+    });
+    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
+    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
+      notificationTokens: mockAdminUser.notificationTokens,
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
+    });
+  });
+
+  it("should edit order with both bottle addons", async () => {
+    const mockOrder = {
+      id: 123,
+      user_id: 456,
+      status: "PENDENTE",
+      payment_state: "PENDENTE",
+      gasAmount: 1,
+      waterAmount: 1,
+      total: 50,
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      address: {
+        street: "Test Street",
+        number: "123",
+        reference: "Test Reference",
+        local: "Test City",
+      },
+      user: {
+        username: "testUser",
+        telephone: "81999999999",
+      },
+    };
+
+    const mockAdminUser = {
+      id: 1,
+      notificationTokens: ["token1"],
+    };
+
+    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .put("/orders/123/edit")
+      .set("Authorization", "Bearer token")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        waterWithBottle: true,
+        gasWithBottle: true,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockOrder);
+    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+      order_id: "123",
+      gasAmount: 1,
+      waterAmount: 1,
+      waterWithBottle: true,
+      gasWithBottle: true,
+    });
+    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
+    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
+      notificationTokens: mockAdminUser.notificationTokens,
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
+    });
+  });
+
+  it("should edit order removing addons", async () => {
+    const mockOrder = {
+      id: 123,
+      user_id: 456,
+      status: "PENDENTE",
+      payment_state: "PENDENTE",
+      gasAmount: 1,
+      waterAmount: 1,
+      total: 15,
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      address: {
+        street: "Test Street",
+        number: "123",
+        reference: "Test Reference",
+        local: "Test City",
+      },
+      user: {
+        username: "testUser",
+        telephone: "81999999999",
+      },
+    };
+
+    const mockAdminUser = {
+      id: 1,
+      notificationTokens: ["token1"],
+    };
+
+    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .put("/orders/123/edit")
+      .set("Authorization", "Bearer token")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        waterWithBottle: false,
+        gasWithBottle: false,
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockOrder);
+    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+      order_id: "123",
+      gasAmount: 1,
+      waterAmount: 1,
+      waterWithBottle: false,
+      gasWithBottle: false,
+    });
+    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
+    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
+      notificationTokens: mockAdminUser.notificationTokens,
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
+    });
+  });
+
+  it("should update order date successfully and return 200", async () => {
+    const mockOrder = {
+      id: 123,
+      user_id: 456,
+      status: "FINALIZADO",
+      payment_state: "PENDENTE",
+      gasAmount: 1,
+      waterAmount: 2,
+      total: 50,
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      address: {
+        street: "Test Street",
+        number: "123",
+        reference: "Test Reference",
+        local: "Test City",
+      },
+      user: {
+        username: "testUser",
+        telephone: "81999999999",
+      },
+    };
+
+    const mockAdminUser = {
+      id: 1,
+      notificationTokens: ["token1", "token2"],
+    };
+
+    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const newDate = new Date().toISOString();
+    const response = await request(app)
+      .put("/orders/123/edit")
+      .set("Authorization", "Bearer token")
+      .send({ date: newDate });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockOrder);
+    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+      order_id: "123",
+      gasAmount: undefined,
+      gasWithBottle: undefined,
+      waterAmount: undefined,
+      waterWithBottle: undefined,
+    });
+    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
+    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
+      notificationTokens: mockAdminUser.notificationTokens,
+      notificationTitle: "Pedido editado",
+      notificationBody: "Um pedido foi editado no app",
+    });
+  });
+
+  it("should return 500 if EitOrderUseCase throws an error", async () => {
     mockEditOrderUseCase.execute.mockRejectedValue(new Error("Database error"));
     mockListAdminUserUseCase.execute.mockResolvedValue({
       notificationTokens: [],
@@ -170,6 +457,24 @@ describe("EditOrderController", () => {
       .put("/orders/12/edit")
       .set("Authorization", "Bearer token")
       .send({ gasAmount: 1 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe("Pedido não encontrado");
+  });
+
+  it("should return 400 if order is null/undefined", async () => {
+    mockEditOrderUseCase.execute.mockRejectedValue(
+      new AppError("Pedido não encontrado", 400)
+    );
+    mockListAdminUserUseCase.execute.mockResolvedValue({
+      notificationTokens: [],
+    });
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .put("/orders/12/edit")
+      .set("Authorization", "Bearer token")
+      .send({ date: new Date().toISOString() });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe("Pedido não encontrado");

@@ -22,7 +22,7 @@ const updateUserNotificationTokensController =
   new UpdateUserNotificationTokensController();
 const listUserNotificationController = new ListUserNotificationController();
 
-usersRoutes.post("/create", createUserController.handle);
+usersRoutes.post("/", createUserController.handle);
 
 usersRoutes.get("/profile", ensureAuthenticated, profileUserController.handle);
 

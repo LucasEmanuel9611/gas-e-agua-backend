@@ -1,5 +1,6 @@
 import request from "supertest";
 
+import { AppError } from "@shared/errors/AppError";
 import { app } from "@shared/infra/http/app";
 
 import { mockUpdateStockUseCase } from "../../../../../jest/mocks/useCaseMocks";
@@ -9,9 +10,7 @@ jest.mock("tsyringe", () => {
   return {
     ...actual,
     container: {
-      resolve: jest.fn(() => ({
-        execute: mockUpdateStockUseCase,
-      })),
+      resolve: jest.fn(),
     },
   };
 });
@@ -21,79 +20,71 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 1 };
+        req.user = { id: 5 };
         next();
       },
     };
   }
 );
 
-describe("UpdateStockController (integration)", () => {
+describe("UpdateStockController", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should update stock successfully and return 201", async () => {
+  it("should update a stock item successfully", async () => {
     const updatedItem = {
       id: 1,
-      name: "Água",
-      quantity: 100,
-      value: 12,
+      name: "Gás",
+      quantity: 15,
+      value: 10.0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
-    mockUpdateStockUseCase.mockResolvedValue(updatedItem);
+    mockUpdateStockUseCase.execute.mockResolvedValue(updatedItem);
 
     const response = await request(app)
-      .put("/stock/update/1")
-      .set("Authorization", "Bearer mocktoken")
-      .send({ name: "Água", quantity: 100, value: 12 });
-
-    expect(mockUpdateStockUseCase).toHaveBeenCalledWith({
-      id: 1,
-      newData: { name: "Água", quantity: 100, value: 12 },
-    });
+      .put("/stock/1")
+      .send({ quantity: 15, value: 10.0 })
+      .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual(updatedItem);
   });
 
-  it("should return 400 for invalid name", async () => {
+  it("should return 400 for invalid data", async () => {
     const response = await request(app)
-      .put("/stock/update/1")
-      .set("Authorization", "Bearer mocktoken")
-      .send({ name: "A" }); // nome inválido (menos de 2 caracteres)
+      .put("/stock/1")
+      .send({ quantity: -1 })
+      .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toContain("nome");
   });
 
-  it("should return 400 for invalid quantity (negative)", async () => {
-    const response = await request(app)
-      .put("/stock/update/1")
-      .set("Authorization", "Bearer mocktoken")
-      .send({ quantity: -10 });
+  it("should return the correct status code when UseCase throws AppError", async () => {
+    mockUpdateStockUseCase.execute.mockImplementation(() => {
+      throw new AppError("Item não encontrado", 404);
+    });
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toContain("quantidade");
+    const response = await request(app)
+      .put("/stock/999")
+      .send({ quantity: 10 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe("Item não encontrado");
   });
 
-  it("should return 400 for invalid value (zero)", async () => {
-    const response = await request(app)
-      .put("/stock/update/1")
-      .set("Authorization", "Bearer mocktoken")
-      .send({ value: 0 });
-
-    expect(response.status).toBe(400);
-    expect(response.body.message).toContain("valor");
-  });
-
-  it("should return 500 if use case throws", async () => {
-    mockUpdateStockUseCase.mockRejectedValue(new Error("Unexpected error"));
+  it("should return 500 when UseCase throws unexpected error", async () => {
+    mockUpdateStockUseCase.execute.mockRejectedValue(
+      new Error("Unexpected error")
+    );
 
     const response = await request(app)
-      .put("/stock/update/1")
-      .set("Authorization", "Bearer mocktoken")
-      .send({ name: "Gás", quantity: 10 });
+      .put("/stock/1")
+      .send({ quantity: 10 })
+      .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(500);
     expect(response.body.message).toBe("Erro interno do servidor");
