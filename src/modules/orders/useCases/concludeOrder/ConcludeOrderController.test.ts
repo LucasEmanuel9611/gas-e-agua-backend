@@ -20,20 +20,12 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: "123" };
+        req.user = { id: "123", role: "ADMIN" };
         next();
       },
     };
   }
 );
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => {
-  return {
-    ensureAdmin: (req: any, res: any, next: any) => {
-      next();
-    },
-  };
-});
 
 describe("ConcludeOrderController", () => {
   beforeAll(() => {

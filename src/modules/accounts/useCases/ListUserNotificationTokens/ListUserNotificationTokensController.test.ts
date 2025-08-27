@@ -35,7 +35,7 @@ describe("ListUserNotificationController", () => {
     }));
 
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
     };
 
     await listUserNotificationController.handle(
@@ -54,7 +54,7 @@ describe("ListUserNotificationController", () => {
     }));
 
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
     };
 
     await listUserNotificationController.handle(
@@ -73,7 +73,7 @@ describe("ListUserNotificationController", () => {
     }));
 
     mockRequest = {
-      user: { id: "123" },
+      user: { id: "123", role: "USER" },
     };
 
     await listUserNotificationController.handle(
@@ -92,7 +92,7 @@ describe("ListUserNotificationController", () => {
     }));
 
     mockRequest = {
-      user: { id: "456" },
+      user: { id: "456", role: "USER" },
     };
 
     await listUserNotificationController.handle(
@@ -110,7 +110,7 @@ describe("ListUserNotificationController", () => {
     }));
 
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
     };
 
     await listUserNotificationController.handle(

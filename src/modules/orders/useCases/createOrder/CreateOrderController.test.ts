@@ -11,6 +11,8 @@ import {
 } from "../../../../../jest/mocks/useCaseMocks";
 import { CreateOrderController } from "./CreateOrderController";
 
+let mockUserRole = "USER";
+
 jest.mock("tsyringe", () => {
   const actual = jest.requireActual("tsyringe");
   return {
@@ -27,7 +29,7 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 5 };
+        req.user = { id: 5, role: mockUserRole };
         next();
       },
     };
@@ -47,7 +49,7 @@ describe("CreateOrderController", () => {
   it("should create an order and notify admins, returning 201", async () => {
     const adminUser = { id: 1, notificationTokens: ["token1", "token2"] };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.mockResolvedValue([
+    mockGetStockUseCase.execute.mockResolvedValue([
       { name: "Gás", quantity: 10 },
       { name: "Água", quantity: 20 },
     ]);
@@ -58,7 +60,7 @@ describe("CreateOrderController", () => {
       waterAmount: 3,
       total: 50,
     };
-    mockCreateOrderUseCase.mockResolvedValue(mockOrder);
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
     mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
@@ -66,7 +68,7 @@ describe("CreateOrderController", () => {
       .send({ gasAmount: 2, waterAmount: 3 })
       .set("Authorization", "Bearer token");
 
-    expect(mockCreateOrderUseCase).toHaveBeenCalledWith({
+    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
       user_id: 5,
       gasAmount: 2,
       waterAmount: 3,
@@ -81,7 +83,7 @@ describe("CreateOrderController", () => {
   it("should create an order with gasAmount = 0 and waterAmount > 0", async () => {
     const adminUser = { id: 1, notificationTokens: ["token1"] };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.mockResolvedValue([
+    mockGetStockUseCase.execute.mockResolvedValue([
       { name: "Gás", quantity: 10 },
       { name: "Água", quantity: 20 },
     ]);
@@ -92,7 +94,7 @@ describe("CreateOrderController", () => {
       waterAmount: 2,
       total: 20,
     };
-    mockCreateOrderUseCase.mockResolvedValue(mockOrder);
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
     mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
@@ -107,7 +109,7 @@ describe("CreateOrderController", () => {
   it("should create an order with gasAmount > 0 and waterAmount = 0", async () => {
     const adminUser = { id: 1, notificationTokens: ["token1"] };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.mockResolvedValue([
+    mockGetStockUseCase.execute.mockResolvedValue([
       { name: "Gás", quantity: 10 },
       { name: "Água", quantity: 20 },
     ]);
@@ -118,7 +120,7 @@ describe("CreateOrderController", () => {
       waterAmount: 0,
       total: 30,
     };
-    mockCreateOrderUseCase.mockResolvedValue(mockOrder);
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
     mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
@@ -145,7 +147,7 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockCreateOrderUseCase.mockRejectedValue(
+    mockCreateOrderUseCase.execute.mockRejectedValue(
       new AppError("Estoque insuficiente de gás")
     );
 
@@ -163,7 +165,7 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockCreateOrderUseCase.mockRejectedValue(
+    mockCreateOrderUseCase.execute.mockRejectedValue(
       new AppError("Estoque insuficiente de água")
     );
 
@@ -181,7 +183,7 @@ describe("CreateOrderController", () => {
       id: 1,
       notificationTokens: [],
     });
-    mockCreateOrderUseCase.mockRejectedValue(
+    mockCreateOrderUseCase.execute.mockRejectedValue(
       new AppError("Estoque insuficiente de gás e água")
     );
 
@@ -192,5 +194,114 @@ describe("CreateOrderController", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.message).toContain("gás e água");
+  });
+});
+
+// Novos testes de policy
+describe("CreateOrderController - Policy Tests", () => {
+  beforeAll(() => {
+    const controller = new CreateOrderController();
+    app.post("/orders/", controller.handle.bind(controller));
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should validate admin fields correctly", async () => {
+    mockUserRole = "ADMIN";
+
+    const adminUser = { id: 1, notificationTokens: ["token1"], role: "ADMIN" };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.execute.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 123,
+      gasAmount: 1,
+      waterAmount: 1,
+      status: "FINALIZADO",
+      payment_state: "PAGO",
+    };
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        user_id: 123,
+        status: "FINALIZADO",
+        payment_state: "PAGO",
+      })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 123,
+        status: "FINALIZADO",
+        payment_state: "PAGO",
+      })
+    );
+  });
+
+  it("should reject non-admin user trying to use admin fields", async () => {
+    mockUserRole = "USER";
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        user_id: 123,
+        status: "FINALIZADO",
+        total: 100,
+      })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toContain("not allowed to set fields");
+  });
+
+  it("should allow regular user to send only basic fields", async () => {
+    mockUserRole = "USER";
+
+    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.execute.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 5,
+      gasAmount: 1,
+      waterAmount: 1,
+    };
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        waterWithBottle: true,
+        gasWithBottle: false,
+      })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 5,
+        gasAmount: 1,
+        waterAmount: 1,
+        waterWithBottle: true,
+        gasWithBottle: false,
+      })
+    );
   });
 });

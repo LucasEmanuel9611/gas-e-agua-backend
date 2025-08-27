@@ -54,7 +54,7 @@ describe(CreateOrderUseCase.name, () => {
     mockOrderCreationService.createOrder.mockResolvedValue(mockOrder);
 
     const result = await createOrderUseCase.execute({
-      user_id: String(mockedUser.id),
+      user_id: Number(mockedUser.id),
       gasAmount,
       waterAmount,
     });
@@ -94,7 +94,7 @@ describe(CreateOrderUseCase.name, () => {
     mockOrderCreationService.createOrder.mockResolvedValue(mockOrder);
 
     const request = {
-      user_id: "123",
+      user_id: 1,
       gasAmount: 1,
       waterAmount: 1,
       waterWithBottle: true,
@@ -111,7 +111,7 @@ describe(CreateOrderUseCase.name, () => {
     await createOrderUseCase.execute(request);
 
     expect(mockOrderCreationService.createOrder).toHaveBeenCalledWith({
-      user_id: 123,
+      user_id: 1,
       gasAmount: 1,
       waterAmount: 1,
       waterWithBottle: true,
@@ -132,7 +132,7 @@ describe(CreateOrderUseCase.name, () => {
 
     await expect(
       createOrderUseCase.execute({
-        user_id: "1",
+        user_id: 1,
         gasAmount: 1,
         waterAmount: 1,
       })
