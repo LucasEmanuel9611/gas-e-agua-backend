@@ -9,3 +9,7 @@ export const mockAuthenticateUserUseCase = { execute: jest.fn() };
 export const mockCreateUserUseCase = { execute: jest.fn() };
 export const mockPaymentUseCase = { execute: jest.fn() };
 export const mockEditOrderUseCase = { execute: jest.fn() };
+export const mockListOrdersByDayUseCase = { execute: jest.fn() };
+export const mockListOrdersByUserUseCase = { execute: jest.fn() };
+export const mockUpdateUserNotificationTokensUseCase = jest.fn();
+export const mockListUserNotificationTokensUseCase = jest.fn();

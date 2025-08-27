@@ -11,14 +11,6 @@ const createStockItemController = new CreateStockItemController();
 const updateStockController = new UpdateStockController();
 const getStockController = new GetStockController();
 
-stockRoutes.post(
-  "/create",
-  ensureAuthenticated,
-  createStockItemController.handle
-);
-stockRoutes.put(
-  "/update/:id",
-  ensureAuthenticated,
-  updateStockController.handle
-);
+stockRoutes.post("/", ensureAuthenticated, createStockItemController.handle);
+stockRoutes.put("/:id", ensureAuthenticated, updateStockController.handle);
 stockRoutes.get("/", ensureAuthenticated, getStockController.handle);

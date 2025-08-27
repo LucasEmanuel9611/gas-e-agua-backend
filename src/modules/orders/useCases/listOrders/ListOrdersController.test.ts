@@ -1,47 +1,30 @@
 import { OrderProps } from "@modules/orders/types";
 import request from "supertest";
-import { container } from "tsyringe";
 
 import { app } from "@shared/infra/http/app";
 
-import { ListOrdersController } from "./listOrdersController";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-      registerSingleton: jest.fn(),
-    },
-  };
-});
+import { mockListOrdersUseCase } from "../../../../../jest/mocks/useCaseMocks";
 
 jest.mock(
   "../../../../shared/infra/http/middlewares/ensureAuthenticated",
   () => ({
-    ensureAuthenticated: (req: any, res: any, next: any) => next(),
+    ensureAuthenticated: (req: any, res: any, next: any) => {
+      req.user = { id: "1" };
+      next();
+    },
   })
 );
 
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
-  ensureAdmin: (req: any, res: any, next: any) => next(),
-}));
+jest.mock(
+  "../../../../shared/infra/http/middlewares/ensureAdminForAllScope",
+  () => ({
+    ensureAdminForAllScope: (req: any, res: any, next: any) => next(),
+  })
+);
 
 describe("ListOrdersController", () => {
-  const mockExecute = jest.fn();
-  const mockListOrdersUseCase = { execute: mockExecute };
-
-  beforeAll(() => {
-    const controller = new ListOrdersController();
-    app.get("/list/all/:pageNumber/:pageSize", (req, res) =>
-      controller.handle(req, res)
-    );
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
-    (container.resolve as jest.Mock).mockReturnValue(mockListOrdersUseCase);
   });
 
   const mockOrders: OrderProps[] = [
@@ -97,14 +80,15 @@ describe("ListOrdersController", () => {
     },
   ];
 
-  it("should return paginated orders", async () => {
-    mockExecute.mockResolvedValue(mockOrders);
+  it("should return paginated orders (scope=all)", async () => {
+    mockListOrdersUseCase.execute.mockResolvedValue(mockOrders);
 
     const response = await request(app)
-      .get("/list/all/0/1")
+      .get("/orders")
+      .query({ scope: "all", page: 0, size: 1 })
       .set("Authorization", `Bearer token`);
 
-    expect(mockExecute).toHaveBeenCalled();
+    expect(mockListOrdersUseCase.execute).toHaveBeenCalled();
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       page_number: 0,
@@ -113,22 +97,24 @@ describe("ListOrdersController", () => {
     });
   });
 
-  it("should return second page", async () => {
-    mockExecute.mockResolvedValue(mockOrders);
+  it("should return second page (scope=all)", async () => {
+    mockListOrdersUseCase.execute.mockResolvedValue(mockOrders);
 
     const response = await request(app)
-      .get("/list/all/1/1")
+      .get("/orders")
+      .query({ scope: "all", page: 1, size: 1 })
       .set("Authorization", `Bearer token`);
 
     expect(response.status).toBe(200);
     expect(response.body.items).toEqual([mockOrders[1]]);
   });
 
-  it("should return empty array for out-of-bounds page", async () => {
-    mockExecute.mockResolvedValue(mockOrders);
+  it("should return empty array for out-of-bounds page (scope=all)", async () => {
+    mockListOrdersUseCase.execute.mockResolvedValue(mockOrders);
 
     const response = await request(app)
-      .get("/list/all/5/1")
+      .get("/orders")
+      .query({ scope: "all", page: 5, size: 1 })
       .set("Authorization", `Bearer token`);
 
     expect(response.status).toBe(200);
