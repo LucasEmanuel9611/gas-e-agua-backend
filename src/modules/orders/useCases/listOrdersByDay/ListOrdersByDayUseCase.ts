@@ -1,5 +1,5 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { Order } from "@modules/orders/types";
+import { OrderProps } from "@modules/orders/types";
 import dayjs from "dayjs";
 import { inject, injectable } from "tsyringe";
 
@@ -10,7 +10,7 @@ export class ListOrdersByDayUseCase {
     private ordersRepository: IOrdersRepository
   ) {}
 
-  async execute(date: string): Promise<Order[]> {
+  async execute(date: string): Promise<OrderProps[]> {
     const ordersByDay = await this.ordersRepository.findByDay(
       dayjs(date).toDate()
     );

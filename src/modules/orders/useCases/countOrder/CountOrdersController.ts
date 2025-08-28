@@ -5,8 +5,8 @@ import { handleControllerError } from "@shared/utils/controller";
 
 import { ListOrdersUseCase } from "../listOrders/ListOrdersUseCase";
 
-export class CountOrderController {
-  async handle(_, response: Response): Promise<Response> {
+export class CountOrdersController {
+  handle = async (_, response: Response): Promise<Response> => {
     try {
       const listOrdersUseCase = container.resolve(ListOrdersUseCase);
 
@@ -18,5 +18,5 @@ export class CountOrderController {
     } catch (error) {
       return handleControllerError(error, response);
     }
-  }
+  };
 }

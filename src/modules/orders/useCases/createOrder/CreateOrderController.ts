@@ -31,13 +31,8 @@ export class CreateOrderController {
       });
 
       if (order) {
-        try {
-          await this.notifyNewOrder(adminUser);
-          notificationSent = true;
-        } catch (err) {
-          console.error("Falha ao enviar notificação de novo pedido:", err);
-          notificationSent = false;
-        }
+        const { sent } = await this.notifyNewOrder(adminUser);
+        notificationSent = sent;
       }
 
       const notificationMessage = notificationSent
@@ -53,14 +48,22 @@ export class CreateOrderController {
     }
   };
 
-  private async notifyNewOrder(adminUser: IUserResponseDTO) {
+  private async notifyNewOrder(
+    adminUser: IUserResponseDTO
+  ): Promise<{ sent: boolean }> {
     const SendNotification = container.resolve(SendNotificationUseCase);
     const pushTokens = adminUser.notificationTokens;
 
-    await SendNotification.execute({
-      notificationTokens: pushTokens,
-      notificationTitle: "Novo pedido",
-      notificationBody: "Novo pedido solicitado no app",
-    });
+    try {
+      await SendNotification.execute({
+        notificationTokens: pushTokens,
+        notificationTitle: "Novo pedido",
+        notificationBody: "Novo pedido solicitado no app",
+      });
+      return { sent: true };
+    } catch (err) {
+      console.error("Falha ao enviar notificação de novo pedido:", err);
+      return { sent: false };
+    }
   }
 }
