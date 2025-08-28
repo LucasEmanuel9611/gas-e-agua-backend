@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const addressSchema = z.object({
+export const addressSchema = z.object({
   street: z
     .string({
       invalid_type_error: "A rua deve ser uma string",

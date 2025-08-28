@@ -1,5 +1,6 @@
 /* eslint-disable consistent-return */
 /* eslint-disable array-callback-return */
+import { IUserAddressRepository } from "@modules/accounts/repositories/interfaces/IUserAddressRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
@@ -14,6 +15,12 @@ interface IRequest {
   waterAmount: number;
   waterWithBottle?: boolean;
   gasWithBottle?: boolean;
+  customAddress?: {
+    street?: string;
+    reference?: string;
+    local?: string;
+    number?: string;
+  };
 }
 
 interface IUpdateQuantityStockItemsProps {
@@ -29,7 +36,9 @@ export class CreateOrderUseCase {
     @inject("UsersRepository")
     private usersRepository: IUsersRepository,
     @inject("StockRepository")
-    private stockRepository: IStockRepository
+    private stockRepository: IStockRepository,
+    @inject("UserAddressRepository")
+    private userAddressRepository: IUserAddressRepository
   ) {}
 
   private async updateQuantityStockItems({
@@ -148,11 +157,21 @@ export class CreateOrderUseCase {
     waterAmount,
     waterWithBottle = false,
     gasWithBottle = false,
+    customAddress,
   }: IRequest): Promise<OrderProps> {
-    const { address } = await this.usersRepository.findById(Number(user_id));
+    const { addresses } = await this.usersRepository.findById(Number(user_id));
 
-    if (!address) {
-      throw new AppError("Usuário sem endereço cadastrado");
+    const userAddress = addresses?.find((addr) => addr.isDefault);
+    let targetAddress = userAddress;
+
+    if (customAddress) {
+      targetAddress = await this.userAddressRepository.create({
+        street: customAddress.street || "",
+        reference: customAddress.reference,
+        local: customAddress.local,
+        number: customAddress.number || "",
+        user_id: Number(user_id),
+      });
     }
 
     const baseTotal = await this.calculateBaseTotal(gasAmount, waterAmount);
@@ -174,12 +193,13 @@ export class CreateOrderUseCase {
       waterWithBottle,
       gasWithBottle
     );
+
     const total = await this.calculateTotalWithAddons(baseTotal, addonIds);
 
     const order = await this.ordersRepository.create({
       status: "PENDENTE",
       user_id: Number(user_id),
-      address_id: address.id,
+      address_id: targetAddress.id,
       gasAmount,
       waterAmount,
       addonIds,

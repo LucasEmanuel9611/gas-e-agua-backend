@@ -18,7 +18,7 @@ interface IResponse {
     email: string;
     role: UserRole;
     id: number;
-    address: AddressDates;
+    addresses: AddressDates[];
   };
   token: string;
 }
@@ -57,7 +57,7 @@ export class AuthenticateUserUseCase {
         email: user.email,
         role: user.role,
         id: user.id,
-        address: user.address,
+        addresses: user.addresses,
       },
     };
 

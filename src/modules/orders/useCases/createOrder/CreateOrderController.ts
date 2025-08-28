@@ -13,8 +13,13 @@ import { createOrderSchema } from "./schema";
 export class CreateOrderController {
   handle = async (request: Request, response: Response) => {
     try {
-      const { gasAmount, waterAmount, waterWithBottle, gasWithBottle } =
-        validateSchema(createOrderSchema, request.body);
+      const {
+        gasAmount,
+        waterAmount,
+        waterWithBottle,
+        gasWithBottle,
+        customAddress,
+      } = validateSchema(createOrderSchema, request.body);
       const { id } = request.user;
 
       const createOrderUseCase = container.resolve(CreateOrderUseCase);
@@ -27,6 +32,7 @@ export class CreateOrderController {
         waterAmount,
         waterWithBottle,
         gasWithBottle,
+        customAddress,
       });
 
       if (order) {
