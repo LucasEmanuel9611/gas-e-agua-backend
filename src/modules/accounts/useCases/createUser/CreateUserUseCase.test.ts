@@ -48,7 +48,12 @@ describe("CreateUserUseCase", () => {
   it("should not create user if email already exists", async () => {
     usersRepository.findByEmail.mockResolvedValue({
       id: 1,
-      ...mockUser,
+      username: mockUser.username,
+      email: mockUser.email,
+      password: mockUser.password,
+      telephone: mockUser.telephone,
+      role: "USER",
+      created_at: new Date(),
     } as UserDates);
 
     await expect(createUserUseCase.execute(mockUser)).rejects.toEqual(
