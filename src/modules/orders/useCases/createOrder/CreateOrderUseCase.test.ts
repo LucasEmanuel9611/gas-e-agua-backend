@@ -1,8 +1,8 @@
+import { UserAddressRepository } from "@modules/accounts/repositories/implementations/UserAddressRepository";
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
 
-import { AppError } from "@shared/errors/AppError";
 import { prisma } from "@shared/infra/database/prisma";
 
 import { CreateOrderUseCase } from "./CreateOrderUseCase";
@@ -11,6 +11,7 @@ let createOrderUseCase: CreateOrderUseCase;
 let usersRepository: UsersRepository;
 let ordersRepository: OrdersRepository;
 let stockRepository: StockRepository;
+let userAddressRepository: UserAddressRepository;
 
 let mockedUser;
 let waterBottleAddonId: number;
@@ -26,11 +27,13 @@ describe(CreateOrderUseCase.name, () => {
     ordersRepository = new OrdersRepository();
     usersRepository = new UsersRepository();
     stockRepository = new StockRepository();
+    userAddressRepository = new UserAddressRepository();
 
     createOrderUseCase = new CreateOrderUseCase(
       ordersRepository,
       usersRepository,
-      stockRepository
+      stockRepository,
+      userAddressRepository
     );
 
     mockedUser = {
@@ -199,22 +202,6 @@ describe(CreateOrderUseCase.name, () => {
 
     const orderAddons = await ordersRepository.getOrderAddons(order.id);
     expect(orderAddons).toHaveLength(0);
-  });
-
-  it("should not create an order if the user has no address", async () => {
-    const userWithoutAddress = await usersRepository.create({
-      ...mockedUser,
-      email: "noaddress@example.com",
-      address: undefined,
-    });
-
-    await expect(
-      createOrderUseCase.execute({
-        user_id: String(userWithoutAddress.id),
-        gasAmount: 1,
-        waterAmount: 1,
-      })
-    ).rejects.toBeInstanceOf(AppError);
   });
 
   it("should throw if water stock is insufficient", async () => {

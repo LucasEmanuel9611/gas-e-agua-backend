@@ -31,7 +31,7 @@ describe("Update Overdue Orders", () => {
       },
     });
 
-    const address_id = user.address.id;
+    const address_id = user.addresses.find((addr) => addr.isDefault)?.id;
 
     // Pedido 1: deve virar VENCIDO
     await ordersRepository.create({
@@ -95,7 +95,7 @@ describe("Update Overdue Orders", () => {
         street: "Rua B",
       },
     });
-    const address_id = user.address.id;
+    const address_id = user.addresses.find((addr) => addr.isDefault)?.id;
 
     // Pedido recente, não deve ser alterado
     await ordersRepository.create({
@@ -132,7 +132,7 @@ describe("Update Overdue Orders", () => {
         street: "Rua C",
       },
     });
-    const address_id = user.address.id;
+    const address_id = user.addresses.find((addr) => addr.isDefault)?.id;
 
     await ordersRepository.create({
       user_id: user.id,
@@ -168,7 +168,7 @@ describe("Update Overdue Orders", () => {
         street: "Rua E",
       },
     });
-    const address_id = user.address.id;
+    const address_id = user.addresses.find((addr) => addr.isDefault)?.id;
 
     await ordersRepository.create({
       user_id: user.id,
@@ -204,7 +204,7 @@ describe("Update Overdue Orders", () => {
         street: "Rua F",
       },
     });
-    const address_id = user.address.id;
+    const address_id = user.addresses.find((addr) => addr.isDefault)?.id;
 
     // Dois pedidos vencidos
     await ordersRepository.create({
