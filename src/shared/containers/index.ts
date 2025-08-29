@@ -1,5 +1,7 @@
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
+import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
@@ -29,6 +31,11 @@ container.registerSingleton<IOrdersRepository>(
 container.registerSingleton<IStockRepository>(
   "StockRepository",
   StockRepository
+);
+
+container.registerSingleton<IAddonsRepository>(
+  "AddonsRepository",
+  AddonsRepository
 );
 
 container.registerSingleton<ITransactionsRepository>(
