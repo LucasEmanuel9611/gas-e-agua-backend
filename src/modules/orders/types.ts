@@ -1,4 +1,4 @@
-import { AddressDates } from "@modules/accounts/types";
+import { AddressDates, NotificationTokenProps } from "@modules/accounts/types";
 import { ITransaction } from "@modules/transactions/types/types";
 
 export type OrderStatusProps = "INICIADO" | "PENDENTE" | "FINALIZADO";
@@ -38,6 +38,7 @@ export class Order {
   user?: {
     username: string;
     telephone: string;
+    notificationTokens?: NotificationTokenProps[];
   };
   transactions?: ITransaction[];
 }

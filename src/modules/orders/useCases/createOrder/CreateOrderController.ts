@@ -34,9 +34,19 @@ export class CreateOrderController {
         user_id: Number(targetUserId),
       });
 
-      await this.notifyAdminNewOrder(isAdmin, order);
+      const { sent: notificationSent } = await this.notifyAdminNewOrder(
+        isAdmin,
+        order
+      );
 
-      return response.status(201).json(order);
+      const notificationMessage = notificationSent
+        ? "Pedido criado com sucesso!"
+        : "Pedido criado com sucesso, notificação não enviada";
+
+      return response.status(201).json({
+        ...order,
+        message: notificationMessage,
+      });
     } catch (err) {
       return handleControllerError(err, response);
     }
@@ -57,9 +67,12 @@ export class CreateOrderController {
           notificationTitle: "Novo pedido",
           notificationBody: "Novo pedido solicitado no app",
         });
+        return { sent: true };
       } catch (err) {
-        console.error("Falha ao enviar notificação de novo pedido:", err);
+        console.error("Notificação não enviada:", err);
+        return { sent: false };
       }
     }
+    return { sent: false };
   }
 }

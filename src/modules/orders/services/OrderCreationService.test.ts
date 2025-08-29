@@ -95,6 +95,8 @@ describe(OrderCreationService.name, () => {
       removeSpecificAddonsFromOrder: jest.fn(),
       getStockData: jest.fn(),
       findByIdWithPayments: jest.fn(),
+      findOrdersByDateRange: jest.fn(),
+      findOrdersByPaymentState: jest.fn(),
     };
 
     mockStockRepository = {
