@@ -20,6 +20,7 @@ export interface ICreateOrderDTO {
   waterAmount: number;
   addonIds?: number[];
   created_at?: Date;
+  interest_allowed?: boolean;
 }
 
 export class Order {

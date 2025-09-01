@@ -37,7 +37,7 @@ describe("UpdateUserNotificationTokensController", () => {
     }));
 
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
       body: {
         token: "ExponentPushToken[test123]",
       },
@@ -53,7 +53,7 @@ describe("UpdateUserNotificationTokensController", () => {
 
   it("should return 400 if token is missing", async () => {
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
       body: {},
     };
 
@@ -72,7 +72,7 @@ describe("UpdateUserNotificationTokensController", () => {
 
   it("should return 400 if token format is invalid", async () => {
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
       body: {
         token: "invalid-token-format",
       },
@@ -103,7 +103,7 @@ describe("UpdateUserNotificationTokensController", () => {
     }));
 
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
       body: {
         token: "ExponentPushToken[test123]",
       },
@@ -123,7 +123,7 @@ describe("UpdateUserNotificationTokensController", () => {
     }));
 
     mockRequest = {
-      user: { id: "1" },
+      user: { id: "1", role: "USER" },
       body: {
         token: "ExponentPushToken[test123]",
       },

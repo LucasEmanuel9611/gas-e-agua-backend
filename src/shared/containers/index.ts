@@ -1,7 +1,11 @@
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
+import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
+import { IOrderCreationService } from "@modules/orders/services/IOrderCreationService";
+import { OrderCreationService } from "@modules/orders/services/OrderCreationService";
 import { SendNotificationUseCase } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
 import { SendOrderPaymentNotificationsUseCase } from "@modules/orders/useCases/sendOrderPaymentNotifications/SendOrderPaymentNotificationsUseCase";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
@@ -33,9 +37,19 @@ container.registerSingleton<IStockRepository>(
   StockRepository
 );
 
+container.registerSingleton<IAddonsRepository>(
+  "AddonsRepository",
+  AddonsRepository
+);
+
 container.registerSingleton<ITransactionsRepository>(
   "TransactionsRepository",
   TransactionsRepository
+);
+
+container.registerSingleton<IOrderCreationService>(
+  "OrderCreationService",
+  OrderCreationService
 );
 
 container.registerSingleton<SendNotificationUseCase>(SendNotificationUseCase);

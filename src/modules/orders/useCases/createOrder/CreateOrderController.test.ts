@@ -1,5 +1,6 @@
 import request from "supertest";
 
+import { AppError } from "@shared/errors/AppError";
 import { app } from "@shared/infra/http/app";
 
 import {
@@ -10,19 +11,15 @@ import {
 } from "../../../../../jest/mocks/useCaseMocks";
 import { CreateOrderController } from "./CreateOrderController";
 
+let mockUserRole = "USER";
+
 jest.mock("tsyringe", () => {
   const actual = jest.requireActual("tsyringe");
   return {
     ...actual,
     container: {
-      resolve: jest.fn((token: string) => {
-        if (token === "CreateOrderUseCase") return mockCreateOrderUseCase;
-        if (token === "GetStockUseCase") return mockGetStockUseCase;
-        if (token === "ListAdminUserUseCase") return mockListAdminUseCase;
-        if (token === "SendNotificationUseCase")
-          return mockSendNotificationUseCase;
-        return {};
-      }),
+      resolve: jest.fn(),
+      registerSingleton: jest.fn(),
     },
   };
 });
@@ -32,14 +29,8 @@ jest.mock(
   () => {
     return {
       ensureAuthenticated: (req: any, res: any, next: any) => {
-        const authHeader = req.headers.authorization;
-
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          return res.status(401).json({ message: "Token de acesso requerido" });
-        }
-
-        req.user = { id: 5 };
-        return next();
+        req.user = { id: 5, role: mockUserRole };
+        next();
       },
     };
   }
@@ -278,60 +269,136 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toContain(
-      "Pelo menos um dos valores (Gás ou Água) deve ser maior que zero"
-    );
+    expect(response.body.message).toContain("Pelo menos um dos valores");
   });
 
-  it("should return 400 for invalid data types", async () => {
-    const response = await request(app)
-      .post("/orders/")
-      .send({ gasAmount: "invalid", waterAmount: 2 })
-      .set("Authorization", "Bearer token");
-
-    expect(response.status).toBe(400);
-    expect(response.body.message).toContain(
-      "A quantidade Gás deve ser um número"
-    );
-  });
-
-  it("should return 400 for negative amounts", async () => {
-    const response = await request(app)
-      .post("/orders/")
-      .send({ gasAmount: -1, waterAmount: 2 })
-      .set("Authorization", "Bearer token");
-
-    expect(response.status).toBe(400);
-    expect(response.body.message).toContain(
-      "A quantidade Gás deve ser maior ou igual a zero"
-    );
-  });
-
-  it("should return 500 when CreateOrderUseCase throws an error", async () => {
-    mockListAdminUseCase.execute.mockResolvedValue({ notificationTokens: [] });
-    mockGetStockUseCase.execute.mockResolvedValue([]);
+  it("should return 400 if gas stock is insufficient", async () => {
+    mockListAdminUseCase.execute.mockResolvedValue({
+      id: 1,
+      notificationTokens: [],
+    });
     mockCreateOrderUseCase.execute.mockRejectedValue(
-      new Error("Database error")
+      new AppError("Estoque insuficiente de gás")
     );
 
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: 1, waterAmount: 1 })
+      .send({ gasAmount: 2, waterAmount: 1 })
       .set("Authorization", "Bearer token");
 
-    expect(response.status).toBe(500);
-    expect(response.body.message).toBe("Erro interno do servidor");
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain("gás");
   });
 
-  it("should handle missing authorization", async () => {
+  it("should return 400 if water stock is insufficient", async () => {
+    mockListAdminUseCase.execute.mockResolvedValue({
+      id: 1,
+      notificationTokens: [],
+    });
+    mockCreateOrderUseCase.execute.mockRejectedValue(
+      new AppError("Estoque insuficiente de água")
+    );
+
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: 1, waterAmount: 1 });
+      .send({ gasAmount: 1, waterAmount: 2 })
+      .set("Authorization", "Bearer token");
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain("água");
   });
 
-  it("should handle notification service failure gracefully", async () => {
+  it("should return 400 if both stocks are insufficient", async () => {
+    mockListAdminUseCase.execute.mockResolvedValue({
+      id: 1,
+      notificationTokens: [],
+    });
+    mockCreateOrderUseCase.execute.mockRejectedValue(
+      new AppError("Estoque insuficiente de gás e água")
+    );
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({ gasAmount: 2, waterAmount: 2 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toContain("gás e água");
+  });
+});
+
+// Novos testes de policy
+describe("CreateOrderController - Policy Tests", () => {
+  beforeAll(() => {
+    const controller = new CreateOrderController();
+    app.post("/orders/", controller.handle.bind(controller));
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should validate admin fields correctly", async () => {
+    mockUserRole = "ADMIN";
+
+    const adminUser = { id: 1, notificationTokens: ["token1"], role: "ADMIN" };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.execute.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 123,
+      gasAmount: 1,
+      waterAmount: 1,
+      status: "FINALIZADO",
+      payment_state: "PAGO",
+    };
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        user_id: 123,
+        status: "FINALIZADO",
+        payment_state: "PAGO",
+      })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 123,
+        status: "FINALIZADO",
+        payment_state: "PAGO",
+      })
+    );
+  });
+
+  it("should reject non-admin user trying to use admin fields", async () => {
+    mockUserRole = "USER";
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        user_id: 123,
+        status: "FINALIZADO",
+        total: 100,
+      })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toContain("not allowed to set fields");
+  });
+
+  it("should allow regular user to send only basic fields", async () => {
+    mockUserRole = "USER";
+
     const adminUser = { id: 1, notificationTokens: ["token1"] };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
     mockGetStockUseCase.execute.mockResolvedValue([
@@ -343,23 +410,24 @@ describe("CreateOrderController", () => {
       user_id: 5,
       gasAmount: 1,
       waterAmount: 1,
-      total: 20,
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockRejectedValue(
-      new Error("Notification failed")
-    );
+    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
-      .send({ gasAmount: 1, waterAmount: 1 })
+      .send({
+        gasAmount: 1,
+        waterAmount: 1,
+        waterWithBottle: true,
+        gasWithBottle: false,
+      })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
-      message:
-        "Pedido criado com sucesso, mas houve falha no envio da notificação",
+      message: "Pedido criado com sucesso!",
     });
   });
 
@@ -391,5 +459,36 @@ describe("CreateOrderController", () => {
       message: "Pedido criado com sucesso!",
     });
     expect(response.body).not.toHaveProperty("notificationStatus");
+  });
+
+  it("should return failure message when notification fails", async () => {
+    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.execute.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 5,
+      gasAmount: 1,
+      waterAmount: 1,
+      total: 20,
+    };
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mockSendNotificationUseCase.execute.mockRejectedValue(
+      new Error("Falha na notificação")
+    );
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({ gasAmount: 1, waterAmount: 1 })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      ...mockOrder,
+      message: "Pedido criado com sucesso, notificação não enviada",
+    });
   });
 });

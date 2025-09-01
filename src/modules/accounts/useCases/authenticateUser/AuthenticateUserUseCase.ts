@@ -45,7 +45,7 @@ export class AuthenticateUserUseCase {
       throw new AppError("Email ou senha incorretos");
     }
 
-    const token = sign({}, secret_token, {
+    const token = sign({ role: user.role }, secret_token, {
       subject: String(user.id),
       expiresIn: expires_in_token,
     });

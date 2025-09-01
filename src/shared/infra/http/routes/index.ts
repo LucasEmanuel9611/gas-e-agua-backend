@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { addonsRoutes } from "./addons.routes";
 import { authenticateRoutes } from "./authenticate.routes";
 import { orderRoutes } from "./orders.routes";
 import { stockRoutes } from "./stock.routes";
@@ -12,6 +13,7 @@ router.use(authenticateRoutes);
 router.use("/users", usersRoutes);
 router.use("/orders", orderRoutes);
 router.use("/stock", stockRoutes);
+router.use("/addons", addonsRoutes);
 router.use("/transactions", transactionsRoutes);
 
 export { router };

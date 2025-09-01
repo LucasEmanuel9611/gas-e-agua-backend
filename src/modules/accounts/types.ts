@@ -51,7 +51,7 @@ export interface IUserResponseDTO {
 export type OrderStatusTextProps = "APROVADO" | "REPROVADO" | "AGUARDANDO";
 
 export interface ICreateUserDTO {
-  id?: string;
+  id?: number;
   username: string;
   email: string;
   password: string;

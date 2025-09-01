@@ -20,7 +20,10 @@ jest.mock(
   "../../../../shared/infra/http/middlewares/ensureAuthenticated",
   () => {
     return {
-      ensureAuthenticated: (req: any, res: any, next: any) => next(),
+      ensureAuthenticated: (req: any, res: any, next: any) => {
+        req.user = { id: 5, role: "ADMIN" };
+        next();
+      },
     };
   }
 );
@@ -31,7 +34,7 @@ describe("DeleteOrderController", () => {
 
   beforeAll(() => {
     const controller = new DeleteOrderController();
-    app.post("/delete-order", (req, res) => controller.handle(req, res));
+    app.delete("/orders/:id", (req, res) => controller.handle(req, res));
   });
 
   beforeEach(() => {
