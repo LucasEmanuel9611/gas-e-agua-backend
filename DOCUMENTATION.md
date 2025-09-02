@@ -108,6 +108,61 @@ Middlewares são funções que executam antes das requisições chegarem aos con
 
 - `ensureAuthenticated.ts`: Verifica se o usuário está autenticado
 - `ensureAdmin.ts`: Verifica se o usuário é administrador
+- `rateLimiter.ts`: Limita o número de requisições por IP
+
+#### Rate Limiter
+
+O rate limiter protege a aplicação contra ataques de força bruta e abuso de API:
+
+**Configuração:**
+- **Limite**: 15 requisições por IP
+- **Período**: 5 segundos
+- **Armazenamento**: Redis
+- **Aplicação**: Global (todas as rotas)
+
+**Como funciona:**
+- Cada IP pode fazer até 15 requisições em 5 segundos
+- Após exceder o limite, retorna erro 429 (Too Many Requests)
+- O limite é resetado automaticamente a cada 5 segundos
+- Mensagem de erro em português: "Muitas requisições. Tente novamente em alguns segundos."
+
+**Variáveis de ambiente necessárias:**
+```env
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+**Instalação e Configuração do Redis:**
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install redis-server
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+```
+
+**macOS:**
+```bash
+brew install redis
+brew services start redis
+```
+
+**Windows:**
+- Baixe o Redis do site oficial: https://redis.io/download
+- Ou use WSL2 com Ubuntu
+
+**Verificar se está funcionando:**
+```bash
+redis-cli ping
+# Deve retornar: PONG
+```
+
+**Dependências:**
+- `rate-limiter-flexible`: Biblioteca para implementar rate limiting
+- `redis`: Cliente Redis para Node.js
+
+O rate limiter está configurado no `app.ts` e é aplicado globalmente antes de todas as rotas.
 
 ## Boas Práticas
 

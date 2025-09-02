@@ -12,6 +12,7 @@ import { AppError } from "@shared/errors/AppError";
 import "../../containers/index";
 
 import swaggerFile from "../../../../swagger.json";
+import rateLimiter from "./middlewares/rateLimiter";
 import { router } from "./routes";
 
 const app = express();
@@ -21,7 +22,7 @@ app.use(morgan("combined"));
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const port = 3333;
 
-// app.use(rateLimiter);fs/promises
+app.use(rateLimiter);
 
 app.use(express.json());
 app.use(cors());
