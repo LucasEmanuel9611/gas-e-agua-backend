@@ -56,7 +56,7 @@ describe("AuthenticateUserUseCase", () => {
       "test@example.com"
     );
     expect(compare).toHaveBeenCalledWith("123456", "hashed_password");
-    expect(sign).toHaveBeenCalledWith({}, expect.any(String), {
+    expect(sign).toHaveBeenCalledWith({ role: "USER" }, expect.any(String), {
       subject: "123",
       expiresIn: expect.any(String),
     });

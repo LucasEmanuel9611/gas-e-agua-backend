@@ -1,5 +1,6 @@
 export const mockCreateOrderUseCase = { execute: jest.fn() };
 export const mockSendNotificationUseCase = { execute: jest.fn() };
+export const mockSendOrderPaymentNotificationsUseCase = { execute: jest.fn() };
 export const mockListAdminUseCase = { execute: jest.fn() };
 export const mockGetStockUseCase = { execute: jest.fn() };
 export const mockListOrdersUseCase = { execute: jest.fn() };

@@ -6,4 +6,10 @@ export interface IUsersRepository {
   findById(id: number): Promise<UserDates>;
   findAdmin(): Promise<UserDates>;
   update(data: IUpdateUserDTO): Promise<UserDates>;
+  findAll(data: {
+    page: number;
+    limit: number;
+    offset: number;
+    search?: string;
+  }): Promise<{ users: UserDates[]; total: number }>;
 }

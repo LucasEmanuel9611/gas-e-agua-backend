@@ -21,4 +21,10 @@ export interface IOrdersRepository {
     addonIds: number[]
   ): Promise<void>;
   getStockData(): Promise<any[]>;
+  findOrdersByDateRange(params: {
+    startDate: Date;
+    endDate: Date;
+    paymentState: string;
+  }): Promise<OrderProps[]>;
+  findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]>;
 }
