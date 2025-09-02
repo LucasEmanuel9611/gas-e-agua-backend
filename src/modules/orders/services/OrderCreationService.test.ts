@@ -117,6 +117,12 @@ describe(OrderCreationService.name, () => {
       findByOrderId: jest.fn(),
     };
 
+    mockUserAddressRepository = {
+      findById: jest.fn(),
+      update: jest.fn(),
+      create: jest.fn(),
+    };
+
     orderCreationService = new OrderCreationService(
       mockOrdersRepository,
       mockUsersRepository,
@@ -484,6 +490,126 @@ describe(OrderCreationService.name, () => {
   });
 
   describe("edge cases", () => {
+    it("should create order with custom address successfully", async () => {
+      const customAddress = {
+        street: "Rua Nova",
+        reference: "Próximo ao mercado",
+        local: "Bairro Novo",
+        number: "123",
+      };
+
+      const mockCustomAddress = {
+        id: 999,
+        ...customAddress,
+        user_id: mockedUser.id,
+        isDefault: false,
+      };
+
+      const mockOrder = {
+        id: 1,
+        user_id: mockedUser.id,
+        gasAmount: 1,
+        waterAmount: 1,
+        total: 15,
+        status: "PENDENTE" as const,
+        payment_state: "PENDENTE" as const,
+        created_at: new Date(),
+        updated_at: new Date(),
+        address: mockCustomAddress,
+        interest_allowed: true,
+      };
+
+      mockUsersRepository.findById.mockResolvedValue(mockedUser);
+      mockStockRepository.findAll.mockResolvedValue(mockedStockItems);
+      mockOrdersRepository.create.mockResolvedValue(mockOrder);
+      mockOrdersRepository.getAddonByName.mockResolvedValue(null);
+      mockOrdersRepository.getAddonsByIds.mockResolvedValue([]);
+      mockUserAddressRepository.create.mockResolvedValue(mockCustomAddress);
+
+      const orderData: IOrderCreationData = {
+        user_id: mockedUser.id,
+        gasAmount: 1,
+        waterAmount: 1,
+        customAddress,
+      };
+
+      const result = await orderCreationService.createOrder(orderData);
+
+      expect(result).toEqual(mockOrder);
+      expect(mockUserAddressRepository.create).toHaveBeenCalledWith({
+        street: customAddress.street,
+        reference: customAddress.reference,
+        local: customAddress.local,
+        number: customAddress.number,
+        user_id: mockedUser.id,
+      });
+      expect(mockOrdersRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          address_id: mockCustomAddress.id,
+        })
+      );
+    });
+
+    it("should use custom address instead of default address when provided", async () => {
+      const customAddress = {
+        street: "Rua Customizada",
+        reference: "Endereço personalizado",
+        local: "Local Customizado",
+        number: "456",
+      };
+
+      const mockCustomAddress = {
+        id: 888,
+        ...customAddress,
+        user_id: mockedUser.id,
+        isDefault: false,
+      };
+
+      const mockOrder = {
+        id: 2,
+        user_id: mockedUser.id,
+        gasAmount: 2,
+        waterAmount: 1,
+        total: 25,
+        status: "PENDENTE" as const,
+        payment_state: "PENDENTE" as const,
+        created_at: new Date(),
+        updated_at: new Date(),
+        address: mockCustomAddress,
+        interest_allowed: true,
+      };
+
+      mockUsersRepository.findById.mockResolvedValue(mockedUser);
+      mockStockRepository.findAll.mockResolvedValue(mockedStockItems);
+      mockOrdersRepository.create.mockResolvedValue(mockOrder);
+      mockOrdersRepository.getAddonByName.mockResolvedValue(null);
+      mockOrdersRepository.getAddonsByIds.mockResolvedValue([]);
+      mockUserAddressRepository.create.mockResolvedValue(mockCustomAddress);
+
+      const orderData: IOrderCreationData = {
+        user_id: mockedUser.id,
+        gasAmount: 2,
+        waterAmount: 1,
+        customAddress,
+      };
+
+      const result = await orderCreationService.createOrder(orderData);
+
+      expect(result).toEqual(mockOrder);
+      expect(mockUserAddressRepository.create).toHaveBeenCalledWith({
+        street: customAddress.street,
+        reference: customAddress.reference,
+        local: customAddress.local,
+        number: customAddress.number,
+        user_id: mockedUser.id,
+      });
+      expect(mockOrdersRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          address_id: mockCustomAddress.id,
+        })
+      );
+    });
+
     it("should handle addon not found gracefully", async () => {
       const mockOrder = {
         id: 1,
