@@ -1,3 +1,4 @@
+import { IUserAddressRepository } from "@modules/accounts/repositories/interfaces/IUserAddressRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
@@ -22,72 +23,98 @@ export class OrderCreationService implements IOrderCreationService {
     @inject("StockRepository")
     private stockRepository: IStockRepository,
     @inject("TransactionsRepository")
-    private transactionsRepository: ITransactionsRepository
+    private transactionsRepository: ITransactionsRepository,
+    @inject("UserAddressRepository")
+    private userAddressRepository: IUserAddressRepository
   ) {}
 
   async createOrder(data: IOrderCreationData): Promise<OrderProps> {
-    const {
-      user_id,
-      gasAmount,
-      waterAmount,
-      waterWithBottle = false,
-      gasWithBottle = false,
-      status = "PENDENTE",
-      payment_state = "PENDENTE",
-      total,
-      interest_allowed = true,
-      overdue_amount = 0,
-      overdue_description = "Débito passado",
-    } = data;
+    try {
+      const {
+        user_id,
+        gasAmount,
+        waterAmount,
+        waterWithBottle = false,
+        gasWithBottle = false,
+        status = "PENDENTE",
+        payment_state = "PENDENTE",
+        total,
+        interest_allowed = true,
+        overdue_amount = 0,
+        overdue_description = "Débito passado",
+        customAddress,
+      } = data;
 
-    const user = await this.validateUserAndAddress(user_id);
-    const { waterStock, gasStock } = await this.getStockData();
+      await this.validateUserAndAddress(user_id);
 
-    await this.verifyStockQuantity({
-      gasStock: gasStock.quantity,
-      gasOrder: gasAmount,
-      waterOrder: waterAmount,
-      waterStock: waterStock.quantity,
-    });
-
-    await this.updateStockQuantity(gasAmount, waterAmount);
-
-    const addonIds = await this.mapBottleFlagsToAddonIds(
-      waterWithBottle,
-      gasWithBottle
-    );
-
-    const baseTotal = await this.calculateBaseTotal(gasAmount, waterAmount);
-    const calculatedTotal = await this.calculateTotalWithAddons(
-      baseTotal,
-      addonIds
-    );
-    const finalTotal = (total || calculatedTotal) + overdue_amount;
-    const finalPaymentState = overdue_amount > 0 ? "VENCIDO" : payment_state;
-
-    const order = await this.ordersRepository.create({
-      status,
-      user_id,
-      address_id: user.address.id,
-      gasAmount,
-      waterAmount,
-      addonIds,
-      total: finalTotal,
-      payment_state: finalPaymentState,
-      interest_allowed,
-    });
-
-    if (overdue_amount > 0) {
-      await this.createOverdueTransaction(
-        order.id,
-        overdue_amount,
-        calculatedTotal,
-        finalTotal,
-        overdue_description
+      const { addresses } = await this.usersRepository.findById(
+        Number(user_id)
       );
-    }
 
-    return order;
+      const userAddress = addresses?.find((addr) => addr.isDefault);
+      let targetAddress = userAddress;
+
+      if (customAddress) {
+        targetAddress = await this.userAddressRepository.create({
+          street: customAddress.street || "",
+          reference: customAddress.reference,
+          local: customAddress.local,
+          number: customAddress.number || "",
+          user_id: Number(user_id),
+        });
+      }
+
+      const { waterStock, gasStock } = await this.getStockData();
+
+      await this.verifyStockQuantity({
+        gasStock: gasStock.quantity,
+        gasOrder: gasAmount,
+        waterOrder: waterAmount,
+        waterStock: waterStock.quantity,
+      });
+
+      await this.updateStockQuantity(gasAmount, waterAmount);
+
+      const addonIds = await this.mapBottleFlagsToAddonIds(
+        waterWithBottle,
+        gasWithBottle
+      );
+
+      const baseTotal = await this.calculateBaseTotal(gasAmount, waterAmount);
+      const calculatedTotal = await this.calculateTotalWithAddons(
+        baseTotal,
+        addonIds
+      );
+      const finalTotal = (total || calculatedTotal) + overdue_amount;
+      const finalPaymentState = overdue_amount > 0 ? "VENCIDO" : payment_state;
+
+      const order = await this.ordersRepository.create({
+        status,
+        user_id,
+        address_id: targetAddress.id,
+        gasAmount,
+        waterAmount,
+        addonIds,
+        total: finalTotal,
+        payment_state: finalPaymentState,
+        interest_allowed,
+      });
+
+      if (overdue_amount > 0) {
+        await this.createOverdueTransaction(
+          order.id,
+          overdue_amount,
+          calculatedTotal,
+          finalTotal,
+          overdue_description
+        );
+      }
+
+      return order;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 
   private async validateUserAndAddress(user_id: number) {
@@ -97,11 +124,9 @@ export class OrderCreationService implements IOrderCreationService {
       throw new AppError("Usuário não encontrado");
     }
 
-    if (!user.address) {
+    if (!user.addresses) {
       throw new AppError("Usuário sem endereço cadastrado");
     }
-
-    return user;
   }
 
   private async getStockData() {

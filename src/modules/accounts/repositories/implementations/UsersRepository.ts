@@ -28,12 +28,15 @@ export class UsersRepository implements IUsersRepository {
     const createdUser = await prisma.user.create({
       data: {
         ...user,
-        address: {
-          create: address as AddressDates,
+        addresses: {
+          create: {
+            ...address,
+            isDefault: true,
+          } as AddressDates,
         },
       },
       include: {
-        address: true,
+        addresses: true,
       },
     });
 
@@ -44,7 +47,7 @@ export class UsersRepository implements IUsersRepository {
     const foundUser = await prisma.user.findFirst({
       where: { email },
       include: {
-        address: true,
+        addresses: true,
       },
     });
 
@@ -55,7 +58,7 @@ export class UsersRepository implements IUsersRepository {
     const foundUser = await prisma.user.findFirst({
       where: { id: Number(id) },
       include: {
-        address: true,
+        addresses: true,
       },
     });
 
@@ -69,24 +72,26 @@ export class UsersRepository implements IUsersRepository {
       },
       include: {
         notificationTokens: true,
-        address: true,
+        addresses: true,
       },
     });
 
     return foundUser;
   }
 
-  async update({ id, username, telephone, address }: IUpdateUserDTO) {
+  async update({ id, username, telephone, addresses }: IUpdateUserDTO) {
     const foundUser = await prisma.user.update({
       data: {
         username,
         telephone,
-        address: {
-          update: address as AddressDates,
-        },
+        addresses: addresses
+          ? {
+              create: addresses as AddressDates[],
+            }
+          : undefined,
       },
       include: {
-        address: true,
+        addresses: true,
       },
       where: {
         id,
@@ -121,7 +126,7 @@ export class UsersRepository implements IUsersRepository {
       prisma.user.findMany({
         where,
         include: {
-          address: true,
+          addresses: true,
         },
         skip: offset,
         take: limit,

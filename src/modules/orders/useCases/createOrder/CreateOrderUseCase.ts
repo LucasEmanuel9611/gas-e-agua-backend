@@ -35,6 +35,7 @@ export class CreateOrderUseCase {
       overdue_amount: request.overdue_amount,
       overdue_description: request.overdue_description,
       due_date: request.due_date,
+      customAddress: request?.customAddress,
     };
 
     return this.orderCreationService.createOrder(orderData);

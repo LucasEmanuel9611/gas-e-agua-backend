@@ -53,7 +53,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 2,
         created_at: dayjs().subtract(30, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -116,7 +116,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 2,
         created_at: dayjs().subtract(30, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -138,7 +138,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 1,
         created_at: dayjs().subtract(35, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -197,7 +197,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 2,
         created_at: dayjs().subtract(35, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -257,7 +257,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 2,
         created_at: dayjs().subtract(40, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -275,7 +275,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 1,
         created_at: dayjs().subtract(37, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -330,7 +330,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 2,
         created_at: dayjs().subtract(30, "days").toDate(),
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,
@@ -386,7 +386,7 @@ describe("Send Order Payment Notifications Use Case", () => {
         waterAmount: 2,
         created_at: dayjs().subtract(33, "days").toDate(), // 33 days = not multiple of 5 after 30
         updated_at: new Date(),
-        address: user.address,
+        address: user.addresses.find((addr) => addr.isDefault),
         interest_allowed: true,
         user: {
           username: user.username,

@@ -1,3 +1,4 @@
+import { addressSchema } from "@modules/accounts/useCases/createUser/schemas";
 import { z } from "zod";
 
 export const createOrderSchema = z
@@ -20,6 +21,7 @@ export const createOrderSchema = z
       .transform((val) => val ?? 0),
     waterWithBottle: z.boolean().optional().default(false),
     gasWithBottle: z.boolean().optional().default(false),
+    customAddress: addressSchema.optional(),
     // Campos opcionais para admin
     user_id: z
       .number({

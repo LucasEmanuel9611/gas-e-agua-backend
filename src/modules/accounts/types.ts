@@ -10,6 +10,7 @@ export type AddressDates = {
   local: string;
   number?: string;
   user_id?: number;
+  isDefault?: boolean;
 };
 
 export type UserRole = "USER" | "ADMIN" | "DELIVERY_MAN";
@@ -23,7 +24,7 @@ export type UserDates = {
   created_at: Date;
   telephone: string;
   notificationTokens?: NotificationTokenProps[];
-  address: AddressDates;
+  addresses: AddressDates[];
 };
 
 export type ICreateUserTokenDTO = {
@@ -63,7 +64,7 @@ export interface IUpdateUserDTO {
   id: number;
   username?: string;
   telephone?: string;
-  address?: Partial<AddressDates>;
+  addresses?: Partial<AddressDates>[];
 }
 
 export interface ICreateAddressDTO {
@@ -73,4 +74,5 @@ export interface ICreateAddressDTO {
   local: string;
   number: string;
   user_id: number;
+  isDefault?: boolean;
 }

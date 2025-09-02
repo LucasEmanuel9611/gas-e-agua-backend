@@ -13,6 +13,12 @@ export interface IOrderCreationData {
   overdue_amount?: number;
   overdue_description?: string;
   due_date?: Date;
+  customAddress?: {
+    street?: string;
+    reference?: string;
+    local?: string;
+    number?: string;
+  };
 }
 
 export interface IOrderCreationService {

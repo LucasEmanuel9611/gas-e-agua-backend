@@ -23,12 +23,14 @@ describe("UpdateUserUseCase", () => {
       id: 123,
       username: "updatedUser",
       telephone: "11987654321",
-      address: {
-        street: "New Street",
-        number: "456",
-        reference: "New Reference",
-        local: "New City",
-      },
+      addresses: [
+        {
+          street: "New Street",
+          number: "456",
+          reference: "New Reference",
+          local: "New City",
+        },
+      ],
     };
 
     const updatedUser: UserDates = {
@@ -39,12 +41,14 @@ describe("UpdateUserUseCase", () => {
       role: "USER",
       created_at: new Date(),
       telephone: "11987654321",
-      address: {
-        street: "New Street",
-        number: "456",
-        reference: "New Reference",
-        local: "New City",
-      },
+      addresses: [
+        {
+          street: "New Street",
+          number: "456",
+          reference: "New Reference",
+          local: "New City",
+        },
+      ],
     };
 
     const expectedDTO: IUserResponseDTO = {
@@ -79,10 +83,12 @@ describe("UpdateUserUseCase", () => {
       role: "USER",
       created_at: new Date(),
       telephone: "81999999999",
-      address: {
-        reference: "Old Reference",
-        local: "Old City",
-      },
+      addresses: [
+        {
+          reference: "Old Reference",
+          local: "Old City",
+        },
+      ],
     };
 
     const expectedDTO: IUserResponseDTO = {

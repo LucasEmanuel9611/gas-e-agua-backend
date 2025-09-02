@@ -34,12 +34,14 @@ describe("AuthenticateUserUseCase", () => {
       role: "USER",
       created_at: new Date(),
       telephone: "81999999999",
-      address: {
-        street: "Test Street",
-        number: "123",
-        reference: "Test Reference",
-        local: "Test City",
-      },
+      addresses: [
+        {
+          street: "Test Street",
+          number: "123",
+          reference: "Test Reference",
+          local: "Test City",
+        },
+      ],
     };
 
     usersRepository.findByEmail.mockResolvedValue(mockUser);
@@ -65,7 +67,7 @@ describe("AuthenticateUserUseCase", () => {
         email: "test@example.com",
         role: "USER",
         id: 123,
-        address: mockUser.address,
+        addresses: mockUser.addresses,
       },
     });
   });
@@ -95,12 +97,14 @@ describe("AuthenticateUserUseCase", () => {
       role: "USER",
       created_at: new Date(),
       telephone: "81999999999",
-      address: {
-        street: "Test Street",
-        number: "123",
-        reference: "Test Reference",
-        local: "Test City",
-      },
+      addresses: [
+        {
+          street: "Test Street",
+          number: "123",
+          reference: "Test Reference",
+          local: "Test City",
+        },
+      ],
     };
 
     usersRepository.findByEmail.mockResolvedValue(mockUser);

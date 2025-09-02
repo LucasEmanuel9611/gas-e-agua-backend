@@ -1,4 +1,6 @@
+import { UserAddressRepository } from "@modules/accounts/repositories/implementations/UserAddressRepository";
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
+import { IUserAddressRepository } from "@modules/accounts/repositories/interfaces/IUserAddressRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
 import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
@@ -20,6 +22,11 @@ import { IDateProvider } from "./DateProvider/IDateProvider";
 container.registerSingleton<IUsersRepository>(
   "UsersRepository",
   UsersRepository
+);
+
+container.registerSingleton<IUserAddressRepository>(
+  "UserAddressRepository",
+  UserAddressRepository
 );
 
 container.registerSingleton<IDateProvider>(
