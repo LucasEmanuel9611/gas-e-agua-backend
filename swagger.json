@@ -775,6 +775,137 @@
           }
         }
       }
+    },
+    "/addons": {
+      "get": {
+        "summary": "Lista todos os addons disponíveis",
+        "tags": ["Addons"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de addons retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Addon"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria um novo addon",
+        "tags": ["Addons"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "Botijão para Água"
+                  },
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 15.0
+                  }
+                },
+                "required": ["name", "value"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Addon criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Addon"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação"
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        }
+      }
+    },
+    "/addons/{id}": {
+      "put": {
+        "summary": "Atualiza um addon existente",
+        "tags": ["Addons"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "ID do addon"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "example": "Botijão para Água"
+                  },
+                  "value": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 15.0
+                  }
+                },
+                "required": ["name", "value"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Addon atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Addon"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação"
+          },
+          "401": {
+            "description": "Não autorizado"
+          },
+          "404": {
+            "description": "Addon não encontrado"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -844,6 +975,14 @@
           "status": { "type": "string" },
           "created_at": { "type": "string", "format": "date-time" },
           "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Addon": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "value": { "type": "number" }
         }
       }
     }
