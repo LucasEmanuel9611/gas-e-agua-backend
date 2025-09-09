@@ -22,7 +22,9 @@ app.use(morgan("combined"));
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const port = 3333;
 
-app.use(rateLimiter);
+if (process.env.NODE_ENV !== "test") {
+  app.use(rateLimiter);
+}
 
 app.use(express.json());
 app.use(cors());
