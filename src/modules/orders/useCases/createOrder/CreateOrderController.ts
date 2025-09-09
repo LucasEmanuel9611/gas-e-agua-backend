@@ -25,7 +25,8 @@ export class CreateOrderController {
       const createOrderUseCase = container.resolve(CreateOrderUseCase);
 
       const userIdProvidedByAdmin = orderData.user_id;
-      const targetUserId = isAdmin ? userIdProvidedByAdmin : id;
+      const createOrderForOtherUser = userIdProvidedByAdmin && isAdmin;
+      const targetUserId = createOrderForOtherUser ? userIdProvidedByAdmin : id;
 
       AdminFieldPolicy.validate(role, orderData);
 
