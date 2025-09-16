@@ -15,11 +15,10 @@ export class OrdersRepository implements IOrdersRepository {
   async create({
     user_id,
     address_id,
-    gasAmount,
+    items,
+    addons = [],
     total,
     status,
-    waterAmount,
-    addonIds = [],
     created_at,
     payment_state,
   }: ICreateOrderDTO): Promise<OrderProps> {
@@ -27,15 +26,24 @@ export class OrdersRepository implements IOrdersRepository {
       data: {
         user_id,
         address_id,
-        gasAmount,
         total,
         status,
-        waterAmount,
         created_at,
         payment_state,
+        orderItems: {
+          create: items.map((item) => ({
+            stockId: item.id,
+            quantity: item.quantity,
+            unitValue: item.unitValue || 0,
+            totalValue: item.totalValue || 0,
+          })),
+        },
         orderAddons: {
-          create: addonIds.map((addonId) => ({
-            addonId,
+          create: addons.map((addon) => ({
+            addonId: addon.id,
+            quantity: addon.quantity,
+            unitValue: addon.unitValue || 0,
+            totalValue: addon.totalValue || 0,
           })),
         },
       },
@@ -48,6 +56,16 @@ export class OrdersRepository implements IOrdersRepository {
           },
         },
         transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
+        orderAddons: {
+          include: {
+            addon: true,
+          },
+        },
       },
     });
 

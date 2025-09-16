@@ -2,10 +2,16 @@ import { OrderProps } from "@modules/orders/types";
 
 export interface IOrderCreationData {
   user_id: number;
-  gasAmount: number;
-  waterAmount: number;
-  waterWithBottle?: boolean;
-  gasWithBottle?: boolean;
+  items: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+  }>;
+  addons?: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+  }>;
   status?: "INICIADO" | "PENDENTE" | "FINALIZADO";
   payment_state?: "PENDENTE" | "PAGO" | "VENCIDO" | "PARCIALMENTE_PAGO";
   total?: number;

@@ -2,6 +2,7 @@ export type StockItem = {
   id: number;
   value: number;
   name: string;
+  type: string;
   quantity: number;
   created_at: Date;
   updated_at: Date;
@@ -10,6 +11,7 @@ export type StockItem = {
 export type ICreateStockItemDTO = {
   value: number;
   name: string;
+  type: string;
   quantity: number;
 };
 

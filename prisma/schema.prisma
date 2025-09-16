@@ -62,10 +62,6 @@ model Address {
 model Order {
   id               Int           @id @default(autoincrement())
   user_id          Int
-  gasAmount        Int
-  waterAmount      Int
-  waterWithBottle  Boolean?      @default(false)
-  gasWithBottle    Boolean?      @default(false)
   address_id       Int
   total            Float
   status           String
@@ -76,6 +72,7 @@ model Order {
   user             User          @relation(fields: [user_id], references: [id])
   interest_allowed Boolean       @default(true)
   transactions     Transaction[]
+  orderItems       OrderItems[]
   orderAddons      OrderAddons[]
 
   @@index([address_id], map: "Order_address_id_fkey")
@@ -99,25 +96,48 @@ model Transaction {
 }
 
 model Stock {
-  id         Int      @id @default(autoincrement())
+  id         Int          @id @default(autoincrement())
   value      Float
   name       String
+  type       String
   quantity   Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+  orderItems OrderItems[]
 }
 
 model Addons {
   id          Int           @id @default(autoincrement())
   name        String
   value       Float
+  type        String
   orderAddons OrderAddons[]
 }
 
+model OrderItems {
+  id         Int   @id @default(autoincrement())
+  order      Order @relation(fields: [orderId], references: [id])
+  orderId    Int
+  stock      Stock @relation(fields: [stockId], references: [id])
+  stockId    Int
+  quantity   Int
+  unitValue  Float
+  totalValue Float
+
+  @@index([orderId], map: "OrderItems_orderId_fkey")
+  @@index([stockId], map: "OrderItems_stockId_fkey")
+}
+
 model OrderAddons {
-  id      Int    @id @default(autoincrement())
-  order   Order  @relation(fields: [orderId], references: [id])
-  orderId Int
-  addon   Addons @relation(fields: [addonId], references: [id])
-  addonId Int
+  id         Int    @id @default(autoincrement())
+  order      Order  @relation(fields: [orderId], references: [id])
+  orderId    Int
+  addon      Addons @relation(fields: [addonId], references: [id])
+  addonId    Int
+  quantity   Int
+  unitValue  Float
+  totalValue Float
+
+  @@index([orderId], map: "OrderAddons_orderId_fkey")
+  @@index([addonId], map: "OrderAddons_addonId_fkey")
 }
