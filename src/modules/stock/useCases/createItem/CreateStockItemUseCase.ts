@@ -11,9 +11,10 @@ export class CreateStockItemUseCase {
 
   async execute({
     quantity,
-    name: type,
+    name,
+    type,
     value,
   }: ICreateStockItemDTO): Promise<void> {
-    await this.stockRepository.createItem({ quantity, name: type, value });
+    await this.stockRepository.createItem({ quantity, name, type, value });
   }
 }

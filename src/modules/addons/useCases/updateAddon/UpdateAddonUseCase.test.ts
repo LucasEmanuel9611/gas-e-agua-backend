@@ -36,6 +36,7 @@ describe("UpdateAddonUseCase", () => {
       newData: {
         name: "Botijão para Água Atualizado",
         value: 20.0,
+        type: "WATER_VESSEL",
       },
     };
 
@@ -43,6 +44,7 @@ describe("UpdateAddonUseCase", () => {
       id: 1,
       name: "Botijão para Água Atualizado",
       value: 20.0,
+      type: "WATER_VESSEL",
     };
 
     mockAddonsRepository.update.mockResolvedValue(expectedAddon);

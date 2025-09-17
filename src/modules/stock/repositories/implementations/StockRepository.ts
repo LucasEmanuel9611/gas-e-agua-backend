@@ -13,9 +13,10 @@ export class StockRepository implements IStockRepository {
     quantity,
     name,
     value,
+    type,
   }: ICreateStockItemDTO): Promise<StockItem> {
     const createdItem = await prisma.stock.create({
-      data: { quantity, name, value },
+      data: { quantity, name, value, type },
     });
 
     return createdItem;

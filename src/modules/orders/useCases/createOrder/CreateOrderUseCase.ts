@@ -1,8 +1,6 @@
 import { OrderProps } from "@modules/orders/types";
 import { inject, injectable } from "tsyringe";
 
-import { AppError } from "@shared/errors/AppError";
-
 import {
   IOrderCreationData,
   IOrderCreationService,
@@ -16,10 +14,6 @@ export class CreateOrderUseCase {
   ) {}
 
   async execute(request: IOrderCreationData): Promise<OrderProps> {
-    if (!request.items || request.items.length === 0) {
-      throw new AppError("Pelo menos um item deve ser fornecido");
-    }
-
     const orderData: IOrderCreationData = {
       user_id: Number(request.user_id),
       items: request.items,

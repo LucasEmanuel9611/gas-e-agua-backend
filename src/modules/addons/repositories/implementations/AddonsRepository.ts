@@ -13,6 +13,7 @@ export class AddonsRepository implements IAddonsRepository {
       data: {
         name: data.name,
         value: data.value,
+        type: data.type,
       },
     });
 
@@ -22,8 +23,12 @@ export class AddonsRepository implements IAddonsRepository {
   async update(data: IUpdateAddonItemDTO): Promise<AddonItem> {
     const { id, newData } = data;
 
+    if (!id) {
+      throw new Error("ID é obrigatório para atualização");
+    }
+
     const updatedAddon = await prisma.addons.update({
-      where: { id: id! },
+      where: { id },
       data: newData,
     });
 

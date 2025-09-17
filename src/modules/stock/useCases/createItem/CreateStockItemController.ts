@@ -10,16 +10,16 @@ import { CreateStockItemUseCase } from "./CreateStockItemUseCase";
 export class CreateStockItemController {
   async handle(req: Request, res: Response) {
     try {
-      const { quantity, name, value } = validateSchema(
+      const { quantity, name, value, type } = validateSchema(
         createStockItemSchema,
         req.body
       );
 
       const createStockItemUseCase = container.resolve(CreateStockItemUseCase);
 
-      await createStockItemUseCase.execute({ quantity, name, value });
+      await createStockItemUseCase.execute({ quantity, name, value, type });
 
-      return res.status(201).send({ quantity, name, value });
+      return res.status(201).send({ quantity, name, value, type });
     } catch (error) {
       return handleControllerError(error, res);
     }

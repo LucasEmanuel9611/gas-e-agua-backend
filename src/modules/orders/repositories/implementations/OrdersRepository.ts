@@ -100,6 +100,9 @@ export class OrdersRepository implements IOrdersRepository {
           data: {
             orderId,
             addonId,
+            quantity: 1,
+            unitValue: 0,
+            totalValue: 0,
           },
         })
       )
@@ -119,6 +122,9 @@ export class OrdersRepository implements IOrdersRepository {
         data: {
           orderId,
           addonId,
+          quantity: 1,
+          unitValue: 0,
+          totalValue: 0,
         },
       });
     }
@@ -356,8 +362,15 @@ export class OrdersRepository implements IOrdersRepository {
   async findOrdersWithGasAndInterestAllowed(): Promise<OrderProps[]> {
     const ordersWithGasAndInterestAllowed = await prisma.order.findMany({
       where: {
-        gasAmount: { gt: 0 },
         interest_allowed: true,
+        orderItems: {
+          some: {
+            stock: {
+              type: "GAS",
+            },
+            quantity: { gt: 0 },
+          },
+        },
       },
       include: {
         address: true,
@@ -368,9 +381,73 @@ export class OrdersRepository implements IOrdersRepository {
           },
         },
         transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
+        orderAddons: {
+          include: {
+            addon: true,
+          },
+        },
       },
     });
 
     return ordersWithGasAndInterestAllowed as OrderProps[];
+  }
+
+  async updateOrderItems(
+    orderId: number,
+    items: Array<{
+      id: number;
+      type: string;
+      quantity: number;
+      unitValue: number;
+      totalValue: number;
+    }>
+  ): Promise<void> {
+    await prisma.orderItems.deleteMany({
+      where: { orderId },
+    });
+
+    if (items.length > 0) {
+      await prisma.orderItems.createMany({
+        data: items.map((item) => ({
+          orderId,
+          stockId: item.id,
+          quantity: item.quantity,
+          unitValue: item.unitValue,
+          totalValue: item.totalValue,
+        })),
+      });
+    }
+  }
+
+  async updateOrderAddons(
+    orderId: number,
+    addons: Array<{
+      id: number;
+      type: string;
+      quantity: number;
+      unitValue: number;
+      totalValue: number;
+    }>
+  ): Promise<void> {
+    await prisma.orderAddons.deleteMany({
+      where: { orderId },
+    });
+
+    if (addons.length > 0) {
+      await prisma.orderAddons.createMany({
+        data: addons.map((addon) => ({
+          orderId,
+          addonId: addon.id,
+          quantity: addon.quantity,
+          unitValue: addon.unitValue,
+          totalValue: addon.totalValue,
+        })),
+      });
+    }
   }
 }

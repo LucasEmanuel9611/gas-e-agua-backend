@@ -16,6 +16,7 @@ describe(CreateStockItemUseCase.name, () => {
       name: "Gás",
       quantity: 15,
       value: 90,
+      type: "GAS",
     };
 
     await createStockItemUseCase.execute(stockItemData);

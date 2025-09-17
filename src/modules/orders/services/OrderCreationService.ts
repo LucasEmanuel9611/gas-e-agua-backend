@@ -43,6 +43,10 @@ export class OrderCreationService implements IOrderCreationService {
         customAddress,
       } = data;
 
+      if (!items || items.length === 0) {
+        throw new AppError("Pelo menos um item deve ser fornecido");
+      }
+
       await this.validateUserAndAddress(user_id);
 
       const { addresses } = await this.usersRepository.findById(

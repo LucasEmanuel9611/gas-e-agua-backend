@@ -34,27 +34,7 @@ export interface ICreateOrderDTO {
   interest_allowed?: boolean;
 }
 
-export class Order {
-  id: number;
-  user_id: number;
-  status: OrderStatusProps;
-  payment_state: OrderPaymentStatus;
-  updated_at: Date | string;
-  created_at: Date | string;
-  total: number;
-  address: AddressDates;
-  interest_allowed: boolean;
-  orderItems?: OrderItem[];
-  orderAddons?: OrderAddon[];
-  user?: {
-    username: string;
-    telephone: string;
-    notificationTokens?: NotificationTokenProps[];
-  };
-  transactions?: ITransaction[];
-}
-
-export interface OrderItem {
+export interface IOrderItem {
   id: number;
   orderId: number;
   stockId: number;
@@ -69,7 +49,7 @@ export interface OrderItem {
   };
 }
 
-export interface OrderAddon {
+export interface IOrderAddon {
   id: number;
   orderId: number;
   addonId: number;
@@ -82,6 +62,26 @@ export interface OrderAddon {
     type: string;
     value: number;
   };
+}
+
+export class Order {
+  id: number;
+  user_id: number;
+  status: OrderStatusProps;
+  payment_state: OrderPaymentStatus;
+  updated_at: Date | string;
+  created_at: Date | string;
+  total: number;
+  address: AddressDates;
+  interest_allowed: boolean;
+  orderItems?: IOrderItem[];
+  orderAddons?: IOrderAddon[];
+  user?: {
+    username: string;
+    telephone: string;
+    notificationTokens?: NotificationTokenProps[];
+  };
+  transactions?: ITransaction[];
 }
 
 export type OrderProps = Omit<Order, "total_paid" | "calculated_payment_state">;

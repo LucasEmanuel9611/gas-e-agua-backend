@@ -3,6 +3,8 @@ import { OrdersRepository } from "@modules/orders/repositories/implementations/O
 import { UpdateOverdueOrdersUseCase } from "@modules/orders/useCases/updateOverdueOrders/updateOverdueOrdersUseCase";
 import dayjs from "dayjs";
 
+import { prisma } from "@shared/infra/database/prisma";
+
 let ordersRepository: OrdersRepository;
 let usersRepository: UsersRepository;
 let updateOverdueOrdersUseCase: UpdateOverdueOrdersUseCase;
@@ -14,6 +16,13 @@ describe("Update Overdue Orders", () => {
     updateOverdueOrdersUseCase = new UpdateOverdueOrdersUseCase(
       ordersRepository
     );
+
+    await prisma.stock.createMany({
+      data: [
+        { id: 1, name: "Gás", type: "GAS", value: 25, quantity: 100 },
+        { id: 2, name: "Água", type: "WATER", value: 12.5, quantity: 100 },
+      ],
+    });
   });
 
   it("should mark orders as overdue if created more than 30 days ago and payment is pending", async () => {
@@ -40,8 +49,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PENDENTE",
       total: 50,
-      gasAmount: 1,
-      waterAmount: 2,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 25, totalValue: 25 },
+        { id: 2, type: "WATER", quantity: 2, unitValue: 12.5, totalValue: 25 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(31, "days").toDate(),
     });
 
@@ -52,8 +64,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PARCIALMENTE_PAGO",
       total: 40,
-      gasAmount: 1,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 20, totalValue: 20 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 20, totalValue: 20 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(5, "days").toDate(),
     });
 
@@ -64,8 +79,10 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PAGO",
       total: 30,
-      gasAmount: 1,
-      waterAmount: 0,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 30, totalValue: 30 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(40, "days").toDate(),
     });
 
@@ -104,8 +121,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PENDENTE",
       total: 60,
-      gasAmount: 2,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 2, unitValue: 20, totalValue: 40 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 20, totalValue: 20 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(29, "days").toDate(),
     });
 
@@ -140,8 +160,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "VENCIDO",
       total: 70,
-      gasAmount: 1,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 35, totalValue: 35 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 35, totalValue: 35 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(40, "days").toDate(),
     });
 
@@ -176,8 +199,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PARCIALMENTE_PAGO",
       total: 90,
-      gasAmount: 1,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 45, totalValue: 45 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 45, totalValue: 45 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(40, "days").toDate(),
     });
 
@@ -213,8 +239,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PENDENTE",
       total: 100,
-      gasAmount: 1,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 50, totalValue: 50 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 50, totalValue: 50 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(35, "days").toDate(),
     });
     await ordersRepository.create({
@@ -223,8 +252,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PENDENTE",
       total: 110,
-      gasAmount: 1,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 55, totalValue: 55 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 55, totalValue: 55 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(50, "days").toDate(),
     });
     // Um pedido não vencido
@@ -234,8 +266,11 @@ describe("Update Overdue Orders", () => {
       status: "FINALIZADO",
       payment_state: "PAGO",
       total: 120,
-      gasAmount: 1,
-      waterAmount: 1,
+      items: [
+        { id: 1, type: "GAS", quantity: 1, unitValue: 60, totalValue: 60 },
+        { id: 2, type: "WATER", quantity: 1, unitValue: 60, totalValue: 60 },
+      ],
+      addons: [],
       created_at: dayjs().utc().local().subtract(60, "days").toDate(),
     });
 

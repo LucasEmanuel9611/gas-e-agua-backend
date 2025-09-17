@@ -26,6 +26,7 @@ describe(UpdateStockUseCase.name, () => {
     const updatedItem: StockItem = {
       id: 42,
       name: "Gás",
+      type: "GAS",
       quantity: 100,
       value: 12,
       created_at: new Date(),

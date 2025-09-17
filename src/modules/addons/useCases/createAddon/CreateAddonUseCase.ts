@@ -9,7 +9,11 @@ export class CreateAddonUseCase {
     private addonsRepository: IAddonsRepository
   ) {}
 
-  async execute({ name, value }: ICreateAddonItemDTO): Promise<AddonItem> {
-    return this.addonsRepository.createItem({ name, value });
+  async execute({
+    name,
+    value,
+    type,
+  }: ICreateAddonItemDTO): Promise<AddonItem> {
+    return this.addonsRepository.createItem({ name, value, type });
   }
 }
