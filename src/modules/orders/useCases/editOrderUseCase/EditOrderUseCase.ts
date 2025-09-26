@@ -6,10 +6,16 @@ import { AppError } from "@shared/errors/AppError";
 
 interface IRequest {
   order_id: string;
-  gasAmount?: number;
-  waterAmount?: number;
-  waterWithBottle?: boolean;
-  gasWithBottle?: boolean;
+  items?: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+  }>;
+  addons?: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+  }>;
 }
 
 @injectable()
@@ -19,97 +25,84 @@ export class EditOrderUseCase {
     private ordersRepository: IOrdersRepository
   ) {}
 
-  private async mapBottleFlagsToAddonIds(
-    waterWithBottle?: boolean,
-    gasWithBottle?: boolean
-  ): Promise<number[]> {
-    const addonIds: number[] = [];
-
-    if (waterWithBottle !== undefined && waterWithBottle) {
-      const waterBottleAddon = await this.ordersRepository.getAddonByName(
-        "Botijão para Água"
-      );
-      if (waterBottleAddon) {
-        addonIds.push(waterBottleAddon.id);
-      }
-    }
-
-    if (gasWithBottle !== undefined && gasWithBottle) {
-      const gasBottleAddon = await this.ordersRepository.getAddonByName(
-        "Botijão para Gás"
-      );
-      if (gasBottleAddon) {
-        addonIds.push(gasBottleAddon.id);
-      }
-    }
-
-    return addonIds;
-  }
-
-  private async calculateTotalWithAddons(
-    baseTotal: number,
-    addonIds: number[]
-  ): Promise<number> {
-    if (addonIds.length === 0) {
-      return baseTotal;
-    }
-
-    const addonsData = await this.ordersRepository.getAddonsByIds(addonIds);
-    const addonsTotal = addonsData.reduce(
-      (sum: number, addon: any) => sum + addon.value,
-      0
-    );
-
-    return baseTotal + addonsTotal;
-  }
-
-  private async calculateBaseTotal(
-    gasAmount: number,
-    waterAmount: number
+  private async calculateItemsTotal(
+    items: Array<{ id: number; type: string; quantity: number }>
   ): Promise<number> {
     const stockItems = await this.ordersRepository.getStockData();
-    const waterStock = stockItems.find((item: any) => item.name === "Água");
-    const gasStock = stockItems.find((item: any) => item.name === "Gás");
 
-    const waterTotalValue = waterAmount * waterStock.value;
-    const gasTotalValue = gasAmount * gasStock.value;
-
-    return waterTotalValue + gasTotalValue;
+    return items.reduce((total, item) => {
+      const stockItem = stockItems.find(
+        (stock: { id: number; value: number }) => stock.id === item.id
+      );
+      if (stockItem) {
+        return total + item.quantity * stockItem.value;
+      }
+      return total;
+    }, 0);
   }
 
-  private async manageAddons(
-    orderId: number,
-    baseTotal: number,
-    waterWithBottle?: boolean,
-    gasWithBottle?: boolean
+  private async calculateAddonsTotal(
+    addons: Array<{ id: number; type: string; quantity: number }>
   ): Promise<number> {
-    const addonIds = await this.mapBottleFlagsToAddonIds(
-      waterWithBottle,
-      gasWithBottle
-    );
-
-    if (waterWithBottle !== undefined || gasWithBottle !== undefined) {
-      await this.ordersRepository.removeAddonsFromOrder(orderId);
-
-      if (addonIds.length > 0) {
-        const totalWithAddons = await this.calculateTotalWithAddons(
-          baseTotal,
-          addonIds
-        );
-        await this.ordersRepository.addAddonsToOrder(orderId, addonIds);
-        return totalWithAddons;
-      }
+    if (addons.length === 0) {
+      return 0;
     }
 
-    return baseTotal;
+    const addonIds = addons.map((addon) => addon.id);
+    const addonsData = await this.ordersRepository.getAddonsByIds(addonIds);
+
+    return addons.reduce((total, addon) => {
+      const addonData = addonsData.find(
+        (data: { id: number; value: number }) => data.id === addon.id
+      );
+      if (addonData) {
+        return total + addon.quantity * addonData.value;
+      }
+      return total;
+    }, 0);
+  }
+
+  private async enrichItemsWithValues(
+    items: Array<{ id: number; type: string; quantity: number }>
+  ) {
+    const stockItems = await this.ordersRepository.getStockData();
+
+    return items.map((item) => {
+      const stockItem = stockItems.find(
+        (stock: { id: number; value: number }) => stock.id === item.id
+      );
+      return {
+        ...item,
+        unitValue: stockItem?.value || 0,
+        totalValue: (stockItem?.value || 0) * item.quantity,
+      };
+    });
+  }
+
+  private async enrichAddonsWithValues(
+    addons: Array<{ id: number; type: string; quantity: number }>
+  ) {
+    if (addons.length === 0) return [];
+
+    const addonIds = addons.map((addon) => addon.id);
+    const addonsData = await this.ordersRepository.getAddonsByIds(addonIds);
+
+    return addons.map((addon) => {
+      const addonData = addonsData.find(
+        (data: { id: number; value: number }) => data.id === addon.id
+      );
+      return {
+        ...addon,
+        unitValue: addonData?.value || 0,
+        totalValue: (addonData?.value || 0) * addon.quantity,
+      };
+    });
   }
 
   async execute({
     order_id,
-    gasAmount,
-    waterAmount,
-    waterWithBottle,
-    gasWithBottle,
+    items,
+    addons = [],
   }: IRequest): Promise<OrderProps> {
     const order = await this.ordersRepository.findById(Number(order_id));
 
@@ -121,26 +114,28 @@ export class EditOrderUseCase {
       throw new AppError("Só é possível editar pedidos com status PENDENTE");
     }
 
-    const newGasAmount = gasAmount ?? order.gasAmount;
-    const newWaterAmount = waterAmount ?? order.waterAmount;
+    const finalItems = items || [];
+    const finalAddons = addons || [];
 
-    const baseTotal = await this.calculateBaseTotal(
-      newGasAmount,
-      newWaterAmount
-    );
+    const enrichedItems = await this.enrichItemsWithValues(finalItems);
+    const enrichedAddons = await this.enrichAddonsWithValues(finalAddons);
 
-    const total = await this.manageAddons(
+    const itemsTotal = await this.calculateItemsTotal(finalItems);
+    const addonsTotal = await this.calculateAddonsTotal(finalAddons);
+    const total = itemsTotal + addonsTotal;
+
+    await this.ordersRepository.updateOrderItems(
       Number(order_id),
-      baseTotal,
-      waterWithBottle,
-      gasWithBottle
+      enrichedItems
+    );
+    await this.ordersRepository.updateOrderAddons(
+      Number(order_id),
+      enrichedAddons
     );
 
     const updatedOrder = await this.ordersRepository.updateById(
       Number(order_id),
       {
-        gasAmount: newGasAmount,
-        waterAmount: newWaterAmount,
         total,
         updated_at: new Date().toISOString(),
       }

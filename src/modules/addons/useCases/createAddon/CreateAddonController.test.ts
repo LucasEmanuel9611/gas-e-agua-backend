@@ -45,6 +45,7 @@ describe("CreateAddonController", () => {
     const mockAddon = {
       id: 1,
       name: "Botijão para Água",
+      type: "WATER_VESSEL",
       value: 15.0,
     };
 
@@ -52,6 +53,7 @@ describe("CreateAddonController", () => {
 
     const payload = {
       name: "Botijão para Água",
+      type: "WATER_VESSEL",
       value: 15.0,
     };
 

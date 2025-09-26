@@ -27,4 +27,26 @@ export interface IOrdersRepository {
     paymentState: string;
   }): Promise<OrderProps[]>;
   findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]>;
+
+  updateOrderItems(
+    orderId: number,
+    items: Array<{
+      id: number;
+      type: string;
+      quantity: number;
+      unitValue: number;
+      totalValue: number;
+    }>
+  ): Promise<void>;
+
+  updateOrderAddons(
+    orderId: number,
+    addons: Array<{
+      id: number;
+      type: string;
+      quantity: number;
+      unitValue: number;
+      totalValue: number;
+    }>
+  ): Promise<void>;
 }

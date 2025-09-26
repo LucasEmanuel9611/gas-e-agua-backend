@@ -40,8 +40,6 @@ describe(CreateOrderUseCase.name, () => {
     const mockOrder = {
       id: 1,
       user_id: mockedUser.id,
-      gasAmount,
-      waterAmount,
       total: expectedTotal,
       status: "PENDENTE" as const,
       payment_state: "PENDENTE" as const,
@@ -49,23 +47,47 @@ describe(CreateOrderUseCase.name, () => {
       updated_at: new Date(),
       address: mockedUser.address,
       interest_allowed: true,
+      orderItems: [
+        {
+          id: 1,
+          orderId: 1,
+          stockId: 1,
+          quantity: gasAmount,
+          unitValue: 5,
+          totalValue: 5,
+          stock: { id: 1, name: "Gás", type: "GAS", value: 5 },
+        },
+        {
+          id: 2,
+          orderId: 1,
+          stockId: 2,
+          quantity: waterAmount,
+          unitValue: 5,
+          totalValue: 10,
+          stock: { id: 2, name: "Água", type: "WATER", value: 5 },
+        },
+      ],
+      orderAddons: [],
     };
 
     mockOrderCreationService.createOrder.mockResolvedValue(mockOrder);
 
     const result = await createOrderUseCase.execute({
       user_id: Number(mockedUser.id),
-      gasAmount,
-      waterAmount,
+      items: [
+        { id: 1, type: "GAS", quantity: gasAmount },
+        { id: 2, type: "WATER", quantity: waterAmount },
+      ],
     });
 
     expect(result).toEqual(mockOrder);
     expect(mockOrderCreationService.createOrder).toHaveBeenCalledWith({
       user_id: mockedUser.id,
-      gasAmount,
-      waterAmount,
-      waterWithBottle: undefined,
-      gasWithBottle: undefined,
+      items: [
+        { id: 1, type: "GAS", quantity: gasAmount },
+        { id: 2, type: "WATER", quantity: waterAmount },
+      ],
+      addons: [],
       status: undefined,
       payment_state: undefined,
       total: undefined,
@@ -80,8 +102,6 @@ describe(CreateOrderUseCase.name, () => {
     const mockOrder = {
       id: 1,
       user_id: mockedUser.id,
-      gasAmount: 1,
-      waterAmount: 1,
       total: 15,
       status: "FINALIZADO" as const,
       payment_state: "PAGO" as const,
@@ -89,16 +109,70 @@ describe(CreateOrderUseCase.name, () => {
       updated_at: new Date(),
       address: mockedUser.address,
       interest_allowed: false,
+      orderItems: [
+        {
+          id: 1,
+          orderId: 1,
+          stockId: 1,
+          quantity: 1,
+          unitValue: 7.5,
+          totalValue: 7.5,
+          stock: { id: 1, name: "Gás", type: "GAS", value: 7.5 },
+        },
+        {
+          id: 2,
+          orderId: 1,
+          stockId: 2,
+          quantity: 1,
+          unitValue: 7.5,
+          totalValue: 7.5,
+          stock: { id: 2, name: "Água", type: "WATER", value: 7.5 },
+        },
+      ],
+      orderAddons: [
+        {
+          id: 1,
+          orderId: 1,
+          addonId: 1,
+          quantity: 1,
+          unitValue: 10,
+          totalValue: 10,
+          addon: {
+            id: 1,
+            name: "Botijão para Água",
+            type: "WATER_VESSEL",
+            value: 10,
+          },
+        },
+        {
+          id: 2,
+          orderId: 1,
+          addonId: 2,
+          quantity: 1,
+          unitValue: 10,
+          totalValue: 10,
+          addon: {
+            id: 2,
+            name: "Botijão para Gás",
+            type: "GAS_VESSEL",
+            value: 10,
+          },
+        },
+      ],
     };
 
     mockOrderCreationService.createOrder.mockResolvedValue(mockOrder);
 
     const request = {
       user_id: 1,
-      gasAmount: 1,
-      waterAmount: 1,
-      waterWithBottle: true,
-      gasWithBottle: true,
+      items: [
+        { id: 1, type: "GAS", quantity: 1 },
+        { id: 2, type: "WATER", quantity: 1 },
+      ],
+      addons: [
+        { id: 1, type: "WATER_VESSEL", quantity: 1 },
+        { id: 2, type: "GAS_VESSEL", quantity: 1 },
+      ],
       status: "FINALIZADO" as const,
       payment_state: "PAGO" as const,
       total: 20,
@@ -112,10 +186,14 @@ describe(CreateOrderUseCase.name, () => {
 
     expect(mockOrderCreationService.createOrder).toHaveBeenCalledWith({
       user_id: 1,
-      gasAmount: 1,
-      waterAmount: 1,
-      waterWithBottle: true,
-      gasWithBottle: true,
+      items: [
+        { id: 1, type: "GAS", quantity: 1 },
+        { id: 2, type: "WATER", quantity: 1 },
+      ],
+      addons: [
+        { id: 1, type: "WATER_VESSEL", quantity: 1 },
+        { id: 2, type: "GAS_VESSEL", quantity: 1 },
+      ],
       status: "FINALIZADO",
       payment_state: "PAGO",
       total: 20,
@@ -133,8 +211,11 @@ describe(CreateOrderUseCase.name, () => {
     await expect(
       createOrderUseCase.execute({
         user_id: 1,
-        gasAmount: 1,
-        waterAmount: 1,
+        items: [
+          { id: 1, type: "GAS", quantity: 1 },
+          { id: 2, type: "WATER", quantity: 1 },
+        ],
+        addons: [],
       })
     ).rejects.toBeInstanceOf(AppError);
   });

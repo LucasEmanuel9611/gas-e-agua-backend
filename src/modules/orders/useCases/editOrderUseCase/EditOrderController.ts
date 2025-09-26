@@ -12,32 +12,33 @@ import { editOrderSchema } from "./schema";
 export class EditOrderController {
   async handle(request: Request, response: Response) {
     try {
-      const { gasAmount, waterAmount, waterWithBottle, gasWithBottle } =
-        request.body;
+      const { items, addons } = request.body;
       const { id } = request.params;
 
       const {
         order_id,
-        gasAmount: validatedGasAmount,
-        waterAmount: validatedWaterAmount,
-        waterWithBottle: validatedWaterWithBottle,
-        gasWithBottle: validatedGasWithBottle,
+        items: validatedItems,
+        addons: validatedAddons,
       } = validateSchema(editOrderSchema, {
         order_id: id,
-        gasAmount,
-        waterAmount,
-        waterWithBottle,
-        gasWithBottle,
+        items,
+        addons,
       });
 
       const editOrderUseCase = container.resolve(EditOrderUseCase);
 
       const order = await editOrderUseCase.execute({
         order_id,
-        gasAmount: validatedGasAmount,
-        waterAmount: validatedWaterAmount,
-        waterWithBottle: validatedWaterWithBottle,
-        gasWithBottle: validatedGasWithBottle,
+        items: validatedItems as Array<{
+          id: number;
+          type: string;
+          quantity: number;
+        }>,
+        addons: validatedAddons as Array<{
+          id: number;
+          type: string;
+          quantity: number;
+        }>,
       });
 
       await this.notifyAdmins();

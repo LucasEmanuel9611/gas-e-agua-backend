@@ -36,11 +36,13 @@ describe("FindAddonsUseCase", () => {
         id: 1,
         name: "Botijão para Água",
         value: 15.0,
+        type: "WATER_VESSEL",
       },
       {
         id: 2,
         name: "Botijão para Gás",
         value: 25.0,
+        type: "GAS_VESSEL",
       },
     ];
 

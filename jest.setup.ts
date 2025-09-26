@@ -46,6 +46,7 @@ beforeEach(async () => {
   await prisma.notificationToken.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.orderAddons.deleteMany();
+  await prisma.orderItems.deleteMany();
   await prisma.order.deleteMany();
   await prisma.address.deleteMany();
   await prisma.user.deleteMany();

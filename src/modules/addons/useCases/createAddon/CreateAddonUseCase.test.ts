@@ -34,12 +34,14 @@ describe("CreateAddonUseCase", () => {
     const addonData = {
       name: "Botijão para Água",
       value: 15.0,
+      type: "WATER_VESSEL",
     };
 
     const expectedAddon: AddonItem = {
       id: 1,
       name: "Botijão para Água",
       value: 15.0,
+      type: "WATER_VESSEL",
     };
 
     mockAddonsRepository.createItem.mockResolvedValue(expectedAddon);

@@ -20,12 +20,14 @@ export class UpdateTotalWithInterestUseCase {
   // $10 after 15 days + $1 per day after 30
   private calculateTotalWithInterest(order: {
     total: number;
-    gasAmount: number;
     created_at: Date;
     interest_allowed: boolean;
+    orderItems?: Array<{ stock?: { type: string }; quantity: number }>;
   }): number {
     const allowInterest = order.interest_allowed;
-    const hasGas = order.gasAmount;
+    const hasGas = order.orderItems?.some(
+      (item) => item.stock?.type === "GAS" && item.quantity > 0
+    );
 
     if (!allowInterest || !hasGas) {
       return order.total;

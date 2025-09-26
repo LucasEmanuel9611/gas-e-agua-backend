@@ -22,6 +22,7 @@ describe(GetStockUseCase.name, () => {
       {
         id: 1,
         name: "Gás",
+        type: "GAS",
         quantity: 10,
         value: 80,
         created_at: new Date(),
@@ -30,6 +31,7 @@ describe(GetStockUseCase.name, () => {
       {
         id: 2,
         name: "Água",
+        type: "WATER",
         quantity: 20,
         value: 5,
         created_at: new Date(),

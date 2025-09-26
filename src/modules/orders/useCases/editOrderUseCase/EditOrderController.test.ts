@@ -36,11 +36,31 @@ describe("EditOrderController", () => {
       user_id: 456,
       status: "PENDENTE",
       payment_state: "PENDENTE",
-      gasAmount: 2,
-      waterAmount: 3,
       total: 50,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
+      interest_allowed: true,
+      orderItems: [
+        {
+          id: 1,
+          orderId: 123,
+          stockId: 1,
+          quantity: 2,
+          unitValue: 15,
+          totalValue: 30,
+          stock: { id: 1, name: "Gás", type: "GAS", value: 15 },
+        },
+        {
+          id: 2,
+          orderId: 123,
+          stockId: 2,
+          quantity: 1,
+          unitValue: 20,
+          totalValue: 20,
+          stock: { id: 2, name: "Água", type: "WATER", value: 20 },
+        },
+      ],
+      orderAddons: [],
       address: {
         street: "Test Street",
         number: "123",
@@ -65,14 +85,23 @@ describe("EditOrderController", () => {
     const response = await request(app)
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
-      .send({ gasAmount: 2, waterAmount: 3 });
+      .send({
+        items: [
+          { id: 1, type: "GAS", quantity: 2 },
+          { id: 2, type: "WATER", quantity: 1 },
+        ],
+        addons: [],
+      });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
-      gasAmount: 2,
-      waterAmount: 3,
+      items: [
+        { id: 1, type: "GAS", quantity: 2 },
+        { id: 2, type: "WATER", quantity: 1 },
+      ],
+      addons: [],
     });
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
@@ -88,11 +117,37 @@ describe("EditOrderController", () => {
       user_id: 456,
       status: "PENDENTE",
       payment_state: "PENDENTE",
-      gasAmount: 1,
-      waterAmount: 2,
-      total: 35,
+      total: 45,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
+      interest_allowed: true,
+      orderItems: [
+        {
+          id: 1,
+          orderId: 123,
+          stockId: 1,
+          quantity: 1,
+          unitValue: 25,
+          totalValue: 25,
+          stock: { id: 1, name: "Gás", type: "GAS", value: 25 },
+        },
+      ],
+      orderAddons: [
+        {
+          id: 1,
+          orderId: 123,
+          addonId: 1,
+          quantity: 1,
+          unitValue: 20,
+          totalValue: 20,
+          addon: {
+            id: 1,
+            name: "Botijão para Água",
+            type: "WATER_VESSEL",
+            value: 20,
+          },
+        },
+      ],
       address: {
         street: "Test Street",
         number: "123",
@@ -118,24 +173,22 @@ describe("EditOrderController", () => {
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
       .send({
-        gasAmount: 1,
-        waterAmount: 2,
-        waterWithBottle: true,
+        items: [{ id: 1, type: "GAS", quantity: 1 }],
+        addons: [{ id: 1, type: "WATER_VESSEL", quantity: 1 }],
       });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
-    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
-      order_id: "123",
-      gasAmount: 1,
-      waterAmount: 2,
-      waterWithBottle: true,
-    });
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
       notificationTokens: mockAdminUser.notificationTokens,
       notificationTitle: "Pedido editado",
       notificationBody: "Um pedido foi editado no app",
+    });
+    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+      order_id: "123",
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [{ id: 1, type: "WATER_VESSEL", quantity: 1 }],
     });
   });
 
@@ -145,11 +198,37 @@ describe("EditOrderController", () => {
       user_id: 456,
       status: "PENDENTE",
       payment_state: "PENDENTE",
-      gasAmount: 2,
-      waterAmount: 1,
       total: 45,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
+      interest_allowed: true,
+      orderItems: [
+        {
+          id: 1,
+          orderId: 123,
+          stockId: 2,
+          quantity: 1,
+          unitValue: 25,
+          totalValue: 25,
+          stock: { id: 2, name: "Água", type: "WATER", value: 25 },
+        },
+      ],
+      orderAddons: [
+        {
+          id: 1,
+          orderId: 123,
+          addonId: 2,
+          quantity: 1,
+          unitValue: 20,
+          totalValue: 20,
+          addon: {
+            id: 2,
+            name: "Botijão para Gás",
+            type: "GAS_VESSEL",
+            value: 20,
+          },
+        },
+      ],
       address: {
         street: "Test Street",
         number: "123",
@@ -175,339 +254,405 @@ describe("EditOrderController", () => {
       .put("/orders/123/edit")
       .set("Authorization", "Bearer token")
       .send({
-        gasAmount: 2,
-        waterAmount: 1,
-        gasWithBottle: true,
+        items: [{ id: 2, type: "WATER", quantity: 1 }],
+        addons: [{ id: 2, type: "GAS_VESSEL", quantity: 1 }],
       });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
+    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
-      gasAmount: 2,
-      waterAmount: 1,
-      gasWithBottle: true,
+      items: [{ id: 2, type: "WATER", quantity: 1 }],
+      addons: [{ id: 2, type: "GAS_VESSEL", quantity: 1 }],
     });
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
       notificationTokens: mockAdminUser.notificationTokens,
       notificationTitle: "Pedido editado",
       notificationBody: "Um pedido foi editado no app",
     });
   });
+});
 
-  it("should edit order with both bottle addons", async () => {
-    const mockOrder = {
-      id: 123,
-      user_id: 456,
-      status: "PENDENTE",
-      payment_state: "PENDENTE",
-      gasAmount: 1,
-      waterAmount: 1,
-      total: 50,
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      address: {
-        street: "Test Street",
-        number: "123",
-        reference: "Test Reference",
-        local: "Test City",
+it("should edit order with both bottle addons", async () => {
+  const mockOrder = {
+    id: 123,
+    user_id: 456,
+    status: "PENDENTE",
+    payment_state: "PENDENTE",
+    total: 65,
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    interest_allowed: true,
+    orderItems: [
+      {
+        id: 1,
+        orderId: 123,
+        stockId: 1,
+        quantity: 1,
+        unitValue: 25,
+        totalValue: 25,
+        stock: { id: 1, name: "Gás", type: "GAS", value: 25 },
       },
-      user: {
-        username: "testUser",
-        telephone: "81999999999",
+    ],
+    orderAddons: [
+      {
+        id: 1,
+        orderId: 123,
+        addonId: 1,
+        quantity: 1,
+        unitValue: 20,
+        totalValue: 20,
+        addon: {
+          id: 1,
+          name: "Botijão para Água",
+          type: "WATER_VESSEL",
+          value: 20,
+        },
       },
-    };
-
-    const mockAdminUser = {
-      id: 1,
-      notificationTokens: ["token1"],
-    };
-
-    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
-
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({
-        gasAmount: 1,
-        waterAmount: 1,
-        waterWithBottle: true,
-        gasWithBottle: true,
-      });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(mockOrder);
-    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
-      order_id: "123",
-      gasAmount: 1,
-      waterAmount: 1,
-      waterWithBottle: true,
-      gasWithBottle: true,
-    });
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
-      notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
-    });
-  });
-
-  it("should edit order removing addons", async () => {
-    const mockOrder = {
-      id: 123,
-      user_id: 456,
-      status: "PENDENTE",
-      payment_state: "PENDENTE",
-      gasAmount: 1,
-      waterAmount: 1,
-      total: 15,
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      address: {
-        street: "Test Street",
-        number: "123",
-        reference: "Test Reference",
-        local: "Test City",
+      {
+        id: 2,
+        orderId: 123,
+        addonId: 2,
+        quantity: 1,
+        unitValue: 20,
+        totalValue: 20,
+        addon: {
+          id: 2,
+          name: "Botijão para Gás",
+          type: "GAS_VESSEL",
+          value: 20,
+        },
       },
-      user: {
-        username: "testUser",
-        telephone: "81999999999",
+    ],
+    address: {
+      street: "Test Street",
+      number: "123",
+      reference: "Test Reference",
+      local: "Test City",
+    },
+    user: {
+      username: "testUser",
+      telephone: "81999999999",
+    },
+  };
+
+  const mockAdminUser = {
+    id: 1,
+    notificationTokens: ["token1"],
+  };
+
+  mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+  mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [
+        { id: 1, type: "WATER_VESSEL", quantity: 1 },
+        { id: 2, type: "GAS_VESSEL", quantity: 1 },
+      ],
+    });
+
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual(mockOrder);
+  expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+    order_id: "123",
+    items: [{ id: 1, type: "GAS", quantity: 1 }],
+    addons: [
+      { id: 1, type: "WATER_VESSEL", quantity: 1 },
+      { id: 2, type: "GAS_VESSEL", quantity: 1 },
+    ],
+  });
+});
+
+it("should return 500 if EditOrderUseCase throws an error", async () => {
+  mockEditOrderUseCase.execute.mockRejectedValue(new Error("Database error"));
+  mockListAdminUserUseCase.execute.mockResolvedValue({
+    notificationTokens: [],
+  });
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
+    });
+
+  expect(response.status).toBe(500);
+  expect(response.body.message).toBe("Erro interno do servidor");
+});
+
+it("should edit order removing addons", async () => {
+  const mockOrder = {
+    id: 123,
+    user_id: 456,
+    status: "PENDENTE",
+    payment_state: "PENDENTE",
+    total: 25,
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    interest_allowed: true,
+    orderItems: [
+      {
+        id: 1,
+        orderId: 123,
+        stockId: 1,
+        quantity: 1,
+        unitValue: 25,
+        totalValue: 25,
+        stock: { id: 1, name: "Gás", type: "GAS", value: 25 },
       },
-    };
+    ],
+    orderAddons: [],
+    address: {
+      street: "Test Street",
+      number: "123",
+      reference: "Test Reference",
+      local: "Test City",
+    },
+    user: {
+      username: "testUser",
+      telephone: "81999999999",
+    },
+  };
 
-    const mockAdminUser = {
-      id: 1,
-      notificationTokens: ["token1"],
-    };
+  const mockAdminUser = {
+    id: 1,
+    notificationTokens: ["token1"],
+  };
 
-    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+  mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+  mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({
-        gasAmount: 1,
-        waterAmount: 1,
-        waterWithBottle: false,
-        gasWithBottle: false,
-      });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(mockOrder);
-    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
-      order_id: "123",
-      gasAmount: 1,
-      waterAmount: 1,
-      waterWithBottle: false,
-      gasWithBottle: false,
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
-      notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
+
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual(mockOrder);
+  expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+    order_id: "123",
+    items: [{ id: 1, type: "GAS", quantity: 1 }],
+    addons: [],
+  });
+});
+
+it("should update order date successfully and return 200", async () => {
+  const mockOrder = {
+    id: 123,
+    user_id: 456,
+    status: "FINALIZADO",
+    payment_state: "PENDENTE",
+    total: 50,
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    interest_allowed: true,
+    orderItems: [],
+    orderAddons: [],
+    address: {
+      street: "Test Street",
+      number: "123",
+      reference: "Test Reference",
+      local: "Test City",
+    },
+    user: {
+      username: "testUser",
+      telephone: "81999999999",
+    },
+  };
+
+  const mockAdminUser = {
+    id: 1,
+    notificationTokens: ["token1", "token2"],
+  };
+
+  mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+  mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const newDate = new Date().toISOString();
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({ date: newDate });
+
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual(mockOrder);
+  expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
+    order_id: "123",
+    items: [],
+    addons: [],
+  });
+});
+
+it("should return 500 if ListAdminUserUseCase throws an error", async () => {
+  mockEditOrderUseCase.execute.mockResolvedValue({});
+  mockListAdminUserUseCase.execute.mockRejectedValue(
+    new Error("Admin user error")
+  );
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-  });
 
-  it("should update order date successfully and return 200", async () => {
-    const mockOrder = {
-      id: 123,
-      user_id: 456,
-      status: "FINALIZADO",
-      payment_state: "PENDENTE",
-      gasAmount: 1,
-      waterAmount: 2,
-      total: 50,
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      address: {
-        street: "Test Street",
-        number: "123",
-        reference: "Test Reference",
-        local: "Test City",
-      },
-      user: {
-        username: "testUser",
-        telephone: "81999999999",
-      },
-    };
+  expect(response.status).toBe(500);
+  expect(response.body.message).toBe("Erro interno do servidor");
+});
 
-    const mockAdminUser = {
-      id: 1,
-      notificationTokens: ["token1", "token2"],
-    };
+it("should handle SendNotificationUseCase error gracefully", async () => {
+  const mockOrder = {
+    id: 123,
+    user_id: 456,
+    status: "PENDENTE",
+    payment_state: "PENDENTE",
+    total: 50,
+    updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    interest_allowed: true,
+    orderItems: [],
+    orderAddons: [],
+    address: {
+      street: "Test Street",
+      number: "123",
+      reference: "Test Reference",
+      local: "Test City",
+    },
+    user: {
+      username: "testUser",
+      telephone: "81999999999",
+    },
+  };
 
-    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+  const mockAdminUser = {
+    id: 1,
+    notificationTokens: ["token1", "token2"],
+  };
 
-    const newDate = new Date().toISOString();
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({ date: newDate });
+  mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
+  mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
+  mockSendNotificationUseCase.execute.mockRejectedValue(
+    new Error("Notification error")
+  );
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(mockOrder);
-    expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
-      order_id: "123",
-      gasAmount: undefined,
-      gasWithBottle: undefined,
-      waterAmount: undefined,
-      waterWithBottle: undefined,
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
-      notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
+
+  expect(response.status).toBe(500);
+  expect(response.body.message).toBe("Erro interno do servidor");
+});
+
+it("should return 400 if order is null/undefined", async () => {
+  mockEditOrderUseCase.execute.mockRejectedValue(
+    new AppError("Pedido não encontrado", 400)
+  );
+  mockListAdminUserUseCase.execute.mockResolvedValue({
+    notificationTokens: [],
+  });
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const response = await request(app)
+    .put("/orders/12/edit")
+    .set("Authorization", "Bearer token")
+    .send({});
+
+  expect(response.status).toBe(400);
+  expect(response.body.message).toBe("Pedido não encontrado");
+});
+
+it("should return 400 if order is not found", async () => {
+  mockEditOrderUseCase.execute.mockRejectedValue(
+    new AppError("Pedido não encontrado", 400)
+  );
+  mockListAdminUserUseCase.execute.mockResolvedValue({
+    notificationTokens: [],
+  });
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const response = await request(app)
+    .put("/orders/999/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-  });
 
-  it("should return 500 if EitOrderUseCase throws an error", async () => {
-    mockEditOrderUseCase.execute.mockRejectedValue(new Error("Database error"));
-    mockListAdminUserUseCase.execute.mockResolvedValue({
-      notificationTokens: [],
+  expect(response.status).toBe(400);
+  expect(response.body.message).toBe("Pedido não encontrado");
+});
+
+it("should return 400 if order status is not PENDENTE", async () => {
+  mockEditOrderUseCase.execute.mockRejectedValue(
+    new AppError("Só é possível editar pedidos com status PENDENTE", 400)
+  );
+  mockListAdminUserUseCase.execute.mockResolvedValue({
+    notificationTokens: [],
+  });
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
+
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({ gasAmount: 1 });
+  expect(response.status).toBe(400);
+  expect(response.body.message).toBe(
+    "Só é possível editar pedidos com status PENDENTE"
+  );
+});
 
-    expect(response.status).toBe(500);
-    expect(response.body.message).toBe("Erro interno do servidor");
-  });
-
-  it("should return 500 if ListAdminUserUseCase throws an error", async () => {
-    mockEditOrderUseCase.execute.mockResolvedValue({});
-    mockListAdminUserUseCase.execute.mockRejectedValue(
-      new Error("Admin user error")
-    );
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
-
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({ gasAmount: 1 });
-
-    expect(response.status).toBe(500);
-    expect(response.body.message).toBe("Erro interno do servidor");
-  });
-
-  it("should handle SendNotificationUseCase error gracefully", async () => {
-    const mockOrder = {
-      id: 123,
-      user_id: 456,
-      status: "PENDENTE",
-      payment_state: "PENDENTE",
-      gasAmount: 1,
-      waterAmount: 2,
-      total: 50,
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      address: {
-        street: "Test Street",
-        number: "123",
-        reference: "Test Reference",
-        local: "Test City",
-      },
-      user: {
-        username: "testUser",
-        telephone: "81999999999",
-      },
-    };
-
-    const mockAdminUser = {
-      id: 1,
-      notificationTokens: ["token1", "token2"],
-    };
-
-    mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockRejectedValue(
-      new Error("Notification error")
-    );
-
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({ gasAmount: 1 });
-
-    expect(response.status).toBe(500);
-    expect(response.body.message).toBe("Erro interno do servidor");
-  });
-
-  it("should return 400 if order is not found", async () => {
-    mockEditOrderUseCase.execute.mockRejectedValue(
-      new AppError("Pedido não encontrado", 400)
-    );
-    mockListAdminUserUseCase.execute.mockResolvedValue({
-      notificationTokens: [],
+it("should return 400 if id is missing", async () => {
+  const response = await request(app)
+    .put("/orders/ /edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
-    const response = await request(app)
-      .put("/orders/12/edit")
-      .set("Authorization", "Bearer token")
-      .send({ gasAmount: 1 });
+  expect(response.status).toBe(400);
+  expect(response.body.message).toBeDefined();
+  expect(response.body.message).toContain("id do pedido");
+});
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe("Pedido não encontrado");
+it("should return 500 if EditOrderUseCase throws an error", async () => {
+  mockEditOrderUseCase.execute.mockRejectedValue(new Error("Database error"));
+  mockListAdminUserUseCase.execute.mockResolvedValue({
+    notificationTokens: [],
   });
+  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
-  it("should return 400 if order is null/undefined", async () => {
-    mockEditOrderUseCase.execute.mockRejectedValue(
-      new AppError("Pedido não encontrado", 400)
-    );
-    mockListAdminUserUseCase.execute.mockResolvedValue({
-      notificationTokens: [],
+  const response = await request(app)
+    .put("/orders/123/edit")
+    .set("Authorization", "Bearer token")
+    .send({
+      items: [{ id: 1, type: "GAS", quantity: 1 }],
+      addons: [],
     });
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
-    const response = await request(app)
-      .put("/orders/12/edit")
-      .set("Authorization", "Bearer token")
-      .send({ date: new Date().toISOString() });
-
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe("Pedido não encontrado");
-  });
-
-  it("should return 400 if order status is not PENDENTE", async () => {
-    mockEditOrderUseCase.execute.mockRejectedValue(
-      new AppError("Só é possível editar pedidos com status PENDENTE", 400)
-    );
-    mockListAdminUserUseCase.execute.mockResolvedValue({
-      notificationTokens: [],
-    });
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
-
-    const response = await request(app)
-      .put("/orders/123/edit")
-      .set("Authorization", "Bearer token")
-      .send({ gasAmount: 1 });
-
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe(
-      "Só é possível editar pedidos com status PENDENTE"
-    );
-  });
-
-  it("should return 400 if id is missing", async () => {
-    const response = await request(app)
-      .put("/orders/ /edit")
-      .set("Authorization", "Bearer token")
-      .send({ gasAmount: 1 });
-
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBeDefined();
-    expect(response.body.message).toContain("id do pedido é obrigatório");
-  });
+  expect(response.status).toBe(500);
+  expect(response.body.message).toBe("Erro interno do servidor");
 });

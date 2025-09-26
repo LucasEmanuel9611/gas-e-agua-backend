@@ -19,6 +19,12 @@ export const createStockItemSchema = z.object({
       invalid_type_error: "O valor deve ser um número",
     })
     .min(0, { message: "O valor deve ser maior que 0" }),
+  type: z
+    .string({
+      required_error: "O tipo é obrigatório",
+      invalid_type_error: "O tipo deve ser uma string",
+    })
+    .min(1, { message: "O tipo não pode ser vazio" }),
 });
 
 export const updateStockItemSchema = z.object({
@@ -39,5 +45,11 @@ export const updateStockItemSchema = z.object({
       invalid_type_error: "O valor deve ser um número",
     })
     .min(1, { message: "O valor deve ser maior que 0" })
+    .optional(),
+  type: z
+    .string({
+      invalid_type_error: "O tipo deve ser uma string",
+    })
+    .min(1, { message: "O tipo não pode ser vazio" })
     .optional(),
 });

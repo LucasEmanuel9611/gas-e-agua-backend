@@ -16,11 +16,52 @@ export interface ICreateOrderDTO {
   status: OrderStatusProps;
   payment_state?: OrderPaymentStatus;
   total: number;
-  gasAmount: number;
-  waterAmount: number;
-  addonIds?: number[];
+  items: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+    unitValue?: number;
+    totalValue?: number;
+  }>;
+  addons?: Array<{
+    id: number;
+    type: string;
+    quantity: number;
+    unitValue?: number;
+    totalValue?: number;
+  }>;
   created_at?: Date;
   interest_allowed?: boolean;
+}
+
+export interface IOrderItem {
+  id: number;
+  orderId: number;
+  stockId: number;
+  quantity: number;
+  unitValue: number;
+  totalValue: number;
+  stock?: {
+    id: number;
+    name: string;
+    type: string;
+    value: number;
+  };
+}
+
+export interface IOrderAddon {
+  id: number;
+  orderId: number;
+  addonId: number;
+  quantity: number;
+  unitValue: number;
+  totalValue: number;
+  addon?: {
+    id: number;
+    name: string;
+    type: string;
+    value: number;
+  };
 }
 
 export class Order {
@@ -28,13 +69,13 @@ export class Order {
   user_id: number;
   status: OrderStatusProps;
   payment_state: OrderPaymentStatus;
-  gasAmount: number;
-  waterAmount: number;
   updated_at: Date | string;
   created_at: Date | string;
   total: number;
   address: AddressDates;
   interest_allowed: boolean;
+  orderItems?: IOrderItem[];
+  orderAddons?: IOrderAddon[];
   user?: {
     username: string;
     telephone: string;
@@ -50,7 +91,5 @@ export type UpdateOrderDTO = Partial<{
   payment_state: string;
   status: OrderStatusProps;
   updated_at: Date | string;
-  gasAmount: number;
-  waterAmount: number;
   interest_allowed: boolean;
 }>;

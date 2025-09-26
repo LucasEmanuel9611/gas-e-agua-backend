@@ -10,12 +10,12 @@ export class UpdateAddonUseCase {
   ) {}
 
   async execute({
-    newData: { name, value },
+    newData: { name, value, type },
     id,
   }: IUpdateAddonItemDTO): Promise<AddonItem> {
     return this.addonsRepository.update({
       id,
-      newData: { name, value },
+      newData: { name, value, type },
     });
   }
 }

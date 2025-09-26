@@ -10,11 +10,11 @@ import { createAddonSchema } from "./schema";
 export class CreateAddonController {
   async handle(req: Request, res: Response) {
     try {
-      const { name, value } = validateSchema(createAddonSchema, req.body);
+      const { name, value, type } = validateSchema(createAddonSchema, req.body);
 
       const createAddonUseCase = container.resolve(CreateAddonUseCase);
 
-      const addon = await createAddonUseCase.execute({ name, value });
+      const addon = await createAddonUseCase.execute({ name, value, type });
 
       return res.status(201).send(addon);
     } catch (error) {

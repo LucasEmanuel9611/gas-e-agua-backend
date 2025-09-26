@@ -48,6 +48,7 @@ describe("CreateStockItemController", () => {
 
     const payload = {
       name: "Gás",
+      type: "GAS",
       quantity: 10,
       value: 89.9,
     };
