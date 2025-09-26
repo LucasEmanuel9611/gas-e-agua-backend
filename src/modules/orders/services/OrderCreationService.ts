@@ -3,6 +3,7 @@ import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUse
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
+import { StockItem } from "@modules/stock/types";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { inject, injectable } from "tsyringe";
 
@@ -66,10 +67,11 @@ export class OrderCreationService implements IOrderCreationService {
         });
       }
 
-      await this.verifyStockQuantity(items);
-      await this.updateStockQuantity(items);
+      const stockItems = await this.getStockData();
+      await this.verifyStockQuantity(items, stockItems);
+      await this.updateStockQuantity(items, stockItems);
 
-      const baseTotal = await this.calculateBaseTotal(items);
+      const baseTotal = this.calculateBaseTotal(items, stockItems);
       const addonsTotal = await this.calculateAddonsTotal(addons);
       const calculatedTotal = baseTotal + addonsTotal;
       const finalTotal = (total || calculatedTotal) + overdue_amount;
@@ -79,7 +81,7 @@ export class OrderCreationService implements IOrderCreationService {
         status,
         user_id,
         address_id: targetAddress.id,
-        items: await this.enrichItemsWithValues(items),
+        items: this.enrichItemsWithValues(items, stockItems),
         addons: await this.enrichAddonsWithValues(addons),
         total: finalTotal,
         payment_state: finalPaymentState,
@@ -121,10 +123,9 @@ export class OrderCreationService implements IOrderCreationService {
   }
 
   private async verifyStockQuantity(
-    items: Array<{ id: number; type: string; quantity: number }>
+    items: Array<{ id: number; type: string; quantity: number }>,
+    stockItems: StockItem[]
   ) {
-    const stockItems = await this.getStockData();
-
     items.forEach((item) => {
       const stockItem = stockItems.find((stock) => stock.id === item.id);
       if (!stockItem) {
@@ -141,11 +142,11 @@ export class OrderCreationService implements IOrderCreationService {
   }
 
   private async updateStockQuantity(
-    items: Array<{ id: number; type: string; quantity: number }>
+    items: Array<{ id: number; type: string; quantity: number }>,
+    stockItems: StockItem[]
   ) {
     const updatePromises = items.map(async (item) => {
-      const stockItem = await this.stockRepository.findAll();
-      const foundItem = stockItem.find((stock) => stock.id === item.id);
+      const foundItem = stockItems.find((stock) => stock.id === item.id);
       if (foundItem) {
         return this.stockRepository.update({
           id: item.id,
@@ -168,11 +169,10 @@ export class OrderCreationService implements IOrderCreationService {
     return item ? item.quantity : 0;
   }
 
-  private async calculateBaseTotal(
-    items: Array<{ id: number; type: string; quantity: number }>
-  ): Promise<number> {
-    const stockItems = await this.getStockData();
-
+  private calculateBaseTotal(
+    items: Array<{ id: number; type: string; quantity: number }>,
+    stockItems: StockItem[]
+  ): number {
     return items.reduce((total, item) => {
       const stockItem = stockItems.find((stock) => stock.id === item.id);
       if (stockItem) {
@@ -201,11 +201,10 @@ export class OrderCreationService implements IOrderCreationService {
     }, 0);
   }
 
-  private async enrichItemsWithValues(
-    items: Array<{ id: number; type: string; quantity: number }>
+  private enrichItemsWithValues(
+    items: Array<{ id: number; type: string; quantity: number }>,
+    stockItems: StockItem[]
   ) {
-    const stockItems = await this.getStockData();
-
     return items.map((item) => {
       const stockItem = stockItems.find((stock) => stock.id === item.id);
       return {
