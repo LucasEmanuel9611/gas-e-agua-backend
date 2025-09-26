@@ -1,3 +1,135 @@
+## CONFIGURE GUIDE
+
+Guia único para subir a aplicação (Docker) e o stack de observabilidade (Grafana, Prometheus, Loki, Promtail) localmente e em produção.
+
+### Sumário
+- Pré‑requisitos
+- Estrutura de pastas relevante
+- Configuração da aplicação (Docker)
+- Banco de dados e Redis
+- Observabilidade (monitoring stack)
+- Verificação e testes
+- Troubleshooting rápido
+- Produção (VPS) – dicas
+
+### Pré‑requisitos
+- Docker e Docker Compose instalados
+- Porta da API liberada (3333) na máquina/servidor
+- Se for usar Nginx/HTTPS em prod, domínios apontados para a VPS
+
+### Estrutura de pastas relevante
+- `Dockerfile`
+- `docker-compose.app.yml` (app + mysql + redis)
+- `docker-compose.monitoring.yml` (Grafana/Prometheus/Loki/Promtail/etc.)
+- `monitoring/` (configs do stack)
+- `.env.docker` (variáveis de app – use o exemplo `env.docker.example`)
+- `swagger.json` (copiado para `dist/` no build da imagem)
+
+### Configuração da aplicação (Docker)
+1) Criar/env copiar `.env.docker`
+   - Baseie-se em `env.docker.example`
+   - Valores padrão funcionam localmente
+
+2) Build & up da aplicação
+```bash
+docker compose -f docker-compose.app.yml --env-file .env.docker build app
+docker compose -f docker-compose.app.yml --env-file .env.docker up -d
+```
+
+3) Comandos úteis
+```bash
+# status
+docker compose -f docker-compose.app.yml --env-file .env.docker ps
+
+# logs da aplicação
+docker logs gas-e-agua-app --tail=100 -f
+
+# parar
+docker compose -f docker-compose.app.yml --env-file .env.docker down
+```
+
+Notas:
+- MySQL mapeado em 3307 (host) → 3306 (container)
+- Redis mapeado em 6380 (host) → 6379 (container)
+- A aplicação expõe 3333
+- O `Dockerfile` copia o `swagger.json` para `dist/` após o build
+
+### Banco de dados e Redis
+- A URL do banco no container é `mysql:3306` (via rede do compose)
+- Variáveis em `.env.docker` controlam usuário/senha/database
+- Redis é acessado por `redis:6379` internamente
+
+### Observabilidade (monitoring stack)
+1) Subir o stack
+```bash
+docker compose -f docker-compose.monitoring.yml up -d
+```
+
+2) Serviços e portas padrão
+- Grafana: 3000
+- Prometheus: 9090
+- Loki: 3100
+- Promtail: (sem porta)
+- Alertmanager: 9093
+- Node Exporter: 9100
+- cAdvisor: 8080
+
+3) Datasources e dashboards
+- Provisionados em `monitoring/grafana/provisioning`
+- Datasources esperados: Prometheus (`http://prometheus:9090`) e Loki (`http://loki:3100`)
+- Dashboards: métricas e logs do backend
+
+4) Scrape da aplicação pelo Prometheus
+- Em `monitoring/prometheus/prometheus.yml`, target para a API: `host.docker.internal:3333`
+- No serviço `prometheus` do compose, usamos `extra_hosts: ["host.docker.internal:host-gateway"]` quando necessário em Linux
+
+### Verificação e testes
+Aplicação:
+```bash
+curl -s http://localhost:3333/health
+```
+
+Métricas (Prometheus):
+```bash
+open http://localhost:9090
+```
+
+Grafana:
+```bash
+open http://localhost:3000
+# usuário/senha: conforme variáveis (ex.: admin/admin123)
+```
+
+Logs (Grafana → Loki):
+- Acesse o dashboard de logs provisionado
+- Filtre por job `gas-e-agua-backend` e visualize `type = "application_error"` para AppError
+
+### Troubleshooting rápido
+- Docker sem permissão: adicione seu usuário ao grupo `docker` e reinicie a sessão
+- Porta em uso (3306/6379): altere binds no `docker-compose.app.yml` (ex.: 3307→3306, 6380→6379)
+- App reiniciando: ver `docker logs gas-e-agua-app` (erros de import, env incorreto, DB indisponível)
+- Prometheus não vê a API: confirme target `host.docker.internal:3333` e `extra_hosts` do serviço
+- Loki com erro 500: reduza range/refresh do painel, confirme `loki-config.yml` válido
+- Grafana sem datasources: reinicie o container após ajustar `provisioning`
+
+### Produção (VPS) – dicas
+- Prefira expor Grafana/Prometheus via Nginx com HTTPS e proteção (Basic Auth/IP allowlist)
+- Mantenha UFW restringindo portas diretas (3000/9090/9093)
+- Volumes persistentes: `monitoring/data/*`, `mysql_data`, `redis_data`
+- Backups: dashboards via API/script, dados TSDB/chunks via snapshots/volumes
+
+### Comandos rápidos (atalhos)
+```bash
+# App
+docker compose -f docker-compose.app.yml --env-file .env.docker up -d
+docker compose -f docker-compose.app.yml --env-file .env.docker down
+docker logs gas-e-agua-app -f --tail=200
+
+# Monitoring
+docker compose -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.monitoring.yml down
+```
+
 # 📊 Guia Completo de Monitoramento - Gas e Água Backend
 
 ## 🎯 **Visão Geral**
@@ -300,7 +432,3 @@ docker logs loki
 docker restart grafana
 docker restart prometheus
 ```
-
----
-
-**📞 Para suporte técnico, consulte a documentação completa em `MONITORING_README.md`**
