@@ -1,3 +1,4 @@
+/* eslint-disable default-param-last */
 export class AppError extends Error {
   public readonly message: string;
   public readonly statusCode: number;
@@ -17,7 +18,6 @@ export class AppError extends Error {
     this.code = code;
     this.name = "AppError";
 
-    // Capturar stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, AppError);
     }
