@@ -38,4 +38,3 @@ scrape_configs:
     static_configs:
       - targets: ["postgres-exporter:9187"]
     scrape_interval: 10s
-# TESTE - arquivo da minha máquina

@@ -143,9 +143,10 @@ export class OrderCreationService implements IOrderCreationService {
   private async updateStockQuantity(
     items: Array<{ id: number; type: string; quantity: number }>
   ) {
+    const stockItems = await this.stockRepository.findAll();
+
     const updatePromises = items.map(async (item) => {
-      const stockItem = await this.stockRepository.findAll();
-      const foundItem = stockItem.find((stock) => stock.id === item.id);
+      const foundItem = stockItems.find((stock) => stock.id === item.id);
       if (foundItem) {
         return this.stockRepository.update({
           id: item.id,
