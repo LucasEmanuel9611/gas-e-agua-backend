@@ -15,7 +15,7 @@ export async function ensureAdmin(
   const id = req?.user?.id;
 
   if (!id) {
-    throw new AppError("User id doest is undefined");
+    throw new AppError({ message: "User id doest is undefined" });
   }
 
   const usersRepository = new UsersRepository();
@@ -23,7 +23,7 @@ export async function ensureAdmin(
   const user = await usersRepository.findById(Number(id));
 
   if (user.role !== "ADMIN") {
-    throw new AppError("User doesn't have admin privileges!");
+    throw new AppError({ message: "User doesn't have admin privileges!" });
   }
 
   next();

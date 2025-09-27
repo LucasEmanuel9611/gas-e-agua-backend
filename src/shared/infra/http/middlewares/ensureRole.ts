@@ -13,11 +13,11 @@ export function ensureRole(allowedRoles: UserRole[]) {
     const user = await usersRepository.findById(Number(id));
 
     if (!allowedRoles.includes(user.role)) {
-      throw new AppError(
-        `User doesn't have required privileges! Required roles: ${allowedRoles.join(
+      throw new AppError({
+        message: `User doesn't have required privileges! Required roles: ${allowedRoles.join(
           ", "
-        )}`
-      );
+        )}`,
+      });
     }
 
     next();

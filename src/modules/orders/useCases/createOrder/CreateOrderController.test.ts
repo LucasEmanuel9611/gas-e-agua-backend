@@ -460,7 +460,9 @@ describe("CreateOrderController", () => {
       notificationTokens: [],
     });
     mockCreateOrderUseCase.execute.mockRejectedValue(
-      new AppError("Estoque insuficiente de Gás. Disponível: 1, Solicitado: 2")
+      new AppError({
+        message: "Estoque insuficiente de Gás. Disponível: 1, Solicitado: 2",
+      })
     );
 
     const response = await request(app)
@@ -481,7 +483,9 @@ describe("CreateOrderController", () => {
       notificationTokens: [],
     });
     mockCreateOrderUseCase.execute.mockRejectedValue(
-      new AppError("Estoque insuficiente de Água. Disponível: 1, Solicitado: 2")
+      new AppError({
+        message: "Estoque insuficiente de Água. Disponível: 1, Solicitado: 2",
+      })
     );
 
     const response = await request(app)
@@ -502,7 +506,9 @@ describe("CreateOrderController", () => {
       notificationTokens: [],
     });
     mockCreateOrderUseCase.execute.mockRejectedValue(
-      new AppError("Estoque insuficiente de Gás. Disponível: 1, Solicitado: 2")
+      new AppError({
+        message: "Estoque insuficiente de Gás. Disponível: 1, Solicitado: 2",
+      })
     );
 
     const response = await request(app)
