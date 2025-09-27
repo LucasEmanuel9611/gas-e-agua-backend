@@ -205,7 +205,10 @@ describe(CreateOrderUseCase.name, () => {
   });
 
   it("should handle service errors", async () => {
-    const serviceError = new AppError("Erro no serviço", 400);
+    const serviceError = new AppError({
+      message: "Erro no serviço",
+      statusCode: 400,
+    });
     mockOrderCreationService.createOrder.mockRejectedValue(serviceError);
 
     await expect(

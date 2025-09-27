@@ -107,11 +107,13 @@ export class EditOrderUseCase {
     const order = await this.ordersRepository.findById(Number(order_id));
 
     if (!order) {
-      throw new AppError("Pedido não encontrado");
+      throw new AppError({ message: "Pedido não encontrado" });
     }
 
     if (order.status !== "PENDENTE") {
-      throw new AppError("Só é possível editar pedidos com status PENDENTE");
+      throw new AppError({
+        message: "Só é possível editar pedidos com status PENDENTE",
+      });
     }
 
     const finalItems = items || [];

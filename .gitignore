@@ -7,3 +7,6 @@ coverage
 dist
 ormconfig.json
 .db
+logs/
+*.log
+monitoring/data/

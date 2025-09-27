@@ -45,7 +45,9 @@ export class OrderCreationService implements IOrderCreationService {
       } = data;
 
       if (!items || items.length === 0) {
-        throw new AppError("Pelo menos um item deve ser fornecido");
+        throw new AppError({
+          message: "Pelo menos um item deve ser fornecido",
+        });
       }
 
       await this.validateUserAndAddress(user_id);
@@ -109,11 +111,11 @@ export class OrderCreationService implements IOrderCreationService {
     const user = await this.usersRepository.findById(user_id);
 
     if (!user) {
-      throw new AppError("Usuário não encontrado");
+      throw new AppError({ message: "Usuário não encontrado" });
     }
 
     if (!user.addresses) {
-      throw new AppError("Usuário sem endereço cadastrado");
+      throw new AppError({ message: "Usuário sem endereço cadastrado" });
     }
   }
 
@@ -129,14 +131,14 @@ export class OrderCreationService implements IOrderCreationService {
     items.forEach((item) => {
       const stockItem = stockItems.find((stock) => stock.id === item.id);
       if (!stockItem) {
-        throw new AppError(
-          `Produto com ID ${item.id} não encontrado no estoque`
-        );
+        throw new AppError({
+          message: `Produto com ID ${item.id} não encontrado no estoque`,
+        });
       }
       if (stockItem.quantity < item.quantity) {
-        throw new AppError(
-          `Estoque insuficiente de ${stockItem.name}. Disponível: ${stockItem.quantity}, Solicitado: ${item.quantity}`
-        );
+        throw new AppError({
+          message: `Estoque insuficiente de ${stockItem.name}. Disponível: ${stockItem.quantity}, Solicitado: ${item.quantity}`,
+        });
       }
     });
   }

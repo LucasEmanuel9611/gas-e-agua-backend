@@ -48,23 +48,23 @@ export class PaymentUseCase {
   private async findOrderOrThrow(order_id: number): Promise<OrderProps> {
     const order = await this.ordersRepository.findByIdWithPayments(order_id);
     if (!order) {
-      throw new AppError("Pedido não encontrado", 404);
+      throw new AppError({ message: "Pedido não encontrado", statusCode: 404 });
     }
     return order;
   }
 
   private validatePayment(order: OrderProps, amount_paid: number): void {
     if (order.payment_state === "PAGO") {
-      throw new AppError(
-        "Pagamento não permitido: pedido já está quitado.",
-        400
-      );
+      throw new AppError({
+        message: "Pagamento não permitido: pedido já está quitado.",
+        statusCode: 400,
+      });
     }
     if (amount_paid > order.total) {
-      throw new AppError(
-        `Valor do pagamento (${amount_paid}) não pode ser maior que o valor atual (${order.total})`,
-        400
-      );
+      throw new AppError({
+        message: `Valor do pagamento (${amount_paid}) não pode ser maior que o valor atual (${order.total})`,
+        statusCode: 400,
+      });
     }
   }
 

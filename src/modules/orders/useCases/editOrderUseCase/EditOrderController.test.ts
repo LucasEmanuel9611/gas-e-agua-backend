@@ -564,7 +564,7 @@ it("should handle SendNotificationUseCase error gracefully", async () => {
 
 it("should return 400 if order is null/undefined", async () => {
   mockEditOrderUseCase.execute.mockRejectedValue(
-    new AppError("Pedido não encontrado", 400)
+    new AppError({ message: "Pedido não encontrado", statusCode: 400 })
   );
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
@@ -582,7 +582,7 @@ it("should return 400 if order is null/undefined", async () => {
 
 it("should return 400 if order is not found", async () => {
   mockEditOrderUseCase.execute.mockRejectedValue(
-    new AppError("Pedido não encontrado", 400)
+    new AppError({ message: "Pedido não encontrado", statusCode: 400 })
   );
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
@@ -603,7 +603,10 @@ it("should return 400 if order is not found", async () => {
 
 it("should return 400 if order status is not PENDENTE", async () => {
   mockEditOrderUseCase.execute.mockRejectedValue(
-    new AppError("Só é possível editar pedidos com status PENDENTE", 400)
+    new AppError({
+      message: "Só é possível editar pedidos com status PENDENTE",
+      statusCode: 400,
+    })
   );
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],

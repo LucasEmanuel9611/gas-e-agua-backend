@@ -1,0 +1,62 @@
+groups:
+  - name: gas-e-agua-backend-alerts
+    rules:
+      # Alta taxa de erros HTTP
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Alta taxa de erros HTTP"
+          description: "A aplicação está retornando mais de 10% de erros 5xx nos últimos 5 minutos"
+
+      # Alto tempo de resposta
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto tempo de resposta"
+          description: "95% das requisições estão demorando mais de 1 segundo para responder"
+
+      # Alta utilização de CPU
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto uso de CPU"
+          description: "CPU está acima de 80% por mais de 5 minutos"
+
+      # Pouca memória disponível
+      - alert: LowMemory
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pouca memória disponível"
+          description: "Menos de 10% de memória disponível"
+
+      # Aplicação inativa
+      - alert: ApplicationDown
+        expr: up{job="gas-e-agua-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Aplicação indisponível"
+          description: "A aplicação gas-e-agua-backend não está respondendo"
+
+      # Alto número de conexões ativas
+      - alert: HighActiveConnections
+        expr: nodejs_active_handles > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alto número de conexões ativas"
+          description: "Número de handles ativos do Node.js está muito alto"

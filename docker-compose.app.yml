@@ -1,0 +1,86 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: gas-e-agua-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gas_e_agua}
+      MYSQL_USER: ${MYSQL_USER:-gas_e_agua}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gas_e_agua123}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Node.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gas-e-agua-app
+    restart: unless-stopped
+    ports:
+      - "3333:3333"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3333
+      DATABASE_URL: mysql://${MYSQL_USER:-gas_e_agua}:${MYSQL_PASSWORD:-gas_e_agua123}@mysql:3306/${MYSQL_DATABASE:-gas_e_agua}
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-key}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3333/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis (para cache e rate limiting)
+  redis:
+    image: redis:7-alpine
+    container_name: gas-e-agua-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

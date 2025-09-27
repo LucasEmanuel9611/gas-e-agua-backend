@@ -57,7 +57,7 @@ describe("CreateUserUseCase", () => {
     } as UserDates);
 
     await expect(createUserUseCase.execute(mockUser)).rejects.toEqual(
-      new AppError("O usuário já existe!")
+      new AppError({ message: "O usuário já existe!" })
     );
 
     expect(usersRepository.create).not.toHaveBeenCalled();

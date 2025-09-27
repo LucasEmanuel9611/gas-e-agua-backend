@@ -35,7 +35,7 @@ export function validateSchema<T extends ZodType<any, any, any>>(
       .join("; ");
     console.error(`Validation failed: ${debugMessages}`);
 
-    throw new AppError(concatenatedMessages, 400);
+    throw new AppError({ message: concatenatedMessages, statusCode: 400 });
   }
 
   return result.data;

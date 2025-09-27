@@ -80,7 +80,9 @@ describe("AuthenticateUserUseCase", () => {
         email: "nonexistent@example.com",
         password: "123456",
       })
-    ).rejects.toEqual(new AppError("Email ou senha incorretos", 401));
+    ).rejects.toEqual(
+      new AppError({ message: "Email ou senha incorretos", statusCode: 401 })
+    );
 
     expect(usersRepository.findByEmail).toHaveBeenCalledWith(
       "nonexistent@example.com"
@@ -115,7 +117,7 @@ describe("AuthenticateUserUseCase", () => {
         email: "test@example.com",
         password: "wrong_password",
       })
-    ).rejects.toEqual(new AppError("Email ou senha incorretos"));
+    ).rejects.toEqual(new AppError({ message: "Email ou senha incorretos" }));
 
     expect(usersRepository.findByEmail).toHaveBeenCalledWith(
       "test@example.com"

@@ -7,7 +7,10 @@ export function checkRole(allowedRoles: string[]) {
     const { user } = req;
 
     if (!user || !allowedRoles.includes(user.role)) {
-      throw new AppError("Acesso negado. Permissão insuficiente.", 403);
+      throw new AppError({
+        message: "Acesso negado. Permissão insuficiente.",
+        statusCode: 403,
+      });
     }
 
     next();
