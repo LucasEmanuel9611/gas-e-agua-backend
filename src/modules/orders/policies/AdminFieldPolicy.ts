@@ -19,10 +19,12 @@ export class AdminFieldPolicy {
       );
 
       if (forbidden.length > 0) {
-        throw new AppError(
-          `Role ${role} is not allowed to set fields: ${forbidden.join(", ")}`,
-          403
-        );
+        throw new AppError({
+          message: `Role ${role} is not allowed to set fields: ${forbidden.join(
+            ", "
+          )}`,
+          statusCode: 403,
+        });
       }
     }
   }

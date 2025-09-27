@@ -29,7 +29,7 @@ export default async function rateLimiter(
     await limiter.consume(request.ip);
     return next();
   } catch (err) {
-    throw new AppError(err.message, 429);
+    throw new AppError({ message: err.message, statusCode: 429 });
   } finally {
     await redisClient.disconnect();
   }

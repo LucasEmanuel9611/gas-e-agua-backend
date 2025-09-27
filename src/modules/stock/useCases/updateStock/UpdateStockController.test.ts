@@ -64,7 +64,7 @@ describe("UpdateStockController", () => {
 
   it("should return the correct status code when UseCase throws AppError", async () => {
     mockUpdateStockUseCase.execute.mockImplementation(() => {
-      throw new AppError("Item não encontrado", 404);
+      throw new AppError({ message: "Item não encontrado", statusCode: 404 });
     });
 
     const response = await request(app)

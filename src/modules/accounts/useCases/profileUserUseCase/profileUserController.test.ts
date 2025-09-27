@@ -58,7 +58,7 @@ describe("ProfileUserController", () => {
 
   it("should return 400 when user is not found", async () => {
     mockProfileUserUseCase.execute.mockRejectedValue(
-      new AppError("Usuário não encontrado", 400)
+      new AppError({ message: "Usuário não encontrado", statusCode: 400 })
     );
 
     const response = await request(app)

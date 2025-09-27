@@ -36,13 +36,16 @@ export class AuthenticateUserUseCase {
     const { expires_in_token, secret_token } = auth;
 
     if (!user) {
-      throw new AppError("Email ou senha incorretos", 401);
+      throw new AppError({
+        message: "Email ou senha incorretos",
+        statusCode: 401,
+      });
     }
 
     const passwordMatch = await compare(password, user.password);
 
     if (!passwordMatch) {
-      throw new AppError("Email ou senha incorretos");
+      throw new AppError({ message: "Email ou senha incorretos" });
     }
 
     const token = sign({ role: user.role }, secret_token, {
