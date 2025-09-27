@@ -213,7 +213,7 @@ describe(CreateOrderUseCase.name, () => {
         user_id: 1,
         items: [
           { id: 1, type: "GAS", quantity: 1 },
-          { id: 1, type: "WATER", quantity: 1 },
+          { id: 2, type: "WATER", quantity: 1 },
         ],
         addons: [],
       })
