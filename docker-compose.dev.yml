@@ -1,50 +1,50 @@
 services:
-  # MySQL Database
+  # MySQL Database (DEV)
   mysql:
     image: mysql:8.0
-    container_name: gas-e-agua-mysql
+    container_name: gas-e-agua-mysql-dev
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.dev
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-gas_e_agua}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gas_e_agua_dev}
       MYSQL_USER: ${MYSQL_USER:-gas_e_agua}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gas_e_agua123}
     ports:
-      - "3307:3306"
+      - "3308:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data_dev:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
     networks:
-      - app-network
+      - app-network-dev
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
 
-  # Node.js Application
+  # Node.js Application (DEV)
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: gas-e-agua-app
+    container_name: gas-e-agua-app-dev
     restart: unless-stopped
     ports:
-      - "3333:3333"
+      - "3334:3333"
     env_file:
-      - .env
+      - .env.dev
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
+      NODE_ENV: development
       PORT: 3333
-      DATABASE_URL: mysql://${MYSQL_USER:-gas_e_agua}:${MYSQL_PASSWORD:-gas_e_agua123}@mysql:3306/${MYSQL_DATABASE:-gas_e_agua}
+      DATABASE_URL: mysql://${MYSQL_USER:-gas_e_agua}:${MYSQL_PASSWORD:-gas_e_agua123}@mysql:3306/${MYSQL_DATABASE:-gas_e_agua_dev}
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-key}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     volumes:
-      - ./logs:/app/logs
+      - ./logs-dev:/app/logs
     networks:
-      - app-network
+      - app-network-dev
     depends_on:
       mysql:
         condition: service_healthy
@@ -61,17 +61,17 @@ services:
       retries: 3
       start_period: 40s
 
-  # Redis (para cache e rate limiting)
+  # Redis (DEV)
   redis:
     image: redis:7-alpine
-    container_name: gas-e-agua-redis
+    container_name: gas-e-agua-redis-dev
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "6381:6379"
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
     networks:
-      - app-network
+      - app-network-dev
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -80,11 +80,13 @@ services:
       retries: 3
 
 volumes:
-  mysql_data:
+  mysql_data_dev:
     driver: local
-  redis_data:
+  redis_data_dev:
     driver: local
 
 networks:
-  app-network:
+  app-network-dev:
     driver: bridge
+
+
