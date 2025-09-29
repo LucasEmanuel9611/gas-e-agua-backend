@@ -40,24 +40,36 @@ cd gas-e-agua-backend
 mkdir -p monitoring/data/{prometheus,loki,grafana,alertmanager} logs
 
 # Copiar arquivos de configuração
-cp env.monitoring.example .env.monitoring
+cp env.monitoring.example .env.monitoring-prd
+cp env.monitoring.example .env.monitoring-dev
 cp env.docker.example .env
+cp env.docker.example .env.dev
 ```
 
 ## ⚙️ 3. Configurar Variáveis de Ambiente
 
 ```bash
-# Editar configurações do monitoramento
-nano .env.monitoring
+# Editar configurações do monitoramento PRD
+nano .env.monitoring-prd
 ```
 
 Configure:
-- `GRAFANA_ADMIN_PASSWORD` (senha do admin)
+- `GRAFANA_ADMIN_PASSWORD` (senha do admin PRD)
 - `SMTP_*` (para alertas por email)
 - `SLACK_WEBHOOK_URL` (para alertas no Slack)
 
 ```bash
-# Editar configurações da aplicação
+# Editar configurações do monitoramento DEV
+nano .env.monitoring-dev
+```
+
+Configure (valores de desenvolvimento):
+- `GRAFANA_ADMIN_PASSWORD` (senha do admin DEV)
+- `SMTP_*` (para alertas por email DEV)
+- `SLACK_WEBHOOK_URL` (para alertas no Slack DEV)
+
+```bash
+# Editar configurações da aplicação PRD
 nano .env
 ```
 
@@ -68,6 +80,19 @@ Configure:
 - `MYSQL_PASSWORD` (senha do usuário)
 - `JWT_SECRET` (chave secreta)
 - `REDIS_URL` (URL do Redis)
+
+```bash
+# Editar configurações da aplicação DEV
+nano .env.dev
+```
+
+Configure (valores de desenvolvimento):
+- `MYSQL_ROOT_PASSWORD` (senha do root do MySQL DEV)
+- `MYSQL_DATABASE` (nome do banco de dados DEV)
+- `MYSQL_USER` (usuário do banco DEV)
+- `MYSQL_PASSWORD` (senha do usuário DEV)
+- `JWT_SECRET` (chave secreta DEV)
+- `REDIS_URL` (URL do Redis DEV)
 
 ## 🐳 4. Deploy da Aplicação
 
@@ -229,11 +254,11 @@ No repositório → Settings → Secrets and variables → Actions:
 
 ### **Deploy Manual**
 ```bash
-# DEV
+# DEV (usa .env.dev e .env.monitoring-dev)
 docker compose -f docker-compose.dev.yml up -d --build
 docker compose -f docker-compose.monitoring-dev.yml up -d
 
-# PRD
+# PRD (usa .env e .env.monitoring-prd)
 docker compose -f docker-compose.app.yml up -d --build
 docker compose -f docker-compose.monitoring-prd.yml up -d
 ```

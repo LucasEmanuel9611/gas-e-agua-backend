@@ -4,6 +4,8 @@ services:
     image: mysql:8.0
     container_name: gas-e-agua-mysql
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-gas_e_agua}
@@ -31,6 +33,8 @@ services:
     restart: unless-stopped
     ports:
       - "3333:3333"
+    env_file:
+      - .env
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3333
