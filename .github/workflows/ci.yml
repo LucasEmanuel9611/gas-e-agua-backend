@@ -49,7 +49,7 @@ jobs:
         run: npx prisma db seed
 
       - name: Rodar linter
-        run: yarn lint
+        run: npm run lint --if-present
 
       - name: Rodar testes
-        run: yarn test --ci --passWithNoTests
+        run: npm test -- --ci --passWithNoTests
