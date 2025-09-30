@@ -22,7 +22,7 @@ scrape_configs:
       - source_labels: ["__meta_docker_container_log_stream"]
         target_label: "stream"
       - source_labels: ["__meta_docker_container_name"]
-        regex: "gas-e-agua-app-dev"
+        regex: "gas-e-agua-app.*"
         target_label: "job"
         replacement: "gas-e-agua-backend"
     pipeline_stages:
