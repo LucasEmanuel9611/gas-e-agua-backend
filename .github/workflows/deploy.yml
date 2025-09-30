@@ -39,6 +39,6 @@ jobs:
             git checkout master
             git pull --ff-only
             docker compose -f docker-compose.app.yml up -d --build --remove-orphans
-            docker compose -f docker-compose.monitoring-prd up -d 
+            docker compose -f docker-compose.monitoring-prd.yml up -d 
             docker system prune -f
           EOF
