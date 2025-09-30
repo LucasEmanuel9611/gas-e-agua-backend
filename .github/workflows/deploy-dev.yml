@@ -27,7 +27,7 @@ jobs:
             git fetch --all
             git checkout develop
             git pull --ff-only
-            docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
-            docker compose -f docker-compose.monitoring-dev.yml up -d
+            docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d --build --remove-orphans
+            docker compose -p gas-e-agua-dev -f docker-compose.monitoring-dev.yml up -d
             docker system prune -f
           EOF
