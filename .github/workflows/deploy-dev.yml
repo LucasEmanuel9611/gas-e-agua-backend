@@ -1,0 +1,33 @@
+name: Deploy to VPS (DEV)
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Pull latest code and restart app (DEV)
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            git fetch --all
+            git checkout develop
+            git pull --ff-only
+            docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
+            docker compose -f docker-compose.monitoring-dev.yml up -d
+            docker system prune -f
+          EOF

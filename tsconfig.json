@@ -6,7 +6,6 @@
     "emitDecoratorMetadata": true,
 
     "module": "commonjs",
-    "moduleResolution": "node",
 
     "baseUrl": "./src",
     "paths": {

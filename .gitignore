@@ -2,9 +2,11 @@ node_modules
 .vscode
 tmp/*
 coverage
-.env
+.env*
 !tmp/.gitkeep
 dist
 ormconfig.json
-package-lock.json
 .db
+logs/
+*.log
+monitoring/data/

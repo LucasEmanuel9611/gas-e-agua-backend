@@ -1,0 +1,96 @@
+global:
+  smtp_smarthost: "${SMTP_HOST:-localhost:587}"
+  smtp_from: "${SMTP_FROM:-alerts@gas-e-agua.com}"
+  smtp_auth_username: "${SMTP_USER:-}"
+  smtp_auth_password: "${SMTP_PASSWORD:-}"
+
+route:
+  group_by: ["alertname", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: "default-receiver"
+  routes:
+    # Alertas críticos vão para múltiplos canais
+    - match:
+        severity: critical
+      receiver: "critical-alerts"
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Alertas de warning só por email
+    - match:
+        severity: warning
+      receiver: "warning-alerts"
+      repeat_interval: 6h
+
+receivers:
+  # Receptor padrão
+  - name: "default-receiver"
+    email_configs:
+      - to: "${ADMIN_EMAIL:-admin@gas-e-agua.com}"
+        subject: "[Gas e Água] Alert: {{ .GroupLabels.alertname }}"
+        body: |
+          {{ range .Alerts }}
+          **Alert:** {{ .Annotations.summary }}
+          **Description:** {{ .Annotations.description }}
+          **Severity:** {{ .Labels.severity }}
+          **Time:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+
+  # Alertas críticos - Email + Slack
+  - name: "critical-alerts"
+    email_configs:
+      - to: "${ADMIN_EMAIL:-admin@gas-e-agua.com}"
+        subject: "🚨 [CRÍTICO] Gas e Água - {{ .GroupLabels.alertname }}"
+        body: |
+          🚨 **ALERTA CRÍTICO** 🚨
+
+          {{ range .Alerts }}
+          **Alert:** {{ .Annotations.summary }}
+          **Description:** {{ .Annotations.description }}
+          **Severity:** {{ .Labels.severity }}
+          **Time:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          **Instance:** {{ .Labels.instance }}
+          {{ end }}
+
+          Acesse o Grafana: http://{{ .ExternalURL }}:3000
+
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#alerts"
+        title: "🚨 Alerta Crítico - Gas e Água Backend"
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          Severidade: `{{ .Labels.severity }}`
+          {{ end }}
+        color: danger
+        send_resolved: true
+
+  # Alertas de warning - Só email
+  - name: "warning-alerts"
+    email_configs:
+      - to: "${ADMIN_EMAIL:-admin@gas-e-agua.com}"
+        subject: "⚠️ [WARNING] Gas e Água - {{ .GroupLabels.alertname }}"
+        body: |
+          ⚠️ **ALERTA DE AVISO** ⚠️
+
+          {{ range .Alerts }}
+          **Alert:** {{ .Annotations.summary }}
+          **Description:** {{ .Annotations.description }}
+          **Time:** {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+
+# Regras de inibição
+inhibit_rules:
+  # Se há alerta crítico, não enviar warning do mesmo tipo
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["alertname", "instance"]
+
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"

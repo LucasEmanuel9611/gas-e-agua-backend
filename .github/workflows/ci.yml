@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22.14.0"
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Definir DATABASE_URL para o container MySQL
+        run: echo "DATABASE_URL=mysql://root:root@localhost:3306/test_db" >> $GITHUB_ENV
+
+      - name: Gerar client do Prisma
+        run: npx prisma generate
+
+      - name: Rodar migrations no banco
+        run: npx prisma migrate deploy
+
+      - name: Rodar seeds no banco
+        run: npx prisma db seed
+
+      - name: Rodar linter
+        run: npm run lint --if-present
+
+      - name: Rodar testes
+        run: npm test -- --ci --passWithNoTests

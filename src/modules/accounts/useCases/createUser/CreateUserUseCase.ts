@@ -1,0 +1,38 @@
+import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { ICreateUserDTO } from "@modules/accounts/types";
+import { hash } from "bcrypt";
+import { inject, injectable } from "tsyringe";
+
+import { AppError } from "@shared/errors/AppError";
+
+@injectable()
+export class CreateUserUseCase {
+  constructor(
+    @inject("UsersRepository")
+    private usersRepository: IUsersRepository
+  ) {}
+
+  async execute({
+    username,
+    email,
+    password,
+    telephone,
+    address,
+  }: ICreateUserDTO): Promise<void> {
+    const userAlreadyExists = await this.usersRepository.findByEmail(email);
+
+    if (userAlreadyExists) {
+      throw new AppError({ message: "O usuário já existe!" });
+    }
+
+    const passwordHash = await hash(password, 8);
+
+    await this.usersRepository.create({
+      username,
+      email,
+      password: passwordHash,
+      telephone,
+      address,
+    });
+  }
+}

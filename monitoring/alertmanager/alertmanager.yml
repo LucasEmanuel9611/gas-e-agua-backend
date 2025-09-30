@@ -1,0 +1,42 @@
+global:
+  smtp_smarthost: "localhost:587"
+  smtp_from: "alerts@gas-e-agua.com"
+
+route:
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: "web.hook"
+
+receivers:
+  - name: "web.hook"
+    webhook_configs:
+      - url: "http://localhost:5001/webhook"
+        send_resolved: true
+
+  # Exemplo de configuração de email (descomente e configure conforme necessário)
+  # - name: 'email-alerts'
+  #   email_configs:
+  #     - to: 'admin@gas-e-agua.com'
+  #       subject: '[ALERT] {{ .GroupLabels.alertname }}'
+  #       body: |
+  #         {{ range .Alerts }}
+  #         Alert: {{ .Annotations.summary }}
+  #         Description: {{ .Annotations.description }}
+  #         {{ end }}
+
+  # Exemplo de configuração Slack (descomente e configure conforme necessário)
+  # - name: 'slack-alerts'
+  #   slack_configs:
+  #     - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+  #       channel: '#alerts'
+  #       title: 'Gas e Água Backend Alert'
+  #       text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+inhibit_rules:
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["alertname", "dev", "instance"]
