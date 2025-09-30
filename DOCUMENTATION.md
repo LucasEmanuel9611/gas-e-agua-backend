@@ -207,7 +207,7 @@ O projeto usa Jest para testes. Cada módulo tem seus próprios testes:
 
 3. Execute as migrações do banco de dados:
    ```bash
-   npm run typeorm migration:run
+   npx prisma migrate deploy
    ```
 
 4. Inicie o servidor:
@@ -219,7 +219,7 @@ O projeto usa Jest para testes. Cada módulo tem seus próprios testes:
 
 - [Documentação do Express](https://expressjs.com/)
 - [Documentação do TypeScript](https://www.typescriptlang.org/)
-- [Documentação do TypeORM](https://typeorm.io/)
+- [Documentação do Prisma](https://www.prisma.io/docs)
 
 ## Tratamento de Erros e Validação
 

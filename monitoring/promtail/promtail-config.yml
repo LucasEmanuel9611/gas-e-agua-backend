@@ -3,49 +3,12 @@ server:
   grpc_listen_port: 0
 
 positions:
-  # arquivo de posições para persistência, progresso de leitura.
   filename: /tmp/positions.yaml
 
 clients:
-  # Lista de destinos onde Promtail envia os logs coletados.
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # Logs da aplicação Node.js
-  - job_name: gas-e-agua-backend
-    static_configs:
-      - targets:
-          - localhost
-        labels:
-          job: gas-e-agua-backend
-          __path__: /var/log/app/*.log
-    pipeline_stages:
-      # Parse JSON logs
-      - json:
-          expressions:
-            level: level
-            message: message
-            timestamp: timestamp
-            service: service
-            method: method
-            url: url
-            status: status
-            responseTime: responseTime
-            userId: userId
-            error: error
-
-      # Adicionar labels baseados no conteúdo
-      - labels:
-          level:
-          service:
-          method:
-          status:
-
-      # Timestamp parsing
-      - timestamp:
-          source: timestamp
-          format: RFC3339Nano
-
   # Logs de containers Docker
   - job_name: docker
     docker_sd_configs:
@@ -58,6 +21,10 @@ scrape_configs:
         replacement: "${1}"
       - source_labels: ["__meta_docker_container_log_stream"]
         target_label: "stream"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "gas-e-agua-app.*"
+        target_label: "job"
+        replacement: "gas-e-agua-backend"
     pipeline_stages:
       - json:
           expressions:
@@ -67,3 +34,7 @@ scrape_configs:
       - timestamp:
           source: time
           format: RFC3339Nano
+      - labels:
+          container_name:
+          stream:
+          job:
