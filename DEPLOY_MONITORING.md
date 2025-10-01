@@ -1,6 +1,29 @@
-# 🚀 Deploy Completo - Gas e Água Backend
+# 🚀 Deploy e Monitoramento - Gas e Água Backend
 
-Guia unificado para deploy da aplicação e sistema de monitoramento em produção.
+Guia completo para deploy, monitoramento e manutenção da aplicação.
+
+## 📖 Índice
+
+### Setup Inicial (Primeira Vez)
+1. [Pré-requisitos](#-pré-requisitos)
+2. [Configurar Domínio](#-1-configurar-domínio-opcional)
+3. [Preparar Projeto](#-2-preparar-o-projeto)
+4. [Configurar Variáveis](#️-3-configurar-variáveis-de-ambiente)
+5. [Deploy Aplicação](#-4-deploy-da-aplicação)
+6. [Deploy Monitoramento](#-5-deploy-do-sistema-de-monitoramento)
+7. [Configurar Segurança](#-6-configurar-segurança-e-https)
+
+### Deploy Dia a Dia
+- [Deploy Automático (GitHub Actions)](#-deploy-automático-github-actions)
+- [Deploy Manual (Scripts)](#️-deploy-manual-scripts)
+- [Rollback (Emergências)](#-rollback-emergências)
+
+### Operação e Manutenção
+- [Comandos de Manutenção](#-9-comandos-de-manutenção)
+- [Troubleshooting](#-10-troubleshooting)
+- [Monitoramento](#-acessar-o-sistema)
+
+---
 
 ## 📋 Pré-requisitos
 
@@ -239,29 +262,170 @@ docker compose -f docker-compose.app.yml logs
 docker compose -f docker-compose.app.yml restart
 ```
 
-## 🚀 11. CI/CD - Deploy Automático
+---
 
-### **Configurar Secrets no GitHub**
-No repositório → Settings → Secrets and variables → Actions:
-- `VPS_HOST`: IP da VPS (ex: 69.62.89.65)
-- `VPS_USER`: deploy
-- `SSH_PRIVATE_KEY`: chave privada SSH do usuário deploy
+## 🔄 Deploy Automático (GitHub Actions)
 
-### **Workflows**
-- **CI**: Roda em pull_request para `develop` e `master` (testes, lint)
-- **Deploy DEV**: Roda em push para `develop` (deploy automático para DEV)
-- **Deploy PRD**: Roda em push para `master` (deploy automático para PRD)
+### **Recomendado para uso diário**
 
-### **Deploy Manual**
+O projeto usa **GitHub Actions customizadas** para deploy automatizado com todas as melhores práticas.
+
+### **🎯 Como Funciona:**
+
+1. **Push código** para `develop` ou `master`
+2. **GitHub Actions** detecta e inicia deploy
+3. **Backup automático** do banco de dados
+4. **Deploy** da aplicação (build, migrations)
+5. **Health check** verifica se está funcionando
+6. **Notificação** de sucesso/falha (Discord/Slack)
+
+### **📋 Configurar Secrets no GitHub**
+
+No repositório → `Settings` → `Secrets and variables` → `Actions`:
+
+| Secret | Descrição | Exemplo |
+|--------|-----------|---------|
+| `VPS_HOST` | IP ou hostname da VPS | `69.62.89.65` |
+| `VPS_USER` | Usuário SSH | `deploy` |
+| `SSH_PRIVATE_KEY` | Chave privada SSH | `-----BEGIN OPENSSH PRIVATE KEY-----` |
+| `DISCORD_WEBHOOK_URL` | (Opcional) Webhook Discord | `https://discord.com/api/webhooks/...` |
+| `SLACK_WEBHOOK_URL` | (Opcional) Webhook Slack | `https://hooks.slack.com/services/...` |
+
+### **🚀 Workflows Disponíveis:**
+
+#### **1. CI (Testes)**
+- **Quando:** Pull Request para `develop` ou `master`
+- **O que faz:**
+  - Roda testes
+  - Verifica linting
+  - Roda migrations em banco de teste
+
+#### **2. Deploy DEV**
+- **Quando:** Push para `develop`
+- **O que faz:**
+  - Backup do banco DEV
+  - Deploy em DEV (porta 3334)
+  - Health check
+  - Notificação
+
+#### **3. Deploy PRD**
+- **Quando:** Push (merge) para `master`
+- **O que faz:**
+  - Backup do banco PRD
+  - Deploy em PRD (porta 3333)
+  - Health check (10 tentativas)
+  - Notificação crítica
+
+### **📦 GitHub Actions Customizadas:**
+
+O projeto tem 4 actions reutilizáveis em `.github/actions/`:
+
+1. **`backup`** - Backup do banco antes do deploy
+2. **`deploy`** - Deploy completo (build, migrations, health check)
+3. **`health-check`** - Verifica saúde da aplicação
+4. **`notify`** - Notificações Discord/Slack
+
+📚 **Documentação completa:** `.github/actions/README.md`
+
+---
+
+## 🛠️ Deploy Manual (Scripts)
+
+### **Use em emergências ou quando GitHub Actions não estiver disponível**
+
+O projeto fornece scripts executáveis para deploy manual direto na VPS.
+
+### **📋 Scripts Disponíveis:**
+
+#### **1. Deploy Completo:**
 ```bash
-# DEV (usa .env.dev e .env.monitoring-dev)
-docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.monitoring-dev.yml up -d
+# DEV
+./scripts/deploy.sh dev
 
-# PRD (usa .env e .env.monitoring-prd)
-docker compose -f docker-compose.app.yml up -d --build
-docker compose -f docker-compose.monitoring-prd.yml up -d
+# PROD
+./scripts/deploy.sh prd
 ```
+
+**O que faz:**
+- ✅ Backup automático do banco
+- ✅ Pull do código
+- ✅ Build dos containers
+- ✅ Migrations do banco
+- ✅ Health check
+- ✅ Sobe monitoramento
+- ✅ Limpeza
+
+#### **2. Backup Manual:**
+```bash
+# DEV
+./scripts/backup-db.sh dev
+
+# PROD
+./scripts/backup-db.sh prd
+```
+
+**Backups ficam em:** `/home/deploy/backups/mysql/`
+
+#### **3. Deploy Básico (sem script):**
+```bash
+# DEV (usa .env.dev)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d --build --remove-orphans
+docker compose -p gas-e-agua-dev -f docker-compose.monitoring-dev.yml up -d
+
+# PRD (usa .env)
+docker compose -p gas-e-agua-prd -f docker-compose.app.yml up -d --build --remove-orphans
+docker compose -p gas-e-agua-prd -f docker-compose.monitoring-prd.yml up -d
+```
+
+📚 **Scripts disponíveis em:** `scripts/`
+
+---
+
+## 🔄 Rollback (Emergências)
+
+### **Quando usar:**
+- ❌ Deploy causou bug crítico
+- ❌ Migration quebrou o banco
+- ❌ Aplicação não responde
+- ❌ Dados sendo corrompidos
+
+### **🚨 Como fazer Rollback:**
+
+#### **1. Listar backups disponíveis:**
+```bash
+ls -lt /home/deploy/backups/mysql/
+```
+
+#### **2. Executar rollback:**
+```bash
+# DEV
+./scripts/rollback.sh dev /home/deploy/backups/mysql/dev-backup-YYYYMMDD-HHMMSS.sql
+
+# PROD (CUIDADO!)
+./scripts/rollback.sh prd /home/deploy/backups/mysql/prd-backup-YYYYMMDD-HHMMSS.sql
+```
+
+#### **3. Verificar se voltou:**
+```bash
+# DEV
+curl http://localhost:3334/health
+
+# PROD
+curl http://localhost:3333/health
+```
+
+### **⏱️ Tempo de Recuperação:**
+- Sem rollback: 30-60 minutos (corrigir + testar + deploy)
+- Com rollback: 2-5 minutos (restaurar backup)
+
+### **🎯 Fluxo de Rollback:**
+
+```
+Deploy com problema → Rollback (2-5 min) → Corrige código → Novo Deploy
+       ❌                     ✅                  ✅              ✅
+```
+
+📚 **Scripts disponíveis em:** `scripts/`
 
 ## 🚀 12. Script Automático para Adicionar IPs
 
@@ -288,16 +452,39 @@ cat /etc/nginx/sites-enabled/monitoring | grep -A 5 -B 5 "allow"
 
 ## ✅ Checklist Final
 
+### **Setup Inicial (Primeira Vez):**
 - [ ] Projeto clonado na VPS
-- [ ] Variáveis de ambiente configuradas
-- [ ] Aplicação rodando (porta 3333)
-- [ ] Sistema de monitoramento rodando
+- [ ] Variáveis de ambiente configuradas (`.env`, `.env.dev`)
+- [ ] Variáveis Redis configuradas (`REDIS_HOST`, `REDIS_PORT`)
+- [ ] Diretório de backups criado (`/home/deploy/backups/mysql`)
 - [ ] DNS configurado (se usando domínio)
 - [ ] SSL configurado (se usando domínio)
 - [ ] Nginx configurado
-- [ ] Acesso funcionando
-- [ ] Backup configurado
+- [ ] GitHub Secrets configurados
+
+### **Deploy Funcionando:**
+- [ ] Aplicação PRD rodando (porta 3333)
+- [ ] Aplicação DEV rodando (porta 3334)
+- [ ] Sistema de monitoramento PRD rodando
+- [ ] Sistema de monitoramento DEV rodando
+- [ ] Health checks passando
+- [ ] Logs aparecendo no Grafana
+
+### **Operação:**
+- [ ] GitHub Actions funcionando
+- [ ] Scripts executáveis com permissão (`chmod +x`)
+- [ ] Backups sendo criados
+- [ ] Notificações configuradas (opcional)
 
 ---
 
-**🎉 Deploy concluído! Sistema rodando em produção!**
+## 📚 Documentação Adicional
+
+- **`.github/actions/README.md`** - Referência das GitHub Actions customizadas
+- **`scripts/README.md`** - Referência dos scripts de manutenção
+- **`DOCUMENTATION.md`** - Documentação do código da aplicação
+- **`prisma-flow.md`** - Fluxo de migrações do banco
+
+---
+
+**🎉 Deploy concluído! Sistema rodando em produção com DevOps Nível 3!**

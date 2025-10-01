@@ -1,0 +1,37 @@
+name: "Database Backup"
+description: "Creates a backup of the database before deployment"
+
+inputs:
+  environment:
+    description: "Environment to backup (dev or prd)"
+    required: true
+  ssh-key:
+    description: "SSH private key"
+    required: true
+  vps-host:
+    description: "VPS hostname"
+    required: true
+  vps-user:
+    description: "VPS user"
+    required: true
+
+outputs:
+  backup-file:
+    description: "Path to the created backup file"
+    value: ${{ steps.backup.outputs.file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create database backup
+      id: backup
+      shell: bash
+      run: |
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
+          set -e
+          cd /home/deploy/gas-e-agua-backend
+          chmod +x scripts/*.sh
+          BACKUP_FILE=$(./scripts/backup-db.sh ${{ inputs.environment }} | grep "Backup created:" | awk '{print $3}')
+          echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
+          echo "✅ Backup created: $BACKUP_FILE"
+        EOF
