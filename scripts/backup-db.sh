@@ -22,13 +22,35 @@ else
   exit 1
 fi
 
-DATABASE=$(grep MYSQL_DATABASE "$ENV_FILE" | cut -d'=' -f2)
-PASSWORD=$(grep MYSQL_ROOT_PASSWORD "$ENV_FILE" | cut -d'=' -f2)
+if [ ! -f "$ENV_FILE" ]; then
+  echo "❌ Arquivo de ambiente não encontrado: $ENV_FILE"
+  exit 1
+fi
+
+source "$ENV_FILE"
+
+if [ -z "$MYSQL_DATABASE" ]; then
+  echo "❌ MYSQL_DATABASE não encontrado no arquivo $ENV_FILE"
+  exit 1
+fi
+
+if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+  echo "❌ MYSQL_ROOT_PASSWORD não encontrado no arquivo $ENV_FILE"
+  exit 1
+fi
+
+if ! docker ps | grep -q "$CONTAINER"; then
+  echo "❌ Container $CONTAINER não está em execução"
+  exit 1
+fi
 
 mkdir -p "$BACKUP_DIR"
 
 echo "📦 Creating backup of $ENV database..."
-docker exec "$CONTAINER" mysqldump -uroot -p"$PASSWORD" "$DATABASE" > "$BACKUP_FILE"
+echo "🔍 Container: $CONTAINER"
+echo "🔍 Database: $MYSQL_DATABASE"
+
+docker exec "$CONTAINER" mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
   echo "✅ Backup created: $BACKUP_FILE"
