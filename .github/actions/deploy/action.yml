@@ -1,0 +1,91 @@
+name: "Deploy Application"
+description: "Deploys the application with all best practices"
+
+inputs:
+  environment:
+    description: "Environment to deploy (dev or prd)"
+    required: true
+  ssh-key:
+    description: "SSH private key"
+    required: true
+  vps-host:
+    description: "VPS hostname"
+    required: true
+  vps-user:
+    description: "VPS user"
+    required: true
+  branch:
+    description: "Git branch to deploy"
+    required: true
+
+outputs:
+  deploy-status:
+    description: "Deploy status (success or failure)"
+    value: ${{ steps.deploy.outputs.status }}
+  deploy-time:
+    description: "Deploy duration in seconds"
+    value: ${{ steps.deploy.outputs.duration }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Deploy application
+      id: deploy
+      shell: bash
+      run: |
+        START_TIME=$SECONDS
+
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
+          set -e
+          
+          echo "🚀 Starting ${{ inputs.environment }} deployment..."
+          cd /home/deploy/gas-e-agua-backend
+          
+          git fetch --all
+          git checkout ${{ inputs.branch }}
+          git pull --ff-only
+          
+          chmod +x scripts/*.sh
+          
+          if [ "${{ inputs.environment }}" = "dev" ]; then
+            PROJECT="gas-e-agua-dev"
+            COMPOSE_FILE="docker-compose.dev.yml"
+            MONITORING_FILE="docker-compose.monitoring-dev.yml"
+            PORT="3334"
+          else
+            PROJECT="gas-e-agua-prd"
+            COMPOSE_FILE="docker-compose.app.yml"
+            MONITORING_FILE="docker-compose.monitoring-prd.yml"
+            PORT="3333"
+          fi
+          
+          echo "🔨 Building containers..."
+          docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans
+          
+          echo "⏳ Waiting for containers..."
+          sleep 15
+          
+          echo "🗄️ Running migrations..."
+          docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate
+          docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy
+          
+          echo "✅ Health check..."
+          sleep 5
+          if ! curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
+            echo "❌ Health check failed!"
+            exit 1
+          fi
+          
+          echo "📊 Starting monitoring..."
+          docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
+          
+          echo "🗑️ Cleaning up..."
+          docker system prune -f
+          
+          echo "✅ Deploy completed successfully!"
+        EOF
+
+        DEPLOY_TIME=$((SECONDS - START_TIME))
+        echo "status=success" >> $GITHUB_OUTPUT
+        echo "duration=$DEPLOY_TIME" >> $GITHUB_OUTPUT
+        echo "⏱️ Deploy completed in ${DEPLOY_TIME}s"
