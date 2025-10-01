@@ -1,0 +1,76 @@
+name: "Send Notification"
+description: "Sends deployment notification to Discord/Slack"
+
+inputs:
+  status:
+    description: "Deployment status (success, failure, or warning)"
+    required: true
+  environment:
+    description: "Environment deployed (dev or prd)"
+    required: true
+  message:
+    description: "Custom message"
+    required: false
+    default: "Deployment completed"
+  discord-webhook:
+    description: "Discord webhook URL"
+    required: false
+  slack-webhook:
+    description: "Slack webhook URL"
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Send Discord notification
+      if: inputs.discord-webhook != ''
+      shell: bash
+      run: |
+        if [ "${{ inputs.status }}" = "success" ]; then
+          COLOR="3066993"
+          EMOJI="✅"
+        elif [ "${{ inputs.status }}" = "failure" ]; then
+          COLOR="15158332"
+          EMOJI="❌"
+        else
+          COLOR="16776960"
+          EMOJI="⚠️"
+        fi
+
+        curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{
+            \"embeds\": [{
+              \"title\": \"$EMOJI Deploy ${{ inputs.status }} - ${{ inputs.environment }}\",
+              \"description\": \"${{ inputs.message }}\",
+              \"color\": $COLOR,
+              \"fields\": [
+                {\"name\": \"Environment\", \"value\": \"${{ inputs.environment }}\", \"inline\": true},
+                {\"name\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"inline\": true},
+                {\"name\": \"Commit\", \"value\": \"${{ github.sha }}\", \"inline\": true},
+                {\"name\": \"Author\", \"value\": \"${{ github.actor }}\", \"inline\": true}
+              ],
+              \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+            }]
+          }" \
+          "${{ inputs.discord-webhook }}" || echo "Failed to send Discord notification"
+
+    - name: Send Slack notification
+      if: inputs.slack-webhook != ''
+      shell: bash
+      run: |
+        EMOJI=$([[ "${{ inputs.status }}" = "success" ]] && echo "✅" || echo "❌")
+
+        curl -X POST \
+          -H 'Content-type: application/json' \
+          -d "{
+            \"text\": \"$EMOJI Deploy ${{ inputs.status }} - ${{ inputs.environment }}\",
+            \"attachments\": [{
+              \"fields\": [
+                {\"title\": \"Message\", \"value\": \"${{ inputs.message }}\", \"short\": false},
+                {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
+                {\"title\": \"Author\", \"value\": \"${{ github.actor }}\", \"short\": true}
+              ]
+            }]
+          }" \
+          "${{ inputs.slack-webhook }}" || echo "Failed to send Slack notification"
