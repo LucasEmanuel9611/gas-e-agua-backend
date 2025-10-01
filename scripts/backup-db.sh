@@ -23,13 +23,12 @@ else
 fi
 
 DATABASE=$(grep MYSQL_DATABASE "$ENV_FILE" | cut -d'=' -f2)
-USER=$(grep MYSQL_USER "$ENV_FILE" | cut -d'=' -f2)
 PASSWORD=$(grep MYSQL_ROOT_PASSWORD "$ENV_FILE" | cut -d'=' -f2)
 
 mkdir -p "$BACKUP_DIR"
 
 echo "📦 Creating backup of $ENV database..."
-docker exec "$CONTAINER" mysqldump -u"$USER" -p"$PASSWORD" "$DATABASE" > "$BACKUP_FILE"
+docker exec "$CONTAINER" mysqldump -uroot -p"$PASSWORD" "$DATABASE" > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
   echo "✅ Backup created: $BACKUP_FILE"
