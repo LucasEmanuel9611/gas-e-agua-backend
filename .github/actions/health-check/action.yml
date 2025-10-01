@@ -1,0 +1,57 @@
+name: "Health Check"
+description: "Checks if the application is healthy after deployment"
+
+inputs:
+  environment:
+    description: "Environment to check (dev or prd)"
+    required: true
+  ssh-key:
+    description: "SSH private key"
+    required: true
+  vps-host:
+    description: "VPS hostname"
+    required: true
+  vps-user:
+    description: "VPS user"
+    required: true
+  max-retries:
+    description: "Maximum number of health check retries"
+    required: false
+    default: "5"
+
+outputs:
+  status:
+    description: "Health check status (healthy or unhealthy)"
+    value: ${{ steps.check.outputs.status }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check application health
+      id: check
+      shell: bash
+      run: |
+        PORT=$([[ "${{ inputs.environment }}" = "dev" ]] && echo "3334" || echo "3333")
+
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << EOF
+          echo "🏥 Checking application health..."
+          
+          RETRIES=0
+          MAX_RETRIES=${{ inputs.max-retries }}
+          
+          while [ \$RETRIES -lt \$MAX_RETRIES ]; do
+            if curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
+              echo "✅ Application is healthy!"
+              exit 0
+            fi
+            
+            RETRIES=\$((RETRIES + 1))
+            echo "⏳ Retry \$RETRIES/\$MAX_RETRIES..."
+            sleep 5
+          done
+          
+          echo "❌ Health check failed after \$MAX_RETRIES attempts"
+          exit 1
+        EOF
+
+        echo "status=healthy" >> $GITHUB_OUTPUT

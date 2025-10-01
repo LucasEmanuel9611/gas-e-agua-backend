@@ -1,15 +1,18 @@
-name: Deploy to VPS (DEV)
+# Nome do workflow que aparecerá na aba "Actions" do GitHub
+name: Deploy to VPS (PRD)
 
+# Quando esse workflow será executado
 on:
   push:
     branches:
-      - develop
+      - master # dispara após merge na master
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Job rodará em máquina virtual Ubuntu
+
     steps:
-      # Etapa 1: Fazer checkout do código do repositório
+      # Etapa 1: Fazer checkout (clonar) o código do repositório
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -21,51 +24,54 @@ jobs:
           chmod 600 ~/.ssh/id_rsa  # Define permissões corretas (segurança)
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts  # Adiciona VPS aos hosts conhecidos
 
-      # Etapa 3: Criar backup do banco antes do deploy (segurança)
+      # Etapa 3: Criar backup do banco ANTES do deploy (CRÍTICO em produção)
       - name: Backup database
         uses: ./.github/actions/backup
         with:
-          environment: dev
+          environment: prd
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
 
-      # Etapa 4: Deploy da aplicação (build, migrations, containers)
+      # Etapa 4: Deploy em PRODUÇÃO (build, migrations, containers)
       - name: Deploy application
         id: deploy
         uses: ./.github/actions/deploy
         with:
-          environment: dev
+          environment: prd
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
-          branch: develop
+          branch: master
 
-      # Etapa 5: Verificar se a aplicação está saudável após deploy
+      # Etapa 5: Verificar saúde da aplicação (10 tentativas em produção)
       - name: Health check
         uses: ./.github/actions/health-check
         with:
-          environment: dev
+          environment: prd
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
+          max-retries: "10" # Mais tentativas em produção
 
-      # Etapa 6: Notificar sucesso do deploy (se tudo deu certo)
+      # Etapa 6: Notificar sucesso (Discord + Slack)
       - name: Notify success
         if: success()
         uses: ./.github/actions/notify
         with:
           status: success
-          environment: dev
-          message: "Deploy completed in ${{ steps.deploy.outputs.deploy-time }}s"
+          environment: prd
+          message: "Production deploy completed in ${{ steps.deploy.outputs.deploy-time }}s"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      # Etapa 7: Notificar falha do deploy (se algo deu errado)
+      # Etapa 7: Notificar FALHA CRÍTICA em produção (Discord + Slack)
       - name: Notify failure
         if: failure()
         uses: ./.github/actions/notify
         with:
           status: failure
-          environment: dev
-          message: "Deploy failed - check logs for details"
+          environment: prd
+          message: "🚨 PRODUCTION DEPLOY FAILED - Immediate action required!"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
