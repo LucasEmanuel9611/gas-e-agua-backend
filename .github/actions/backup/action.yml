@@ -30,7 +30,9 @@ runs:
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
           set -e
           cd /home/deploy/gas-e-agua-backend
-          chmod +x scripts/*.sh
+          git fetch --all
+          git pull --ff-only
+          chmod +x scripts/backup-db.sh
           BACKUP_FILE=$(./scripts/backup-db.sh ${{ inputs.environment }} | grep "Backup created:" | awk '{print $3}')
           echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
           echo "✅ Backup created: $BACKUP_FILE"
