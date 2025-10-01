@@ -27,13 +27,15 @@ runs:
       id: backup
       shell: bash
       run: |
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
+        BRANCH="${{ github.ref_name }}"
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << EOF
           set -e
           cd /home/deploy/gas-e-agua-backend
           git fetch --all
-          git pull --ff-only
+          git checkout $BRANCH
+          git pull --ff-only origin $BRANCH
           chmod +x scripts/backup-db.sh
-          BACKUP_FILE=$(./scripts/backup-db.sh ${{ inputs.environment }} | grep "Backup created:" | awk '{print $3}')
-          echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
-          echo "✅ Backup created: $BACKUP_FILE"
+          BACKUP_FILE=\$(./scripts/backup-db.sh ${{ inputs.environment }} | grep "Backup created:" | awk '{print \$3}')
+          echo "file=\$BACKUP_FILE" >> \$GITHUB_OUTPUT
+          echo "✅ Backup created: \$BACKUP_FILE"
         EOF
