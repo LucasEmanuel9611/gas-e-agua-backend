@@ -34,8 +34,22 @@ else
   exit 1
 fi
 
-DATABASE=$(grep MYSQL_DATABASE "$ENV_FILE" | cut -d'=' -f2)
-PASSWORD=$(grep MYSQL_ROOT_PASSWORD "$ENV_FILE" | cut -d'=' -f2)
+if [ ! -f "$ENV_FILE" ]; then
+  echo "❌ Arquivo de ambiente não encontrado: $ENV_FILE"
+  exit 1
+fi
+
+source "$ENV_FILE"
+
+if [ -z "$MYSQL_DATABASE" ]; then
+  echo "❌ MYSQL_DATABASE não encontrado no arquivo $ENV_FILE"
+  exit 1
+fi
+
+if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+  echo "❌ MYSQL_ROOT_PASSWORD não encontrado no arquivo $ENV_FILE"
+  exit 1
+fi
 
 read -p "⚠️  Are you sure you want to rollback $ENV? (yes/no): " confirm
 if [ "$confirm" != "yes" ]; then
@@ -44,9 +58,12 @@ if [ "$confirm" != "yes" ]; then
 fi
 
 echo "🔄 Starting rollback for $ENV..."
+echo "🔍 Container: $CONTAINER"
+echo "🔍 Database: $MYSQL_DATABASE"
+echo "🔍 Backup file: $BACKUP_FILE"
 
 echo "📥 Restoring database from backup..."
-docker exec -i "$CONTAINER" mysql -uroot -p"$PASSWORD" "$DATABASE" < "$BACKUP_FILE"
+docker exec -i "$CONTAINER" mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$BACKUP_FILE"
 
 echo "🔄 Restarting application..."
 cd /home/deploy/gas-e-agua-backend

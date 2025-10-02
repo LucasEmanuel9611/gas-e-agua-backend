@@ -262,6 +262,31 @@ docker compose -f docker-compose.app.yml logs
 docker compose -f docker-compose.app.yml restart
 ```
 
+### Erro de autenticação no backup MySQL:
+Se o backup falhar com erro `Access denied for user`, verifique:
+
+```bash
+# 1. Verificar se arquivo .env existe e tem as variáveis
+cat /home/deploy/gas-e-agua-backend/.env.dev | grep -E "^MYSQL_ROOT_PASSWORD|^MYSQL_DATABASE"
+
+# 2. Verificar se container está rodando
+docker ps | grep mysql
+
+# 3. Testar conexão manualmente
+docker exec gas-e-agua-mysql-dev mysql -uroot -p'SUA_SENHA' -e "SHOW DATABASES;"
+
+# 4. Verificar variáveis do container
+docker exec gas-e-agua-mysql-dev env | grep MYSQL
+```
+
+**Importante:** O arquivo `.env` deve ter as variáveis sem espaços e sem aspas:
+```bash
+MYSQL_ROOT_PASSWORD=senha_root
+MYSQL_DATABASE=gas_e_agua_dev
+MYSQL_USER=gas_e_agua
+MYSQL_PASSWORD=senha_usuario
+```
+
 ---
 
 ## 🔄 Deploy Automático (GitHub Actions)
