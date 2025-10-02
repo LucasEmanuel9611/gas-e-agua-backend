@@ -65,6 +65,7 @@ echo "🔍 User: root"
 echo "🔍 Password length: ${#MYSQL_ROOT_PASSWORD} caracteres"
 
 echo "📥 Restoring database from backup..."
+unset MYSQL_USER
 docker exec -i "$CONTAINER" mysql --user=root --password="$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$BACKUP_FILE"
 
 echo "🔄 Restarting application..."
