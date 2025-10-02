@@ -61,6 +61,8 @@ echo "🔄 Starting rollback for $ENV..."
 echo "🔍 Container: $CONTAINER"
 echo "🔍 Database: $MYSQL_DATABASE"
 echo "🔍 Backup file: $BACKUP_FILE"
+echo "🔍 User: root"
+echo "🔍 Password length: ${#MYSQL_ROOT_PASSWORD} caracteres"
 
 echo "📥 Restoring database from backup..."
 docker exec -i "$CONTAINER" mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$BACKUP_FILE"

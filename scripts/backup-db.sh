@@ -49,6 +49,8 @@ mkdir -p "$BACKUP_DIR"
 echo "📦 Creating backup of $ENV database..."
 echo "🔍 Container: $CONTAINER"
 echo "🔍 Database: $MYSQL_DATABASE"
+echo "🔍 User: root"
+echo "🔍 Password length: ${#MYSQL_ROOT_PASSWORD} caracteres"
 
 docker exec "$CONTAINER" mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" > "$BACKUP_FILE"
 
