@@ -52,7 +52,7 @@ echo "🔍 Database: $MYSQL_DATABASE"
 echo "🔍 User: root"
 echo "🔍 Password length: ${#MYSQL_ROOT_PASSWORD} caracteres"
 
-docker exec "$CONTAINER" mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" > "$BACKUP_FILE"
+docker exec "$CONTAINER" mysqldump --user=root --password="$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
   echo "✅ Backup created: $BACKUP_FILE"

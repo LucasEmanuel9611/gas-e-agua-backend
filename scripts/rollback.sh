@@ -65,7 +65,7 @@ echo "🔍 User: root"
 echo "🔍 Password length: ${#MYSQL_ROOT_PASSWORD} caracteres"
 
 echo "📥 Restoring database from backup..."
-docker exec -i "$CONTAINER" mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$BACKUP_FILE"
+docker exec -i "$CONTAINER" mysql --user=root --password="$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$BACKUP_FILE"
 
 echo "🔄 Restarting application..."
 cd /home/deploy/gas-e-agua-backend
