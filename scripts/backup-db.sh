@@ -50,7 +50,9 @@ echo "📦 Creating backup of $ENV database..."
 echo "🔍 Container: $CONTAINER"
 echo "🔍 Database: $MYSQL_DATABASE"
 
-docker exec "$CONTAINER" mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" > "$BACKUP_FILE"
+# unset var MYSQL_USER from env to use root user
+unset MYSQL_USER
+docker exec "$CONTAINER" mysqldump --user=root --password="$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" > "$BACKUP_FILE"
 
 if [ $? -eq 0 ]; then
   echo "✅ Backup created: $BACKUP_FILE"
