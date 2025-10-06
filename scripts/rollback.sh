@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Script de rollback para reverter deploy
-# Uso: ./scripts/rollback.sh [dev|prd] [backup-file]
-
 set -e
 
 ENV=${1:-dev}
 BACKUP_FILE=$2
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 if [ -z "$BACKUP_FILE" ]; then
+  BACKUP_BASE_DIR="$(dirname "$PROJECT_DIR")/backups"
   echo "Uso: $0 [dev|prd] [backup-file]"
-  echo "Exemplo: $0 dev /home/deploy/backups/mysql/dev-backup-20250930-120000.sql"
+  echo "Exemplo: $0 dev $BACKUP_BASE_DIR/dev/backup-20250930-120000.sql"
   exit 1
 fi
 
@@ -21,12 +21,12 @@ fi
 
 if [ "$ENV" = "dev" ]; then
   CONTAINER="gas-e-agua-mysql-dev"
-  ENV_FILE="/home/deploy/gas-e-agua-backend/.env.dev"
+  ENV_FILE="$PROJECT_DIR/.env.dev"
   PROJECT="gas-e-agua-dev"
   COMPOSE_FILE="docker-compose.dev.yml"
 elif [ "$ENV" = "prd" ]; then
   CONTAINER="gas-e-agua-mysql"
-  ENV_FILE="/home/deploy/gas-e-agua-backend/.env"
+  ENV_FILE="$PROJECT_DIR/.env"
   PROJECT="gas-e-agua-prd"
   COMPOSE_FILE="docker-compose.app.yml"
 else
@@ -69,7 +69,7 @@ unset MYSQL_USER
 docker exec -i "$CONTAINER" mysql --user=root --password="$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$BACKUP_FILE"
 
 echo "🔄 Restarting application..."
-cd /home/deploy/gas-e-agua-backend
+cd "$PROJECT_DIR"
 docker compose -p "$PROJECT" -f "$COMPOSE_FILE" restart app
 
 echo "✅ Rollback completed!"

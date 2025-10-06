@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Script completo de deploy com todas as melhores práticas
-# Uso: ./scripts/deploy.sh [dev|prd]
-
 set -e
 
 ENV=${1:-dev}
@@ -73,7 +70,12 @@ if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migr
   echo "🔄 Do you want to rollback? (yes/no)"
   read -r ROLLBACK
   if [ "$ROLLBACK" = "yes" ]; then
-    LATEST_BACKUP=$(ls -t /home/deploy/backups/mysql/${ENV}-backup-*.sql | head -1)
+    BACKUP_BASE_DIR="$(dirname "$PROJECT_DIR")/backups"
+    if [ "$ENV" = "dev" ]; then
+      LATEST_BACKUP=$(ls -t "$BACKUP_BASE_DIR/dev/backup-"*.sql | head -1)
+    else
+      LATEST_BACKUP=$(ls -t "$BACKUP_BASE_DIR/prd/backup-"*.sql | head -1)
+    fi
     "$SCRIPT_DIR/rollback.sh" "$ENV" "$LATEST_BACKUP"
   fi
   exit 1

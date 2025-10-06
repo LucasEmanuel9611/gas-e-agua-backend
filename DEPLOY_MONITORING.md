@@ -266,17 +266,20 @@ docker compose -f docker-compose.app.yml restart
 Se o backup falhar com erro `Access denied for user`, verifique:
 
 ```bash
-# 1. Verificar se arquivo .env existe e tem as variáveis
-cat /home/deploy/gas-e-agua-backend/.env.dev | grep -E "^MYSQL_ROOT_PASSWORD|^MYSQL_DATABASE"
+# 1. Verificar variáveis do container (senha REAL)
+docker exec gas-e-agua-mysql-dev env | grep MYSQL
 
-# 2. Verificar se container está rodando
+# 2. Verificar arquivo .env.dev (deve corresponder ao container)
+cat .env.dev | grep -E "^MYSQL_ROOT_PASSWORD|^MYSQL_DATABASE"
+
+# 3. Verificar se container está rodando
 docker ps | grep mysql
 
-# 3. Testar conexão manualmente
-docker exec gas-e-agua-mysql-dev mysql -uroot -p'SUA_SENHA' -e "SHOW DATABASES;"
+# 4. Testar conexão e ver bancos disponíveis
+docker exec gas-e-agua-mysql-dev mysql -uroot -pSUA_SENHA -e "SHOW DATABASES;"
 
-# 4. Verificar variáveis do container
-docker exec gas-e-agua-mysql-dev env | grep MYSQL
+# 5. Se banco não existir, criar:
+docker exec gas-e-agua-mysql-dev mysql -uroot -pSUA_SENHA -e "CREATE DATABASE gas_e_agua_dev;"
 ```
 
 **Importante:** O arquivo `.env` deve ter as variáveis sem espaços e sem aspas:
@@ -389,7 +392,16 @@ O projeto fornece scripts executáveis para deploy manual direto na VPS.
 ./scripts/backup-db.sh prd
 ```
 
-**Backups ficam em:** `/home/deploy/backups/mysql/`
+**Estrutura de Backups:**
+```
+../backups/
+├── dev/
+│   └── backup-20251006-190000.sql
+└── prd/
+    └── backup-20251006-210000.sql
+```
+
+**Backups são mantidos por 7 dias** e limpos automaticamente.
 
 #### **3. Deploy Básico (sem script):**
 ```bash
@@ -418,16 +430,20 @@ docker compose -p gas-e-agua-prd -f docker-compose.monitoring-prd.yml up -d
 
 #### **1. Listar backups disponíveis:**
 ```bash
-ls -lt /home/deploy/backups/mysql/
+# DEV
+ls -lt ../backups/dev/
+
+# PRD
+ls -lt ../backups/prd/
 ```
 
 #### **2. Executar rollback:**
 ```bash
 # DEV
-./scripts/rollback.sh dev /home/deploy/backups/mysql/dev-backup-YYYYMMDD-HHMMSS.sql
+./scripts/rollback.sh dev ../backups/dev/backup-YYYYMMDD-HHMMSS.sql
 
 # PROD (CUIDADO!)
-./scripts/rollback.sh prd /home/deploy/backups/mysql/prd-backup-YYYYMMDD-HHMMSS.sql
+./scripts/rollback.sh prd ../backups/prd/backup-YYYYMMDD-HHMMSS.sql
 ```
 
 #### **3. Verificar se voltou:**
