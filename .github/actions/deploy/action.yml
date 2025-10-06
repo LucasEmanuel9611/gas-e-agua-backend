@@ -14,9 +14,6 @@ inputs:
   vps-user:
     description: "VPS user"
     required: true
-  branch:
-    description: "Git branch to deploy"
-    required: true
 
 outputs:
   deploy-status:
@@ -40,12 +37,6 @@ runs:
           
           echo "🚀 Starting ${{ inputs.environment }} deployment..."
           cd /home/deploy/gas-e-agua-backend
-          
-          git fetch --all
-          git checkout ${{ inputs.branch }}
-          git pull --ff-only
-          
-          chmod +x scripts/*.sh
           
           if [ "${{ inputs.environment }}" = "dev" ]; then
             PROJECT="gas-e-agua-dev"

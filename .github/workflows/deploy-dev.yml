@@ -5,6 +5,10 @@ on:
     branches:
       - develop
 
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,10 +20,22 @@ jobs:
       # Etapa 2: Configurar SSH para conectar na VPS
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh  # Cria diretório .ssh se não existir
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa  # Salva chave privada
-          chmod 600 ~/.ssh/id_rsa  # Define permissões corretas (segurança)
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts  # Adiciona VPS aos hosts conhecidos
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Ensure correct branch
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            git fetch --all
+            git checkout develop
+            git pull --ff-only
+            chmod +x scripts/*.sh
+            echo "✅ Repository updated to develop branch"
+          EOF
 
       # Etapa 3: Criar backup do banco antes do deploy (segurança)
       - name: Backup database
@@ -39,7 +55,6 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
-          branch: develop
 
       # Etapa 5: Verificar se a aplicação está saudável após deploy
       - name: Health check
