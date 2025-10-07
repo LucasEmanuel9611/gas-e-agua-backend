@@ -57,8 +57,18 @@ runs:
             exit 1
           fi
           
-          echo "⏳ Waiting for migrations and app startup..."
-          sleep 20
+          echo "⏳ Waiting for containers to be ready..."
+          sleep 15
+          
+          echo "🗄️ Running database migrations..."
+          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1; then
+            echo "❌ Database migrations failed!"
+            echo "📋 Application logs:"
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
+            exit 1
+          fi
+          
+          echo "✅ Migrations completed successfully!"
           
           echo "✅ Checking application health..."
           sleep 5

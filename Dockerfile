@@ -49,10 +49,6 @@ COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /app/swagger.json ./
 
-# Copiar entrypoint script
-COPY --chown=nodejs:nodejs docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # Criar diretório para logs
 RUN mkdir -p logs && chown nodejs:nodejs logs
 
@@ -67,7 +63,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3333/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Usar dumb-init para gerenciar processos corretamente
-ENTRYPOINT ["dumb-init", "--", "docker-entrypoint.sh"]
+ENTRYPOINT ["dumb-init", "--"]
 
 # Comando padrão
 CMD ["npm", "start"]
