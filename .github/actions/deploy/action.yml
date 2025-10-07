@@ -51,26 +51,44 @@ runs:
           fi
           
           echo "🔨 Building containers..."
-          docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans
-          
-          echo "⏳ Waiting for containers..."
-          sleep 15
-          
-          echo "🗄️ Running migrations..."
-          docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate
-          docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy
-          
-          echo "✅ Health check..."
-          sleep 5
-          if ! curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
-            echo "❌ Health check failed!"
+          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans; then
+            echo "❌ Container build failed!"
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs --tail=50
             exit 1
           fi
           
-          echo "📊 Starting monitoring..."
+          echo "⏳ Waiting for containers to be healthy..."
+          sleep 15
+          
+          echo "🗄️ Generating Prisma Client..."
+          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate 2>&1 | tee /tmp/prisma-generate.log; then
+            echo "❌ Prisma generate failed!"
+            cat /tmp/prisma-generate.log
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
+            exit 1
+          fi
+          
+          echo "🗄️ Running database migrations..."
+          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1 | tee /tmp/prisma-migrate.log; then
+            echo "❌ Database migrations failed!"
+            cat /tmp/prisma-migrate.log
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
+            exit 1
+          fi
+          
+          echo "✅ Checking application health..."
+          sleep 5
+          if ! curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
+            echo "❌ Health check failed at http://localhost:$PORT/health"
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" ps
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
+            exit 1
+          fi
+          
+          echo "📊 Starting monitoring stack..."
           docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
           
-          echo "🗑️ Cleaning up..."
+          echo "🗑️ Cleaning up old images and containers..."
           docker system prune -f
           
           echo "✅ Deploy completed successfully!"
