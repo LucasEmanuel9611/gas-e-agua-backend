@@ -1,0 +1,52 @@
+name: Database Backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment (dev or prd)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prd
+  schedule:
+    - cron: "0 2 * * *"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Execute Backup
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+        run: |
+          BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa ${VPS_USER}@${VPS_HOST} "bash -l -c 'cd ~/gas-e-agua-backend && bash ./scripts/backup-db.sh ${ENVIRONMENT}'")
+
+          echo "$BACKUP_OUTPUT"
+
+          BACKUP_FILE=$(echo "$BACKUP_OUTPUT" | grep "Backup created:" | awk '{print $3}')
+
+          if [ -z "$BACKUP_FILE" ]; then
+            echo "❌ Falha ao criar backup"
+            exit 1
+          fi
+
+          echo "✅ Backup created: $BACKUP_FILE"
+          echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa

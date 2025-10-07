@@ -2,6 +2,29 @@
 
 Actions reutilizáveis para deploy e manutenção da aplicação.
 
+## 🔄 Workflows Automáticos
+
+### `backup.yml` - Backup Automático do Banco
+
+Workflow para criar backups do banco de dados de forma manual ou automática.
+
+**Execução:**
+- **Manual**: Actions → Database Backup → Run workflow
+- **Automática**: Diariamente às 2h AM (UTC)
+
+**Secrets necessários:**
+- `VPS_SSH_KEY`: Chave SSH privada
+- `VPS_HOST`: Hostname/IP do servidor
+- `VPS_USER`: Usuário SSH
+
+**O que faz:**
+1. Conecta via SSH no servidor
+2. Executa `scripts/backup-db.sh` com bash (compatível zsh/bash)
+3. Salva backup em `/backups/{env}/backup-{timestamp}.sql`
+4. Remove backups com mais de 7 dias
+
+---
+
 ## 📦 Actions Disponíveis
 
 ### 1. `backup` - Backup do Banco de Dados

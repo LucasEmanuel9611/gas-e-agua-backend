@@ -3,7 +3,8 @@
 set -e
 
 ENV=${1:-dev}
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BACKUP_BASE_DIR="$(dirname "$PROJECT_DIR")/backups"
 DATE=$(date +%Y%m%d-%H%M%S)
