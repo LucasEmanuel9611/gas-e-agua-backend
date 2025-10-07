@@ -57,24 +57,8 @@ runs:
             exit 1
           fi
           
-          echo "⏳ Waiting for containers to be healthy..."
-          sleep 15
-          
-          echo "🗄️ Generating Prisma Client..."
-          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate 2>&1 | tee /tmp/prisma-generate.log; then
-            echo "❌ Prisma generate failed!"
-            cat /tmp/prisma-generate.log
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-            exit 1
-          fi
-          
-          echo "🗄️ Running database migrations..."
-          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1 | tee /tmp/prisma-migrate.log; then
-            echo "❌ Database migrations failed!"
-            cat /tmp/prisma-migrate.log
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-            exit 1
-          fi
+          echo "⏳ Waiting for migrations and app startup..."
+          sleep 20
           
           echo "✅ Checking application health..."
           sleep 5
