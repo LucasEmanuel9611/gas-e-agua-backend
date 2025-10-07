@@ -27,10 +27,11 @@ runs:
       id: backup
       shell: bash
       run: |
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
-          set -e
-          cd /home/deploy/gas-e-agua-backend
-          BACKUP_FILE=$(./scripts/backup-db.sh ${{ inputs.environment }} | grep "Backup created:" | awk '{print $3}')
-          echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
-          echo "✅ Backup created: $BACKUP_FILE"
-        EOF
+        BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} "bash -lc 'cd /home/deploy/gas-e-agua-backend && ./scripts/backup-db.sh ${{ inputs.environment }}'")
+        echo "$BACKUP_OUTPUT"
+        BACKUP_FILE=$(echo "$BACKUP_OUTPUT" | grep "Backup created:" | awk '{print $3}')
+        if [ -z "$BACKUP_FILE" ]; then
+          exit 1
+        fi
+        echo "file=$BACKUP_FILE" >> "$GITHUB_OUTPUT"
+        echo "✅ Backup created: $BACKUP_FILE"
