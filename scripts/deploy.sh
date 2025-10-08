@@ -44,7 +44,20 @@ else
 fi
 git pull --ff-only
 
-# 3. Build e subir containers
+# 3. Carregar variáveis de ambiente
+if [ "$ENV" = "dev" ]; then
+  ENV_FILE="$PROJECT_DIR/.env.dev"
+else
+  ENV_FILE="$PROJECT_DIR/.env"
+fi
+
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+fi
+
+# 4. Build e subir containers
 echo "🔨 Building and starting containers..."
 if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans; then
   echo "❌ Container build failed!"
@@ -52,11 +65,11 @@ if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orph
   exit 1
 fi
 
-# 4. Aguardar containers ficarem saudáveis
+# 5. Aguardar containers ficarem saudáveis
 echo "⏳ Waiting for containers to be healthy..."
 sleep 15
 
-# 5. Rodar migrations
+# 6. Rodar migrations
 echo "🗄️ Running database migrations..."
 echo "📝 Generating Prisma Client..."
 if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate; then
@@ -90,7 +103,7 @@ fi
 
 echo "✅ Database migrations completed successfully"
 
-# 6. Health check
+# 7. Health check
 echo "✅ Checking application health..."
 sleep 5
 if ! curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
@@ -99,19 +112,19 @@ if ! curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
   exit 1
 fi
 
-# 7. Subir monitoramento
+# 8. Subir monitoramento
 echo "📊 Starting monitoring stack..."
 docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
 
-# 8. Limpeza
+# 9. Limpeza
 echo "🗑️ Cleaning up..."
 docker system prune -f
 
-# 9. Sucesso
+# 10. Sucesso
 echo "✅ Deployment completed successfully!"
 "$SCRIPT_DIR/notify.sh" success "$ENV" "Deployment completed successfully"
 
-# 10. Métricas
+# 11. Métricas
 DEPLOY_TIME=$SECONDS
 echo "⏱️  Total deployment time: ${DEPLOY_TIME}s"
 echo "🔗 Application URL: http://localhost:$PORT"
