@@ -69,13 +69,8 @@ fi
 echo "✅ Prisma Client generated successfully"
 echo "📝 Applying database migrations..."
 
-MIGRATION_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1)
-MIGRATION_EXIT_CODE=$?
-
-echo "$MIGRATION_OUTPUT"
-
-if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
-  echo "❌ Migration failed with exit code $MIGRATION_EXIT_CODE"
+if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy; then
+  echo "❌ Migration failed!"
   docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
   "$SCRIPT_DIR/notify.sh" failure "$ENV" "Database migration failed"
   
@@ -93,14 +88,7 @@ if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
   exit 1
 fi
 
-if echo "$MIGRATION_OUTPUT" | grep -q "No pending migrations"; then
-  echo "✅ No pending migrations to apply"
-elif echo "$MIGRATION_OUTPUT" | grep -q "migrations have been successfully applied"; then
-  APPLIED_COUNT=$(echo "$MIGRATION_OUTPUT" | grep "Applying migration" | wc -l)
-  echo "✅ Successfully applied $APPLIED_COUNT migration(s)"
-else
-  echo "⚠️  Migration completed but status unclear"
-fi
+echo "✅ Database migrations completed successfully"
 
 # 6. Health check
 echo "✅ Checking application health..."
