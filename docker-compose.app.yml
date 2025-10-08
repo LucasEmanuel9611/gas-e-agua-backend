@@ -38,7 +38,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3333
-      DATABASE_URL: mysql://${MYSQL_USER:-gas_e_agua}:${MYSQL_PASSWORD:-gas_e_agua123}@mysql:3306/${MYSQL_DATABASE:-gas_e_agua}
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-key}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     volumes:
