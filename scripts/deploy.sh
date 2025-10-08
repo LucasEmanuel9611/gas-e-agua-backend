@@ -58,14 +58,25 @@ sleep 15
 
 # 5. Rodar migrations
 echo "🗄️ Running database migrations..."
+echo "📝 Generating Prisma Client..."
 if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate; then
   echo "❌ Prisma generate failed!"
+  docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
   "$SCRIPT_DIR/notify.sh" failure "$ENV" "Prisma generate failed"
   exit 1
 fi
 
-if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy; then
-  echo "❌ Migration failed!"
+echo "✅ Prisma Client generated successfully"
+echo "📝 Applying database migrations..."
+
+MIGRATION_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1)
+MIGRATION_EXIT_CODE=$?
+
+echo "$MIGRATION_OUTPUT"
+
+if [ $MIGRATION_EXIT_CODE -ne 0 ]; then
+  echo "❌ Migration failed with exit code $MIGRATION_EXIT_CODE"
+  docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
   "$SCRIPT_DIR/notify.sh" failure "$ENV" "Database migration failed"
   
   echo "🔄 Do you want to rollback? (yes/no)"
@@ -80,6 +91,15 @@ if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migr
     "$SCRIPT_DIR/rollback.sh" "$ENV" "$LATEST_BACKUP"
   fi
   exit 1
+fi
+
+if echo "$MIGRATION_OUTPUT" | grep -q "No pending migrations"; then
+  echo "✅ No pending migrations to apply"
+elif echo "$MIGRATION_OUTPUT" | grep -q "migrations have been successfully applied"; then
+  APPLIED_COUNT=$(echo "$MIGRATION_OUTPUT" | grep "Applying migration" | wc -l)
+  echo "✅ Successfully applied $APPLIED_COUNT migration(s)"
+else
+  echo "⚠️  Migration completed but status unclear"
 fi
 
 # 6. Health check
