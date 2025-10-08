@@ -32,67 +32,15 @@ runs:
       run: |
         START_TIME=$SECONDS
 
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
-          set -e
-          
-          echo "🚀 Starting ${{ inputs.environment }} deployment..."
-          cd /home/deploy/gas-e-agua-backend
-          
-          if [ "${{ inputs.environment }}" = "dev" ]; then
-            PROJECT="gas-e-agua-dev"
-            COMPOSE_FILE="docker-compose.dev.yml"
-            MONITORING_FILE="docker-compose.monitoring-dev.yml"
-            PORT="3334"
-          else
-            PROJECT="gas-e-agua-prd"
-            COMPOSE_FILE="docker-compose.app.yml"
-            MONITORING_FILE="docker-compose.monitoring-prd.yml"
-            PORT="3333"
-          fi
-          
-          echo "🔨 Building containers..."
-          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans; then
-            echo "❌ Container build failed!"
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs --tail=50
-            exit 1
-          fi
-          
-          echo "⏳ Waiting for containers to be healthy..."
-          sleep 15
-          
-          echo "🗄️ Generating Prisma Client..."
-          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate 2>&1 | tee /tmp/prisma-generate.log; then
-            echo "❌ Prisma generate failed!"
-            cat /tmp/prisma-generate.log
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-            exit 1
-          fi
-          
-          echo "🗄️ Running database migrations..."
-          if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1 | tee /tmp/prisma-migrate.log; then
-            echo "❌ Database migrations failed!"
-            cat /tmp/prisma-migrate.log
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-            exit 1
-          fi
-          
-          echo "✅ Checking application health..."
-          sleep 5
-          if ! curl -f "http://localhost:$PORT/health" > /dev/null 2>&1; then
-            echo "❌ Health check failed at http://localhost:$PORT/health"
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" ps
-            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
-            exit 1
-          fi
-          
-          echo "📊 Starting monitoring stack..."
-          docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
-          
-          echo "🗑️ Cleaning up old images and containers..."
-          docker system prune -f
-          
-          echo "✅ Deploy completed successfully!"
-        EOF
+        DEPLOY_OUTPUT=$(ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} "cd /home/deploy/gas-e-agua-backend && bash ./scripts/deploy.sh ${{ inputs.environment }} 2>&1")
+        DEPLOY_EXIT_CODE=$?
+
+        echo "$DEPLOY_OUTPUT"
+
+        if [ $DEPLOY_EXIT_CODE -ne 0 ]; then
+          echo "❌ Deploy failed with exit code $DEPLOY_EXIT_CODE"
+          exit 1
+        fi
 
         DEPLOY_TIME=$((SECONDS - START_TIME))
         echo "status=success" >> $GITHUB_OUTPUT
