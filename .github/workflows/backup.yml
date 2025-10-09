@@ -32,7 +32,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
         run: |
-          BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa ${VPS_USER}@${VPS_HOST} "bash -l -c 'cd ~/gas-e-agua-backend && bash ./scripts/deploy/backup-db.sh ${ENVIRONMENT}'")
+          BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa ${VPS_USER}@${VPS_HOST} "bash -l -c 'cd ~/gas-e-agua-backend && bash ./scripts/backup/backup-db.sh ${ENVIRONMENT}'" 2>&1)
 
           echo "$BACKUP_OUTPUT"
 
