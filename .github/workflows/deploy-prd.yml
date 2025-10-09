@@ -36,7 +36,7 @@ jobs:
             git fetch --all
             git checkout master
             git pull --ff-only
-            chmod +x scripts/*.sh
+            chmod +x scripts/**/*.sh
             echo "✅ Repository updated to master branch"
           EOF
 
