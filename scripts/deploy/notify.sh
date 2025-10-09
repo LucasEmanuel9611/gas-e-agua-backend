@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script de notificação de deploy
-# Uso: ./scripts/notify.sh [success|failure] [env] [message]
+# Uso: ./scripts/deploy/notify.sh [success|failure] [env] [message]
 
 set -e
 
