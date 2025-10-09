@@ -27,7 +27,7 @@ runs:
       id: backup
       shell: bash
       run: |
-        BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} "bash -lc 'cd /home/deploy/gas-e-agua-backend && ./scripts/backup-db.sh ${{ inputs.environment }}'")
+        BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} "bash -lc 'cd /home/deploy/gas-e-agua-backend && bash ./scripts/backup/backup-db.sh ${{ inputs.environment }}'" 2>&1)
         echo "$BACKUP_OUTPUT"
         BACKUP_FILE=$(echo "$BACKUP_OUTPUT" | grep "Backup created:" | awk '{print $3}')
         if [ -z "$BACKUP_FILE" ]; then
