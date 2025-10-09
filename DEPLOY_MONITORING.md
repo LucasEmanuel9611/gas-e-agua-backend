@@ -36,14 +36,14 @@ Guia completo para deploy, monitoramento e manutenção da aplicação.
 
 ### Se você tem domínio (recomendado):
 
-**1.1. Configurar DNS no provedor:**
+**1.1. Configurar DNS no provedor do domínio:**
 ```
 Tipo: A | Nome: @              | Valor: IP_DA_VPS | TTL: 3600
 Tipo: A | Nome: monitoring     | Valor: IP_DA_VPS | TTL: 3600
 Tipo: A | Nome: monitoring-dev | Valor: IP_DA_VPS | TTL: 300
 Tipo: A | Nome: prometheus     | Valor: IP_DA_VPS | TTL: 3600
 Tipo: A | Nome: prometheus-dev | Valor: IP_DA_VPS | TTL: 300
-Tipo: A | Nome: api-prd        | Valor: IP_DA_VPS | TTL: 3600
+Tipo: A | Nome: api            | Valor: IP_DA_VPS | TTL: 3600
 Tipo: A | Nome: api-dev        | Valor: IP_DA_VPS | TTL: 300
 ```
 
@@ -149,11 +149,11 @@ docker compose -f docker-compose.monitoring-dev.yml ps
 
 ```bash
 # Configurar domínios
-./configure-domains.sh
+bash scripts/monitoring/configure-domains.sh
 # Escolha opção 1 e digite seu domínio
 
 # Configurar SSL e segurança
-./setup-security.sh
+bash scripts/setup/setup-security.sh
 # Digite os domínios quando solicitado
 
 # Configurar Nginx
@@ -166,7 +166,7 @@ sudo nginx -t && sudo systemctl restart nginx
 
 ```bash
 # Configurar apenas com IP
-./configure-domains.sh
+bash scripts/monitoring/configure-domains.sh
 # Escolha opção 2 e digite o IP da VPS
 
 # Configurar autenticação básica
@@ -198,7 +198,7 @@ curl -f http://localhost:3100/ready
 ## 🌐 8. Acessar o Sistema
 
 ### Com domínio:
-- **API PRD**: https://api-prd.SEU_DOMINIO.com
+- **API PRD**: https://api.SEU_DOMINIO.com
 - **API DEV**: https://api-dev.SEU_DOMINIO.com
 - **Grafana PRD**: https://monitoring.SEU_DOMINIO.com
 - **Grafana DEV**: https://monitoring-dev.SEU_DOMINIO.com
@@ -217,22 +217,22 @@ curl -f http://localhost:3100/ready
 
 ```bash
 # Verificar status
-./monitoring-setup.sh status
+bash scripts/monitoring/monitoring-setup.sh status
 
 # Ver logs
-./monitoring-setup.sh logs
+bash scripts/monitoring/monitoring-setup.sh logs
 
 # Reiniciar serviços
-./monitoring-setup.sh restart
+bash scripts/monitoring/monitoring-setup.sh restart
 
 # Backup
-./backup-monitoring.sh
+bash scripts/monitoring/backup-monitoring.sh
 
 # Parar tudo
-./monitoring-setup.sh stop
+bash scripts/monitoring/monitoring-setup.sh stop
 
 # Iniciar tudo
-./monitoring-setup.sh start
+bash scripts/monitoring/monitoring-setup.sh start
 ```
 
 ## 🚨 10. Troubleshooting
@@ -260,6 +260,34 @@ sudo certbot renew
 ```bash
 docker compose -f docker-compose.app.yml logs
 docker compose -f docker-compose.app.yml restart
+```
+
+### Erro de autenticação no backup MySQL:
+Se o backup falhar com erro `Access denied for user`, verifique:
+
+```bash
+# 1. Verificar variáveis do container (senha REAL)
+docker exec gas-e-agua-mysql-dev env | grep MYSQL
+
+# 2. Verificar arquivo .env.dev (deve corresponder ao container)
+cat .env.dev | grep -E "^MYSQL_ROOT_PASSWORD|^MYSQL_DATABASE"
+
+# 3. Verificar se container está rodando
+docker ps | grep mysql
+
+# 4. Testar conexão e ver bancos disponíveis
+docker exec gas-e-agua-mysql-dev mysql -uroot -pSUA_SENHA -e "SHOW DATABASES;"
+
+# 5. Se banco não existir, criar:
+docker exec gas-e-agua-mysql-dev mysql -uroot -pSUA_SENHA -e "CREATE DATABASE gas_e_agua_dev;"
+```
+
+**Importante:** O arquivo `.env` deve ter as variáveis sem espaços e sem aspas:
+```bash
+MYSQL_ROOT_PASSWORD=senha_root
+MYSQL_DATABASE=gas_e_agua_dev
+MYSQL_USER=gas_e_agua
+MYSQL_PASSWORD=senha_usuario
 ```
 
 ---
@@ -340,17 +368,18 @@ O projeto fornece scripts executáveis para deploy manual direto na VPS.
 #### **1. Deploy Completo:**
 ```bash
 # DEV
-./scripts/deploy.sh dev
+bash scripts/deploy/deploy.sh dev
 
 # PROD
-./scripts/deploy.sh prd
+bash scripts/deploy/deploy.sh prd
 ```
 
 **O que faz:**
 - ✅ Backup automático do banco
 - ✅ Pull do código
 - ✅ Build dos containers
-- ✅ Migrations do banco
+- ✅ Verifica e configura MySQL authentication plugin
+- ✅ Migrations do banco (com output detalhado)
 - ✅ Health check
 - ✅ Sobe monitoramento
 - ✅ Limpeza
@@ -358,13 +387,22 @@ O projeto fornece scripts executáveis para deploy manual direto na VPS.
 #### **2. Backup Manual:**
 ```bash
 # DEV
-./scripts/backup-db.sh dev
+bash scripts/deploy/backup-db.sh dev
 
 # PROD
-./scripts/backup-db.sh prd
+bash scripts/deploy/backup-db.sh prd
 ```
 
-**Backups ficam em:** `/home/deploy/backups/mysql/`
+**Estrutura de Backups:**
+```
+../backups/
+├── dev/
+│   └── backup-20251006-190000.sql
+└── prd/
+    └── backup-20251006-210000.sql
+```
+
+**Backups são mantidos por 7 dias** e limpos automaticamente.
 
 #### **3. Deploy Básico (sem script):**
 ```bash
@@ -393,16 +431,20 @@ docker compose -p gas-e-agua-prd -f docker-compose.monitoring-prd.yml up -d
 
 #### **1. Listar backups disponíveis:**
 ```bash
-ls -lt /home/deploy/backups/mysql/
+# DEV
+ls -lt ../backups/dev/
+
+# PRD
+ls -lt ../backups/prd/
 ```
 
 #### **2. Executar rollback:**
 ```bash
 # DEV
-./scripts/rollback.sh dev /home/deploy/backups/mysql/dev-backup-YYYYMMDD-HHMMSS.sql
+bash scripts/deploy/rollback.sh dev ../backups/dev/backup-YYYYMMDD-HHMMSS.sql
 
 # PROD (CUIDADO!)
-./scripts/rollback.sh prd /home/deploy/backups/mysql/prd-backup-YYYYMMDD-HHMMSS.sql
+bash scripts/deploy/rollback.sh prd ../backups/prd/backup-YYYYMMDD-HHMMSS.sql
 ```
 
 #### **3. Verificar se voltou:**
@@ -447,8 +489,9 @@ cat /etc/nginx/sites-enabled/monitoring | grep -A 5 -B 5 "allow"
 
 ## 📚 13. Documentação Adicional
 
-- `DOCUMENTATION.md` - Documentação completa do projeto
+- `DEVELOPMENT.md` - Guia de desenvolvimento local
 - `prisma-flow.md` - Fluxo de migrações do banco
+- `scripts/README.md` - Referência dos scripts
 
 ## ✅ Checklist Final
 
@@ -482,7 +525,7 @@ cat /etc/nginx/sites-enabled/monitoring | grep -A 5 -B 5 "allow"
 
 - **`.github/actions/README.md`** - Referência das GitHub Actions customizadas
 - **`scripts/README.md`** - Referência dos scripts de manutenção
-- **`DOCUMENTATION.md`** - Documentação do código da aplicação
+- **`DEVELOPMENT.md`** - Guia de desenvolvimento local
 - **`prisma-flow.md`** - Fluxo de migrações do banco
 
 ---

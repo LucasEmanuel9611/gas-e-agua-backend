@@ -13,7 +13,7 @@
     "prepare": "husky"
   },
   "prisma": {
-    "seed": "ts-node src/shared/infra/database/seed.ts"
+    "seed": "bash scripts/database/seed.sh"
   },
   "dependencies": {
     "@prisma/client": "^5.9.1",
