@@ -1,8 +1,10 @@
-# Gas e Água Backend - Documentação
+# Gas e Água Backend - Documentação de Desenvolvimento
 
-## Visão Geral
+## 📖 Visão Geral
 
-Este é um backend para um sistema de gerenciamento de pedidos de gás e água, construído com Node.js, TypeScript e Express. A documentação abaixo explica a estrutura do projeto e como os diferentes componentes se conectam.
+Backend para sistema de gerenciamento de pedidos de gás e água, construído com Node.js, TypeScript, Express e Prisma.
+
+**Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md).
 
 ## Estrutura do Projeto
 
@@ -193,30 +195,158 @@ O projeto usa Jest para testes. Cada módulo tem seus próprios testes:
 - `*.test.ts`: Testes unitários
 - `*.spec.ts`: Testes de integração
 
-## Configuração do Ambiente
+## 🚀 Setup Rápido (Desenvolvimento Local)
 
-1. Instale as dependências:
-   ```bash
-   npm install
-   ```
+### Pré-requisitos
 
-2. Configure as variáveis de ambiente:
-   ```bash
-   cp .env.example .env
-   ```
+- Node.js 18+
+- Docker e Docker Compose
+- Git
 
-3. Execute as migrações do banco de dados:
-   ```bash
-   npx prisma migrate deploy
-   ```
+### 1. Clonar e Instalar
 
-4. Inicie o servidor:
-   ```bash
-   npm run dev
-   ```
+```bash
+git clone <seu-repositorio>
+cd gas-e-agua-backend
+npm install
+```
 
-## Recursos Adicionais
+### 2. Configurar Ambiente
 
+```bash
+# Copiar arquivo de exemplo
+cp env.docker.example .env.dev
+
+# Editar variáveis (se necessário)
+nano .env.dev
+```
+
+Principais variáveis:
+```env
+MYSQL_ROOT_PASSWORD=password
+MYSQL_DATABASE=gas_e_agua_dev
+MYSQL_USER=gas_e_agua_dev
+MYSQL_PASSWORD=password
+JWT_SECRET=jwt_secret_dev
+REDIS_URL=redis://redis:6379
+```
+
+### 3. Subir Banco de Dados (Docker)
+
+```bash
+# Subir MySQL e Redis
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis
+
+# Aguardar banco ficar pronto
+sleep 10
+```
+
+### 4. Rodar Migrations
+
+```bash
+# Gerar Prisma Client
+npx prisma generate
+
+# Aplicar migrations
+npx prisma migrate deploy
+
+# (Opcional) Executar seeds
+npx prisma db seed
+```
+
+### 5. Iniciar Aplicação
+
+```bash
+# Modo desenvolvimento (hot reload)
+npm run dev
+
+# A aplicação estará rodando em http://localhost:3333
+```
+
+### 6. Verificar
+
+```bash
+# Health check
+curl http://localhost:3333/health
+
+# Deve retornar: {"status":"ok"}
+```
+
+## 🔧 Comandos Úteis
+
+### Desenvolvimento
+
+```bash
+# Iniciar em modo desenvolvimento
+npm run dev
+
+# Rodar testes
+npm test
+
+# Rodar lint
+npm run lint
+
+# Type check
+npm run typecheck
+
+# Build para produção
+npm run build
+```
+
+### Banco de Dados (Prisma)
+
+```bash
+# Gerar Prisma Client
+npx prisma generate
+
+# Criar nova migration
+npx prisma migrate dev --name nome_da_migration
+
+# Aplicar migrations
+npx prisma migrate deploy
+
+# Abrir Prisma Studio (GUI do banco)
+npx prisma studio
+
+# Executar seeds
+npx prisma db seed
+
+# Reset completo do banco (CUIDADO!)
+npx prisma migrate reset
+```
+
+### Docker
+
+```bash
+# Subir todos os serviços
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+
+# Ver logs
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml logs -f app
+
+# Parar serviços
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml down
+
+# Remover volumes (CUIDADO - apaga dados!)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml down -v
+```
+
+## 📂 Estrutura de Scripts
+
+Os scripts estão organizados em `scripts/`:
+
+- `scripts/deploy/` - Scripts de deploy
+- `scripts/database/` - Scripts de banco de dados  
+- `scripts/monitoring/` - Scripts de monitoramento
+- `scripts/setup/` - Scripts de configuração inicial
+
+Veja [`scripts/README.md`](./scripts/README.md) para mais detalhes.
+
+## 📚 Documentação Adicional
+
+- **[`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md)** - Deploy e monitoramento em produção
+- **[`scripts/README.md`](./scripts/README.md)** - Referência dos scripts
+- **[`prisma-flow.md`](./prisma-flow.md)** - Fluxo de migrations do Prisma
 - [Documentação do Express](https://expressjs.com/)
 - [Documentação do TypeScript](https://www.typescriptlang.org/)
 - [Documentação do Prisma](https://www.prisma.io/docs)
