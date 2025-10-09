@@ -2,12 +2,22 @@
 
 set -e
 
+if [ "${GITHUB_ACTIONS}" = "true" ] || [ "${DEBUG}" = "1" ]; then
+  set -x 
+fi
+
 ENV=${1:-dev}
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 BACKUP_BASE_DIR="$(dirname "$PROJECT_DIR")/backups"
 DATE=$(date +%Y%m%d-%H%M%S)
+
+echo "🔍 Debug Info:"
+echo "   SCRIPT_DIR: $SCRIPT_DIR"
+echo "   PROJECT_DIR: $PROJECT_DIR"
+echo "   ENV_FILE: será definido como $PROJECT_DIR/.env.$ENV ou $PROJECT_DIR/.env"
+echo ""
 
 if [ "$ENV" = "dev" ]; then
   CONTAINER="gas-e-agua-mysql-dev"
@@ -74,10 +84,18 @@ docker exec "$CONTAINER" mysqldump --user=root --password="$MYSQL_ROOT_PASSWORD"
 
 if [ $? -eq 0 ] && [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
   BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
-  echo "✅ Backup created: $BACKUP_FILE ($BACKUP_SIZE)"
+  echo "✅ Backup created successfully!"
+  echo "📁 File: $BACKUP_FILE"
+  echo "📊 Size: $BACKUP_SIZE"
   
   find "$BACKUP_DIR" -name "backup-*.sql" -mtime +7 -delete
   echo "🗑️ Old backups (>7 days) cleaned"
+  
+  echo ""
+  echo "BACKUP_SUCCESS=true"
+  echo "BACKUP_FILE_PATH=$BACKUP_FILE"
+  
+  exit 0
 else
   echo "❌ Backup failed!"
   if [ ! -f "$BACKUP_FILE" ]; then
@@ -85,6 +103,10 @@ else
   elif [ ! -s "$BACKUP_FILE" ]; then
     echo "   Arquivo criado mas está vazio: $BACKUP_FILE"
   fi
+  
+  echo ""
+  echo "BACKUP_SUCCESS=false"
+  
   exit 1
 fi
 

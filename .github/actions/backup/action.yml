@@ -27,11 +27,13 @@ runs:
       id: backup
       shell: bash
       run: |
-        BACKUP_OUTPUT=$(ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} "bash -lc 'cd /home/deploy/gas-e-agua-backend && bash ./scripts/deploy/backup-db.sh ${{ inputs.environment }}'" 2>&1)
-        echo "$BACKUP_OUTPUT"
-        BACKUP_FILE=$(echo "$BACKUP_OUTPUT" | grep "Backup created:" | awk '{print $3}')
-        if [ -z "$BACKUP_FILE" ]; then
-          exit 1
-        fi
-        echo "file=$BACKUP_FILE" >> "$GITHUB_OUTPUT"
-        echo "✅ Backup created: $BACKUP_FILE"
+        set -e
+
+        echo "📦 Executando backup no ambiente: ${{ inputs.environment }}"
+        echo ""
+
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} \
+          "cd /home/deploy/gas-e-agua-backend && bash ./scripts/deploy/backup-db.sh ${{ inputs.environment }}"
+
+        echo ""
+        echo "✅ Backup concluído com sucesso!"

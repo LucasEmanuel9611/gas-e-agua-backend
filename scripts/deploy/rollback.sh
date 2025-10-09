@@ -6,7 +6,7 @@ ENV=${1:-dev}
 BACKUP_FILE=$2
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 if [ -z "$BACKUP_FILE" ]; then
   BACKUP_BASE_DIR="$(dirname "$PROJECT_DIR")/backups"

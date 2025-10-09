@@ -30,19 +30,19 @@ runs:
       id: deploy
       shell: bash
       run: |
+        set -e
         START_TIME=$SECONDS
 
-        DEPLOY_OUTPUT=$(ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} "cd /home/deploy/gas-e-agua-backend && bash ./scripts/deploy/deploy.sh ${{ inputs.environment }} 2>&1")
-        DEPLOY_EXIT_CODE=$?
+        echo "🚀 Iniciando deploy no ambiente: ${{ inputs.environment }}"
+        echo ""
 
-        echo "$DEPLOY_OUTPUT"
-
-        if [ $DEPLOY_EXIT_CODE -ne 0 ]; then
-          echo "❌ Deploy failed with exit code $DEPLOY_EXIT_CODE"
-          exit 1
-        fi
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} \
+          "cd /home/deploy/gas-e-agua-backend && bash ./scripts/deploy/deploy.sh ${{ inputs.environment }}"
 
         DEPLOY_TIME=$((SECONDS - START_TIME))
         echo "status=success" >> $GITHUB_OUTPUT
         echo "duration=$DEPLOY_TIME" >> $GITHUB_OUTPUT
-        echo "⏱️ Deploy completed in ${DEPLOY_TIME}s"
+
+        echo ""
+        echo "✅ Deploy concluído com sucesso!"
+        echo "⏱️ Tempo total: ${DEPLOY_TIME}s"
