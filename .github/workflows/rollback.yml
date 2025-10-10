@@ -1,0 +1,323 @@
+name: 🔄 Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to rollback"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prd
+      rollback_type:
+        description: "Type of rollback"
+        required: true
+        type: choice
+        options:
+          - image_only
+          - database_only
+          - full_rollback
+      version:
+        description: "Version to rollback to (leave empty for latest backup)"
+        required: false
+        type: string
+      backup_file:
+        description: "Backup file name (for database rollback, e.g., backup-20251009-120000.sql)"
+        required: false
+        type: string
+      confirm:
+        description: "Type CONFIRM to proceed"
+        required: true
+        type: string
+
+jobs:
+  validate:
+    name: Validate Input
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "CONFIRM" ]; then
+            echo "::error::You must type CONFIRM to proceed"
+            exit 1
+          fi
+          echo "✅ Confirmation validated"
+
+      - name: Validate rollback type and parameters
+        run: |
+          ROLLBACK_TYPE="${{ github.event.inputs.rollback_type }}"
+
+          if [ "$ROLLBACK_TYPE" = "database_only" ] || [ "$ROLLBACK_TYPE" = "full_rollback" ]; then
+            if [ -z "${{ github.event.inputs.backup_file }}" ]; then
+              echo "::error::backup_file is required for database rollback"
+              exit 1
+            fi
+          fi
+
+          echo "✅ Parameters validated"
+
+  rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Execute Rollback - Image Only
+        if: github.event.inputs.rollback_type == 'image_only'
+        run: |
+          set -e
+
+          echo "::group::🔄 Rolling back Docker image"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Version: ${{ github.event.inputs.version || 'backup-latest' }}"
+          echo ""
+
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="backup-latest"
+          fi
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            VERSION="${{ github.event.inputs.version }}"
+            
+            if [ "$ENV" = "dev" ]; then
+              PROJECT="gas-e-agua-dev"
+              COMPOSE_FILE="docker-compose.dev.yml"
+              IMAGE_NAME="gas-e-agua-dev-app"
+            else
+              PROJECT="gas-e-agua"
+              COMPOSE_FILE="docker-compose.app.yml"
+              IMAGE_NAME="gas-e-agua-app"
+            fi
+            
+            # Default to backup-latest if no version specified
+            if [ -z "$VERSION" ]; then
+              VERSION="backup-latest"
+            fi
+            
+            echo "📋 Checking if tag exists..."
+            if ! docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "$IMAGE_NAME:$VERSION"; then
+              echo "::error::Tag not found: $IMAGE_NAME:$VERSION"
+              echo "Available tags:"
+              docker images --format "{{.Repository}}:{{.Tag}}" | grep "$IMAGE_NAME" || echo "No images found"
+              exit 1
+            fi
+            
+            echo "⏸️  Stopping current container..."
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" stop app
+            
+            echo "📸 Creating safety snapshot..."
+            docker tag "$IMAGE_NAME:latest" "$IMAGE_NAME:before-rollback-$(date +%Y%m%d-%H%M%S)" || true
+            
+            echo "🔄 Applying rollback version..."
+            docker tag "$IMAGE_NAME:$VERSION" "$IMAGE_NAME:latest"
+            
+            echo "▶️  Starting container..."
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d app
+            
+            echo "⏳ Waiting for health check..."
+            sleep 15
+            
+            if docker compose -p "$PROJECT" -f "$COMPOSE_FILE" ps app | grep -q "healthy\|Up"; then
+              echo "✅ Rollback completed successfully!"
+              echo "Version: $VERSION"
+            else
+              echo "::error::Container is not healthy!"
+              docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail 50
+              exit 1
+            fi
+          EOF
+
+          echo "::endgroup::"
+          echo "✅ Image rollback completed"
+
+      - name: Execute Rollback - Database Only
+        if: github.event.inputs.rollback_type == 'database_only'
+        run: |
+          set -e
+
+          echo "::group::🗄️  Rolling back database"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Backup file: ${{ github.event.inputs.backup_file }}"
+          echo ""
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            BACKUP_FILE="${{ github.event.inputs.backup_file }}"
+            
+            if [ "$ENV" = "dev" ]; then
+              MYSQL_CONTAINER="gas-e-agua-mysql-dev"
+              BACKUP_DIR="$(dirname $(pwd))/backups/dev"
+            else
+              MYSQL_CONTAINER="gas-e-agua-mysql"
+              BACKUP_DIR="$(dirname $(pwd))/backups/prd"
+            fi
+            
+            BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
+            
+            echo "🔍 Checking backup file..."
+            if [ ! -f "$BACKUP_PATH" ]; then
+              echo "::error::Backup file not found: $BACKUP_PATH"
+              echo "Available backups:"
+              ls -lht "$BACKUP_DIR"/*.sql 2>/dev/null || echo "No backups found"
+              exit 1
+            fi
+            
+            # Load environment variables
+            if [ "$ENV" = "dev" ]; then
+              set -a; source .env.dev; set +a
+            else
+              set -a; source .env; set +a
+            fi
+            
+            echo "💾 Creating safety backup before restore..."
+            SAFETY_BACKUP="$BACKUP_DIR/safety-backup-$(date +%Y%m%d-%H%M%S).sql"
+            docker exec "$MYSQL_CONTAINER" mysqldump \
+              --user=root \
+              --password="$MYSQL_ROOT_PASSWORD" \
+              "$MYSQL_DATABASE" > "$SAFETY_BACKUP" || echo "::warning::Safety backup failed"
+            
+            echo "🔄 Restoring database from backup..."
+            docker exec -i "$MYSQL_CONTAINER" mysql \
+              --user=root \
+              --password="$MYSQL_ROOT_PASSWORD" \
+              "$MYSQL_DATABASE" < "$BACKUP_PATH"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Database restored successfully!"
+              echo "Restored from: $BACKUP_FILE"
+              echo "Safety backup: $SAFETY_BACKUP"
+            else
+              echo "::error::Database restore failed!"
+              exit 1
+            fi
+          EOF
+
+          echo "::endgroup::"
+          echo "✅ Database rollback completed"
+
+      - name: Execute Rollback - Full
+        if: github.event.inputs.rollback_type == 'full_rollback'
+        run: |
+          set -e
+
+          echo "::group::🔄 Full Rollback (Image + Database)"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Image version: ${{ github.event.inputs.version || 'backup-latest' }}"
+          echo "Backup file: ${{ github.event.inputs.backup_file }}"
+          echo ""
+          echo "::warning::This will rollback BOTH application and database!"
+          echo ""
+
+          # First: Database rollback
+          echo "::group::Step 1/2: Database Rollback"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            BACKUP_FILE="${{ github.event.inputs.backup_file }}"
+            
+            bash scripts/deploy/rollback.sh "$ENV" "$BACKUP_FILE"
+          EOF
+          echo "::endgroup::"
+
+          # Second: Image rollback
+          echo "::group::Step 2/2: Image Rollback"
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="backup-latest"
+          fi
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            
+            if [ "\$ENV" = "dev" ]; then
+              PROJECT="gas-e-agua-dev"
+              COMPOSE_FILE="docker-compose.dev.yml"
+              IMAGE_NAME="gas-e-agua-dev-app"
+            else
+              PROJECT="gas-e-agua"
+              COMPOSE_FILE="docker-compose.app.yml"
+              IMAGE_NAME="gas-e-agua-app"
+            fi
+            
+            docker compose -p "\$PROJECT" -f "\$COMPOSE_FILE" stop app
+            docker tag "\$IMAGE_NAME:$VERSION" "\$IMAGE_NAME:latest"
+            docker compose -p "\$PROJECT" -f "\$COMPOSE_FILE" up -d app
+            
+            sleep 15
+            docker compose -p "\$PROJECT" -f "\$COMPOSE_FILE" ps app
+          EOF
+          echo "::endgroup::"
+
+          echo "::endgroup::"
+          echo "✅ Full rollback completed"
+
+      - name: Verify Health
+        run: |
+          echo "::group::🏥 Health Check"
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            ENV="${{ github.event.inputs.environment }}"
+            
+            if [ "$ENV" = "dev" ]; then
+              PORT=3334
+            else
+              PORT=3333
+            fi
+            
+            echo "Testing health endpoint: http://localhost:$PORT/health"
+            sleep 5
+            
+            HEALTH=$(curl -f "http://localhost:$PORT/health" 2>&1) || {
+              echo "::error::Health check failed!"
+              exit 1
+            }
+            
+            echo "$HEALTH"
+            echo "✅ Application is healthy"
+          EOF
+
+          echo "::endgroup::"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🔄 Rollback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type:** ${{ github.event.inputs.rollback_type }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ github.event.inputs.rollback_type }}" = "image_only" ] || [ "${{ github.event.inputs.rollback_type }}" = "full_rollback" ]; then
+            echo "- **Image Version:** ${{ github.event.inputs.version || 'backup-latest' }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ github.event.inputs.rollback_type }}" = "database_only" ] || [ "${{ github.event.inputs.rollback_type }}" = "full_rollback" ]; then
+            echo "- **Backup File:** ${{ github.event.inputs.backup_file }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "- **Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

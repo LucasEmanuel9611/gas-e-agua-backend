@@ -120,10 +120,36 @@ else
 fi
 log_group_end
 
-# 4. Build e subir containers
+# 4. Criar snapshot da versão atual (para rollback)
+log_group_start "📸 Creating snapshot of current version"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+CURRENT_COMMIT=$(git rev-parse --short HEAD)
+IMAGE_NAME="${PROJECT}-app"
+if [ "$ENV" = "dev" ]; then
+  IMAGE_NAME="gas-e-agua-dev-app"
+fi
+
+# Taguear imagem atual se existir
+if docker images | grep -q "$IMAGE_NAME.*latest"; then
+  log_info "Tagging current version: $IMAGE_NAME:$TIMESTAMP"
+  docker tag "$IMAGE_NAME:latest" "$IMAGE_NAME:$TIMESTAMP" || log_warning "Failed to tag image"
+  docker tag "$IMAGE_NAME:latest" "$IMAGE_NAME:backup-latest" || log_warning "Failed to tag backup"
+  
+  # Salvar informações do deploy
+  DEPLOY_LOG_DIR="$PROJECT_DIR/.deploy-history"
+  mkdir -p "$DEPLOY_LOG_DIR"
+  echo "$TIMESTAMP|$CURRENT_COMMIT|$ENV|$IMAGE_NAME:$TIMESTAMP" >> "$DEPLOY_LOG_DIR/deploys.log"
+  log_success "Snapshot created: $IMAGE_NAME:$TIMESTAMP"
+else
+  log_info "No previous image found (first deploy)"
+fi
+log_group_end
+
+# 5. Build e subir containers
 log_group_start "🔨 Building and starting containers"
 log_info "Project: $PROJECT"
 log_info "Compose file: $COMPOSE_FILE"
+log_info "Commit: $CURRENT_COMMIT"
 log_info "Running: docker compose up -d --build --remove-orphans"
 if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans; then
   log_error "Container build failed!"
@@ -247,11 +273,15 @@ docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
 log_success "Monitoring stack started"
 log_group_end
 
-# 9. Limpeza
+# 9. Limpeza de recursos Docker e versões antigas
 log_group_start "🗑️ Cleaning up Docker resources"
 log_info "Running: docker system prune -f"
 docker system prune -f
-log_success "Cleanup completed"
+log_success "Docker cleanup completed"
+
+# Limpar versões antigas (mantém últimas 5 imagens e backups de 7 dias)
+log_info "Cleaning old versions..."
+bash "$SCRIPT_DIR/cleanup-old-versions.sh" || log_warning "Cleanup script failed (non-critical)"
 log_group_end
 
 # 10. Sucesso
