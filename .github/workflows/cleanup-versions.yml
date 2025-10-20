@@ -1,0 +1,90 @@
+name: 🧹 Cleanup Old Versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (preview what would be deleted)"
+        required: true
+        type: boolean
+        default: true
+      keep_images:
+        description: "Number of images to keep"
+        required: true
+        type: number
+        default: 5
+      keep_backups_days:
+        description: "Days of backups to keep"
+        required: true
+        type: number
+        default: 7
+
+jobs:
+  cleanup:
+    name: Cleanup Old Versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run Cleanup Script
+        run: |
+          set -e
+
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="DRY_RUN=true"
+            echo "::warning::Running in DRY RUN mode - no files will be deleted"
+          fi
+
+          echo "::group::🧹 Cleaning up old versions"
+          echo "Configuration:"
+          echo "- Keep images: ${{ github.event.inputs.keep_images }}"
+          echo "- Keep backups: ${{ github.event.inputs.keep_backups_days }} days"
+          echo "- Dry run: ${{ github.event.inputs.dry_run }}"
+          echo ""
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd /home/deploy/gas-e-agua-backend
+            
+            # Export configuration
+            export KEEP_IMAGES=${{ github.event.inputs.keep_images }}
+            export KEEP_BACKUPS_DAYS=${{ github.event.inputs.keep_backups_days }}
+            export $DRY_RUN_FLAG
+            
+            # Run cleanup script
+            bash scripts/deploy/cleanup-old-versions.sh
+          EOF
+
+          echo "::endgroup::"
+
+      - name: Show Final Status
+        run: |
+          echo "## 🧹 Cleanup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run:** ${{ github.event.inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Images Kept:** ${{ github.event.inputs.keep_images }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backup Days Kept:** ${{ github.event.inputs.keep_backups_days }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Executed by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo "⚠️ **This was a DRY RUN** - No files were actually deleted" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To execute the cleanup, run again with 'Dry run' unchecked" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Current Storage" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
+            docker system df
+          EOF
+
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
