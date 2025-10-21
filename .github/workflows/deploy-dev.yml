@@ -31,17 +31,27 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Update repository on VPS
+      - name: Sync configuration files to VPS
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e
-            cd /home/deploy/gas-e-agua-backend
-            git fetch --all
-            git checkout develop
-            git pull --ff-only
-            chmod +x scripts/**/*.sh
-            echo "✅ Repository updated to develop branch"
-          EOF
+          echo "📦 Syncing docker-compose and scripts to VPS..."
+
+          # Sync docker-compose files
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            docker-compose.dev.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Sync essential scripts
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            scripts/deploy/backup-db.sh \
+            scripts/deploy/rollback.sh \
+            scripts/deploy/cleanup-old-versions.sh \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/scripts/deploy/
+
+          # Set permissions
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "chmod +x /home/deploy/gas-e-agua-backend/scripts/deploy/*.sh"
+
+          echo "✅ Configuration synced"
 
       # Etapa 3: Criar backup do banco antes do deploy (segurança)
       - name: Backup database
