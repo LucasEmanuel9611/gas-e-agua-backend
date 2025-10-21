@@ -32,6 +32,7 @@ Aplicação rodando em **http://localhost:3333**
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Desenvolvimento local e arquitetura
 - **[DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md)** - Deploy, monitoramento e GHCR
 - **[docs/VPS_RUNTIME_MIGRATION.md](./docs/VPS_RUNTIME_MIGRATION.md)** - Migração para VPS runtime-only
+- **[docs/SECRETS_MANAGEMENT.md](./docs/SECRETS_MANAGEMENT.md)** - Gerenciamento de secrets via GitHub
 - **[.github/workflows/README.md](./.github/workflows/README.md)** - Workflows disponíveis (rollback, cleanup)
 - **[scripts/README.md](./scripts/README.md)** - Referência dos scripts
 - **[prisma-flow.md](./prisma-flow.md)** - Fluxo de migrations do Prisma
