@@ -75,33 +75,7 @@ echo ""
 echo "🚀 Starting $ENV deployment..."
 echo ""
 
-# 1. Backup do banco
-log_group_start "📦 Creating database backup"
-if ! "$SCRIPT_DIR/backup-db.sh" "$ENV"; then
-  log_error "Backup failed!"
-  "$SCRIPT_DIR/notify.sh" failure "$ENV" "Database backup failed"
-  exit 1
-fi
-log_success "Database backup created"
-log_group_end
-
-# 2. Pull do código
-log_group_start "📥 Pulling latest code"
-log_info "Fetching all branches..."
-git fetch --all
-if [ "$ENV" = "dev" ]; then
-  log_info "Checking out develop branch..."
-  git checkout develop
-else
-  log_info "Checking out master branch..."
-  git checkout master
-fi
-log_info "Pulling latest changes..."
-git pull --ff-only
-log_success "Code updated successfully"
-log_group_end
-
-# 3. Carregar variáveis de ambiente
+# 1. Carregar variáveis de ambiente
 log_group_start "🔧 Loading environment variables"
 if [ "$ENV" = "dev" ]; then
   ENV_FILE="$PROJECT_DIR/.env.dev"
@@ -120,14 +94,38 @@ else
 fi
 log_group_end
 
+# 2. Definir imagem Docker do GHCR
+log_group_start "🐳 Setting up Docker image"
+if [ -n "$DOCKER_IMAGE" ] && [ -n "$IMAGE_TAG" ]; then
+  FULL_IMAGE="${DOCKER_IMAGE}:${IMAGE_TAG}"
+  log_info "Using GHCR image: $FULL_IMAGE"
+  export APP_IMAGE="$FULL_IMAGE"
+  USE_GHCR=true
+else
+  log_warning "DOCKER_IMAGE or IMAGE_TAG not set, will build locally"
+  USE_GHCR=false
+fi
+log_group_end
+
+# 3. Pull da imagem do GHCR (se usando GHCR)
+if [ "$USE_GHCR" = "true" ]; then
+  log_group_start "📥 Pulling image from GHCR"
+  log_info "Pulling: $FULL_IMAGE"
+  if ! docker pull "$FULL_IMAGE"; then
+    log_error "Failed to pull image from GHCR!"
+    log_warning "Falling back to local build..."
+    USE_GHCR=false
+  else
+    log_success "Image pulled successfully"
+  fi
+  log_group_end
+fi
+
 # 4. Criar snapshot da versão atual (para rollback)
 log_group_start "📸 Creating snapshot of current version"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-CURRENT_COMMIT=$(git rev-parse --short HEAD)
+CURRENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 IMAGE_NAME="${PROJECT}-app"
-if [ "$ENV" = "dev" ]; then
-  IMAGE_NAME="gas-e-agua-dev-app"
-fi
 
 # Taguear imagem atual se existir
 if docker images | grep -q "$IMAGE_NAME.*latest"; then
@@ -145,35 +143,37 @@ else
 fi
 log_group_end
 
-# 5. Build e subir containers
-log_group_start "🔨 Building and starting containers"
+# 5. Subir containers
+log_group_start "🚀 Starting containers"
 log_info "Project: $PROJECT"
 log_info "Compose file: $COMPOSE_FILE"
-log_info "Commit: $CURRENT_COMMIT"
-log_info "Running: docker compose up -d --build --remove-orphans"
-if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans; then
-  log_error "Container build failed!"
-  "$SCRIPT_DIR/notify.sh" failure "$ENV" "Container build failed"
-  exit 1
+
+if [ "$USE_GHCR" = "true" ]; then
+  log_info "Using pre-built image from GHCR (no build)"
+  if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --remove-orphans; then
+    log_error "Container startup failed!"
+    exit 1
+  fi
+else
+  log_info "Building image locally"
+  if ! docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --build --remove-orphans; then
+    log_error "Container build failed!"
+    exit 1
+  fi
 fi
-log_success "Containers built and started successfully"
+log_success "Containers started successfully"
 log_group_end
 
-# 5. Aguardar containers ficarem saudáveis
+# 6. Aguardar containers ficarem saudáveis
 log_group_start "⏳ Waiting for containers to be healthy"
 log_info "Waiting 15 seconds for containers to stabilize..."
 sleep 15
 log_success "Containers are ready"
 log_group_end
 
-# 5.5. Verificar e corrigir plugin de autenticação MySQL
+# 7. Verificar e corrigir plugin de autenticação MySQL
 log_group_start "🔐 Verifying MySQL authentication plugin"
 MYSQL_CONTAINER="${PROJECT}-mysql"
-if [ "$ENV" = "dev" ]; then
-  MYSQL_CONTAINER="gas-e-agua-mysql-dev"
-else
-  MYSQL_CONTAINER="gas-e-agua-mysql"
-fi
 
 log_info "Checking user: $MYSQL_USER"
 log_info "Database: $MYSQL_DATABASE"
@@ -191,7 +191,7 @@ else
 fi
 log_group_end
 
-# 6. Rodar migrations
+# 8. Rodar migrations
 log_group_start "🗄️ Running database migrations"
 
 log_info "Step 1/2: Generating Prisma Client..."
@@ -205,7 +205,6 @@ if [ $PRISMA_GENERATE_EXIT -ne 0 ]; then
   echo ""
   echo "Application logs:"
   docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-  "$SCRIPT_DIR/notify.sh" failure "$ENV" "Prisma generate failed"
   exit 1
 fi
 log_success "Prisma Client generated successfully"
@@ -221,7 +220,6 @@ if [ $MIGRATE_EXIT -ne 0 ]; then
   echo ""
   echo "Application logs:"
   docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
-  "$SCRIPT_DIR/notify.sh" failure "$ENV" "Database migration failed"
   
   if [ "$IS_GITHUB_ACTIONS" != "true" ]; then
     echo "🔄 Do you want to rollback? (yes/no)"
@@ -242,7 +240,7 @@ fi
 log_success "Database migrations completed successfully"
 log_group_end
 
-# 7. Health check
+# 9. Health check
 log_group_start "🏥 Application health check"
 log_info "Waiting 5 seconds before health check..."
 sleep 5
@@ -258,7 +256,6 @@ if [ $HEALTH_EXIT -ne 0 ]; then
   echo ""
   echo "Application logs:"
   docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-  "$SCRIPT_DIR/notify.sh" failure "$ENV" "Application health check failed"
   exit 1
 fi
 
@@ -266,14 +263,14 @@ log_success "Application is healthy"
 echo "$HEALTH_OUTPUT"
 log_group_end
 
-# 8. Subir monitoramento
+# 10. Subir monitoramento
 log_group_start "📊 Starting monitoring stack"
 log_info "Compose file: $MONITORING_FILE"
 docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
 log_success "Monitoring stack started"
 log_group_end
 
-# 9. Limpeza de recursos Docker e versões antigas
+# 11. Limpeza de recursos Docker e versões antigas
 log_group_start "🗑️ Cleaning up Docker resources"
 log_info "Running: docker system prune -f"
 docker system prune -f
@@ -284,18 +281,16 @@ log_info "Cleaning old versions..."
 bash "$SCRIPT_DIR/cleanup-old-versions.sh" || log_warning "Cleanup script failed (non-critical)"
 log_group_end
 
-# 10. Sucesso
+# 12. Sucesso
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
 log_success "Deployment completed successfully!"
 echo "═══════════════════════════════════════════════════════════════"
-"$SCRIPT_DIR/notify.sh" success "$ENV" "Deployment completed successfully"
 
-# 11. Métricas
+# 13. Métricas
 DEPLOY_TIME=$SECONDS
 echo ""
 log_info "Total deployment time: ${DEPLOY_TIME}s"
 log_info "Application URL: http://localhost:$PORT"
 log_info "Grafana: http://localhost:$([[ "$ENV" = "dev" ]] && echo "3001" || echo "3000")"
 echo ""
-
