@@ -105,6 +105,10 @@ else
   log_warning "DOCKER_IMAGE or IMAGE_TAG not set, will build locally"
   USE_GHCR=false
 fi
+
+# Get commit info (if git available)
+CURRENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "no-git")
+log_info "Current commit: $CURRENT_COMMIT"
 log_group_end
 
 # 3. Pull da imagem do GHCR (se usando GHCR)
@@ -124,7 +128,6 @@ fi
 # 4. Criar snapshot da versão atual (para rollback)
 log_group_start "📸 Creating snapshot of current version"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-CURRENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 IMAGE_NAME="${PROJECT}-app"
 
 # Taguear imagem atual se existir
@@ -136,7 +139,14 @@ if docker images | grep -q "$IMAGE_NAME.*latest"; then
   # Salvar informações do deploy
   DEPLOY_LOG_DIR="$PROJECT_DIR/.deploy-history"
   mkdir -p "$DEPLOY_LOG_DIR"
-  echo "$TIMESTAMP|$CURRENT_COMMIT|$ENV|$IMAGE_NAME:$TIMESTAMP" >> "$DEPLOY_LOG_DIR/deploys.log"
+  
+  # Log com commit do GHCR tag ou "no-git"
+  COMMIT_INFO="$IMAGE_TAG"
+  if [ -z "$COMMIT_INFO" ]; then
+    COMMIT_INFO="$CURRENT_COMMIT"
+  fi
+  
+  echo "$TIMESTAMP|$COMMIT_INFO|$ENV|$IMAGE_NAME:$TIMESTAMP" >> "$DEPLOY_LOG_DIR/deploys.log"
   log_success "Snapshot created: $IMAGE_NAME:$TIMESTAMP"
 else
   log_info "No previous image found (first deploy)"
