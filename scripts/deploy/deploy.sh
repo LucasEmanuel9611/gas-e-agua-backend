@@ -84,13 +84,14 @@ else
 fi
 
 if [ -f "$ENV_FILE" ]; then
-  log_info "Loading from: $ENV_FILE"
+  log_info "Loading from file: $ENV_FILE"
   set -a
   source "$ENV_FILE"
   set +a
-  log_success "Environment variables loaded"
+  log_success "Environment variables loaded from file"
 else
   log_warning "Environment file not found: $ENV_FILE"
+  log_info "Using environment variables from GitHub Secrets (injected via SSH)"
 fi
 log_group_end
 
