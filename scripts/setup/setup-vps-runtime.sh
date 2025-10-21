@@ -53,11 +53,17 @@ scp docker-compose.monitoring-prd.yml ${VPS_USER}@${VPS_HOST}:~/gas-e-agua-backe
 echo "✅ Docker Compose files copiados"
 
 # Copiar scripts essenciais
+scp scripts/deploy/deploy.sh ${VPS_USER}@${VPS_HOST}:~/gas-e-agua-backend/scripts/deploy/
 scp scripts/deploy/backup-db.sh ${VPS_USER}@${VPS_HOST}:~/gas-e-agua-backend/scripts/deploy/
 scp scripts/deploy/rollback.sh ${VPS_USER}@${VPS_HOST}:~/gas-e-agua-backend/scripts/deploy/
 scp scripts/deploy/cleanup-old-versions.sh ${VPS_USER}@${VPS_HOST}:~/gas-e-agua-backend/scripts/deploy/
 
 echo "✅ Scripts essenciais copiados"
+
+# Copiar arquivos Prisma (necessários para migrations)
+scp -r prisma ${VPS_USER}@${VPS_HOST}:~/gas-e-agua-backend/
+
+echo "✅ Prisma schema copiado"
 
 # Dar permissão de execução
 ssh ${VPS_USER}@${VPS_HOST} << 'EOF'

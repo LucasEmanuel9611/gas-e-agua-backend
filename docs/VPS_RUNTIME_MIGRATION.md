@@ -141,6 +141,22 @@ curl http://localhost:3334/health
 
 **Zero git, zero build na VPS!**
 
+### 📦 O que é sincronizado a cada deploy:
+
+**Arquivos de configuração:**
+- `docker-compose.dev.yml` ou `docker-compose.app.yml`
+- `docker-compose.monitoring-*.yml`
+
+**Scripts de deploy:**
+- `scripts/deploy/deploy.sh` (principal)
+- `scripts/deploy/backup-db.sh`
+- `scripts/deploy/rollback.sh`
+- `scripts/deploy/cleanup-old-versions.sh`
+
+**Prisma (para migrations):**
+- `prisma/schema.prisma`
+- `prisma/migrations/`
+
 ---
 
 ## 📂 Estrutura na VPS
@@ -157,8 +173,12 @@ curl http://localhost:3334/health
 │   ├── .deploy-history/
 │   │   └── deploys.log
 │   ├── logs/
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
 │   └── scripts/
 │       └── deploy/
+│           ├── deploy.sh
 │           ├── backup-db.sh
 │           ├── rollback.sh
 │           └── cleanup-old-versions.sh
@@ -167,7 +187,8 @@ curl http://localhost:3334/health
     └── prd/
 ```
 
-**Total:** ~50KB (vs ~200MB antes)
+**Total:** ~100KB (vs ~200MB antes)
+**Redução:** 99.95% 🎉
 
 ---
 
@@ -175,8 +196,8 @@ curl http://localhost:3334/health
 
 | Antes | Depois |
 |-------|--------|
-| 200MB+ (repo completo) | ~50KB (configs) |
-| Git history exposto | Zero código |
+| 200MB+ (repo completo) | ~100KB (configs + prisma) |
+| Git history exposto | Zero código-fonte |
 | Build local (2-3min) | Pull imagem (20s) |
 | Risco de modificação | Imutável |
 | Ataque via código | Apenas runtime |

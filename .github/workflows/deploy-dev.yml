@@ -42,10 +42,16 @@ jobs:
 
           # Sync essential scripts
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            scripts/deploy/deploy.sh \
             scripts/deploy/backup-db.sh \
             scripts/deploy/rollback.sh \
             scripts/deploy/cleanup-old-versions.sh \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/scripts/deploy/
+
+          # Sync Prisma files (for migrations)
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
+            prisma \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
 
           # Set permissions
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
@@ -73,9 +79,18 @@ jobs:
             # Login no GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Definir variáveis
+            # Definir variáveis de GHCR
             export DOCKER_IMAGE="ghcr.io/${{ github.repository }}"
             export IMAGE_TAG="develop-latest"
+            
+            # Injetar secrets da aplicação (via GitHub Secrets)
+            export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}"
+            export MYSQL_DATABASE="${{ secrets.MYSQL_DATABASE_DEV }}"
+            export MYSQL_USER="${{ secrets.MYSQL_USER_DEV }}"
+            export MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD_DEV }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET_DEV }}"
+            export GRAFANA_ADMIN_PASSWORD="${{ secrets.GRAFANA_ADMIN_PASSWORD_DEV }}"
+            export GRAFANA_SECRET_KEY="${{ secrets.GRAFANA_SECRET_KEY_DEV }}"
             
             # Executar deploy script
             bash ./scripts/deploy/deploy.sh dev
