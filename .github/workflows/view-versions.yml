@@ -1,10 +1,10 @@
-name: 📜 View Versions
+name: 👀 View Versions
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Environment"
+        description: "Environment to view"
         required: true
         type: choice
         options:
@@ -14,141 +14,199 @@ on:
 
 jobs:
   view-versions:
-    name: List Available Versions
+    name: View Available Versions
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Get Deploy History
+      - name: Get GHCR Versions
+        id: ghcr
         run: |
-          echo "## 📜 Deploy History" >> $GITHUB_STEP_SUMMARY
+          echo "## 📦 GHCR Images" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd /home/deploy/gas-e-agua-backend
+          echo "🔐 Logging into GHCR..."
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${REPO_LOWER}"
+
+          echo "📋 Fetching available tags from GHCR..."
+          echo ""
+
+          # Listar tags usando GitHub API
+          TAGS=$(curl -s -H "Authorization: Bearer ${{ secrets.GHCR_TOKEN }}" \
+            "https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$(echo ${{ github.repository }} | cut -d'/' -f2)/versions" \
+            | jq -r '.[].metadata.container.tags[]' | sort -r || echo "")
+
+          if [ -z "$TAGS" ]; then
+            echo "⚠️  No tags found or API error" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$TAGS" | head -20 >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             
+            # Filtrar por ambiente
             ENV="${{ github.event.inputs.environment }}"
-            
-            echo "╔═══════════════════════════════════════════════════════════════╗"
-            echo "║                    DEPLOY HISTORY                              ║"
-            echo "╚═══════════════════════════════════════════════════════════════╝"
+            if [ "$ENV" = "dev" ]; then
+              echo "### 🧪 DEV Tags" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "$TAGS" | grep "^develop" | head -10 >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            elif [ "$ENV" = "prd" ]; then
+              echo "### 🚀 PRD Tags" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+              echo "$TAGS" | grep "^master" | head -10 >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Get Local VPS Versions (DEV)
+        if: github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'both'
+        run: |
+          echo "## 🖥️ Local VPS Images (DEV)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`"
+            docker images --filter "reference=gas-e-agua-dev-app" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -15
+            echo "\`\`\`"
             echo ""
+          EOF
+
+      - name: Get Local VPS Versions (PRD)
+        if: github.event.inputs.environment == 'prd' || github.event.inputs.environment == 'both'
+        run: |
+          echo "## 🖥️ Local VPS Images (PRD)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`"
+            docker images --filter "reference=gas-e-agua-prd-app" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -15
             
-            if [ -f ".deploy-history/deploys.log" ]; then
-              echo "Recent Deploys (last 20):"
-              echo "─────────────────────────────────────────────────────────────"
-              
-              if [ "$ENV" = "both" ]; then
-                tail -20 .deploy-history/deploys.log | tac
-              else
-                grep "|$ENV|" .deploy-history/deploys.log | tail -20 | tac || echo "No deploys found for $ENV"
-              fi
+            echo ""
+            echo "# GHCR Images (cached locally)"
+            docker images --filter "reference=ghcr.io/*/gas-e-agua-backend" --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -15
+            echo "\`\`\`"
+            echo ""
+          EOF
+
+      - name: Get Deploy History (DEV)
+        if: github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'both'
+        run: |
+          echo "## 📜 Deploy History (DEV)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
+            if [ -f /home/deploy/gas-e-agua-backend/.deploy-history/deploys.log ]; then
+              echo "\`\`\`"
+              echo "Timestamp           | Commit  | Env | Image"
+              echo "--------------------|---------| ----|------"
+              tail -10 /home/deploy/gas-e-agua-backend/.deploy-history/deploys.log | grep "|dev|" | sort -r
+              echo "\`\`\`"
             else
               echo "No deploy history found"
             fi
-            
             echo ""
-            echo "Format: TIMESTAMP | COMMIT_SHA | ENV | IMAGE_TAG"
           EOF
 
-      - name: List Docker Images - DEV
-        if: github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'both'
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🐳 Docker Images - DEV" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
-            echo ""
-            echo "DEV Environment Images:"
-            echo "─────────────────────────────────────────────────────────────"
-            docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.CreatedAt}}\t{{.Size}}" | grep "gas-e-agua-dev-app" || echo "No DEV images found"
-          EOF
-
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-      - name: List Docker Images - PRD
+      - name: Get Deploy History (PRD)
         if: github.event.inputs.environment == 'prd' || github.event.inputs.environment == 'both'
         run: |
+          echo "## 📜 Deploy History (PRD)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🐳 Docker Images - PRD" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
+            if [ -f /home/deploy/gas-e-agua-backend/.deploy-history/deploys.log ]; then
+              echo "\`\`\`"
+              echo "Timestamp           | Commit  | Env | Image"
+              echo "--------------------|---------| ----|------"
+              tail -10 /home/deploy/gas-e-agua-backend/.deploy-history/deploys.log | grep "|prd|" | sort -r
+              echo "\`\`\`"
+            else
+              echo "No deploy history found"
+            fi
             echo ""
-            echo "PRD Environment Images:"
-            echo "─────────────────────────────────────────────────────────────"
-            docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.CreatedAt}}\t{{.Size}}" | grep -E "gas-e-agua-app" | grep -v "gas-e-agua-dev" || echo "No PRD images found"
           EOF
 
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-      - name: List Database Backups - DEV
+      - name: Get Database Backups (DEV)
         if: github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'both'
         run: |
+          echo "## 💾 Database Backups (DEV)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 💾 Database Backups - DEV" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
-            BACKUP_DIR="$(dirname /home/deploy/gas-e-agua-backend)/backups/dev"
-            
+            echo "\`\`\`"
+            ls -lh ../backups/dev/ | tail -10 | awk '{print $9, "-", $5, "-", $6, $7, $8}'
+            echo "\`\`\`"
             echo ""
-            echo "DEV Backups (last 10):"
-            echo "─────────────────────────────────────────────────────────────"
-            
-            if [ -d "$BACKUP_DIR" ]; then
-              ls -lht "$BACKUP_DIR"/*.sql 2>/dev/null | head -10 || echo "No backups found"
-            else
-              echo "Backup directory not found"
-            fi
           EOF
 
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-      - name: List Database Backups - PRD
+      - name: Get Database Backups (PRD)
         if: github.event.inputs.environment == 'prd' || github.event.inputs.environment == 'both'
         run: |
+          echo "## 💾 Database Backups (PRD)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 💾 Database Backups - PRD" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
-            BACKUP_DIR="$(dirname /home/deploy/gas-e-agua-backend)/backups/prd"
-            
+            echo "\`\`\`"
+            ls -lh ../backups/prd/ | tail -10 | awk '{print $9, "-", $5, "-", $6, $7, $8}'
+            echo "\`\`\`"
             echo ""
-            echo "PRD Backups (last 10):"
-            echo "─────────────────────────────────────────────────────────────"
-            
-            if [ -d "$BACKUP_DIR" ]; then
-              ls -lht "$BACKUP_DIR"/*.sql 2>/dev/null | head -10 || echo "No backups found"
-            else
-              echo "Backup directory not found"
-            fi
           EOF
 
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-      - name: Storage Summary
+      - name: Current Running Version
         run: |
+          echo "## 🏃 Currently Running" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 💽 Storage Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          ENV="${{ github.event.inputs.environment }}"
 
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF' >> $GITHUB_STEP_SUMMARY
+            echo "### DEV"
+            echo "\`\`\`"
+            docker ps --filter "name=gas-e-agua-app-dev" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+            echo "\`\`\`"
             echo ""
-            docker system df
+            
+            echo "### PRD"
+            echo "\`\`\`"
+            docker ps --filter "name=gas-e-agua-app" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+            echo "\`\`\`"
+            echo ""
           EOF
 
+      - name: Usage Instructions
+        run: |
+          echo "## 📝 How to Rollback" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Via GitHub Actions" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to **Actions** > **🔄 Rollback**" >> $GITHUB_STEP_SUMMARY
+          echo "2. Click **Run workflow**" >> $GITHUB_STEP_SUMMARY
+          echo "3. Fill in:" >> $GITHUB_STEP_SUMMARY
+          echo "   - **Environment**: \`dev\` or \`prd\`" >> $GITHUB_STEP_SUMMARY
+          echo "   - **Rollback type**: Choose image/database/full" >> $GITHUB_STEP_SUMMARY
+          echo "   - **Image tag**: Use a tag from GHCR list above (e.g., \`develop-a1b2c3d\`)" >> $GITHUB_STEP_SUMMARY
+          echo "   - **Backup file**: Use a file from backups list (e.g., \`backup-20241020-120000.sql\`)" >> $GITHUB_STEP_SUMMARY
+          echo "   - **Confirm**: Type \`CONFIRM\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Via SSH (Manual)" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# GHCR Rollback" >> $GITHUB_STEP_SUMMARY
+          echo "export DOCKER_IMAGE=\"ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')\"" >> $GITHUB_STEP_SUMMARY
+          echo "export IMAGE_TAG=\"develop-a1b2c3d\"  # Replace with desired tag" >> $GITHUB_STEP_SUMMARY
+          echo "bash /home/deploy/gas-e-agua-backend/scripts/deploy/deploy.sh dev" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
