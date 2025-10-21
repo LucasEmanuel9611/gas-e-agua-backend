@@ -26,6 +26,7 @@ services:
 
   # Node.js Application (DEV)
   app:
+    image: ${APP_IMAGE:-gas-e-agua-dev-app:latest}
     build:
       context: .
       dockerfile: Dockerfile
