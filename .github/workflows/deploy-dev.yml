@@ -1,21 +1,27 @@
 name: Deploy to VPS (DEV)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["🏗️ Build and Push to GHCR"]
+    types:
+      - completed
     branches:
       - develop
+  workflow_dispatch:
 
 concurrency:
-  group: vps-deploy
+  group: vps-deploy-dev
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
     steps:
       # Etapa 1: Fazer checkout do código do repositório
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Etapa 2: Configurar SSH para conectar na VPS
       - name: Setup SSH
@@ -25,7 +31,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Ensure correct branch
+      - name: Update repository on VPS
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             set -e
@@ -49,12 +55,21 @@ jobs:
       # Etapa 4: Deploy da aplicação (build, migrations, containers)
       - name: Deploy application
         id: deploy
-        uses: ./.github/actions/deploy
-        with:
-          environment: dev
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          vps-host: ${{ secrets.VPS_HOST }}
-          vps-user: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            # Login no GHCR
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Definir variáveis
+            export DOCKER_IMAGE="ghcr.io/${{ github.repository }}"
+            export IMAGE_TAG="develop-latest"
+            
+            # Executar deploy script
+            bash ./scripts/deploy/deploy.sh dev
+          EOF
 
       # Etapa 5: Verificar se a aplicação está saudável após deploy
       - name: Health check
@@ -72,7 +87,7 @@ jobs:
         with:
           status: success
           environment: dev
-          message: "Deploy completed in ${{ steps.deploy.outputs.deploy-time }}s"
+          message: "Deploy completed successfully"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       # Etapa 7: Notificar falha do deploy (se algo deu errado)
