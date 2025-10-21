@@ -2,7 +2,26 @@
 
 ## Workflows Disponíveis
 
-### 1. 🔄 Rollback (`rollback.yml`)
+### 1. 🏗️ Build and Push to GHCR (`build-and-push.yml`)
+
+**Quando executa:** Automático ao push em `develop` ou `master`
+
+**O que faz:**
+- Build da imagem Docker no GitHub Actions
+- Push para GitHub Container Registry (GHCR)
+- Tags criadas:
+  - `{branch}-latest` (ex: `develop-latest`)
+  - `{branch}-{sha}` (ex: `develop-a1b2c3d`)
+  - `latest` (apenas branch padrão)
+- Cache de layers para builds futuros
+
+**Tempo:** ~2min (paralelo ao desenvolvimento)
+
+**Não precisa executar manualmente** - acontece automaticamente!
+
+---
+
+### 2. 🔄 Rollback (`rollback.yml`)
 
 **Quando usar:** Reverter deploy com problemas
 
@@ -11,23 +30,33 @@
 2. Preencher:
    - **Environment:** `dev` ou `prd`
    - **Rollback type:** 
-     - `image_only` - Rápido, mantém banco (recomendado)
-     - `database_only` - Só banco
-     - `full_rollback` - Ambos (cuidado!)
-   - **Version:** Tag da imagem (ex: `20251009-143022`) ou deixe vazio para `backup-latest`
+     - `image_only` - Rápido (~30s), mantém banco (recomendado) ⚡
+     - `database_only` - Só banco (~1-2min)
+     - `full_rollback` - Ambos (~2min) - cuidado!
+   - **Image tag:** Tag do GHCR (ex: `develop-a1b2c3d`) ou local (ex: `20251009-143022`) ou vazio para `backup-latest`
    - **Backup file:** Nome do arquivo (ex: `backup-20251009-120000.sql`) - só para database/full
    - **Confirm:** Digite `CONFIRM`
 3. Clicar em `Run workflow`
 
 **Exemplos:**
 
-#### Rollback rápido (apenas app):
+#### Rollback rápido usando GHCR (Recomendado) ⚡:
+```
+Environment: dev
+Rollback type: image_only
+Image tag: develop-a1b2c3d  ← Tag do GHCR (pegar do View Versions)
+Confirm: CONFIRM
+```
+**Tempo: ~30s**
+
+#### Rollback rápido usando backup local:
 ```
 Environment: prd
 Rollback type: image_only
-Version: (vazio para usar backup-latest)
+Image tag: (vazio para usar backup-latest)
 Confirm: CONFIRM
 ```
+**Tempo: ~30s**
 
 #### Rollback de banco:
 ```
@@ -36,51 +65,57 @@ Rollback type: database_only
 Backup file: backup-20251009-120000.sql
 Confirm: CONFIRM
 ```
+**Tempo: ~1-2min**
 
-#### Rollback completo:
+#### Rollback completo (GHCR + Database):
 ```
 Environment: prd
 Rollback type: full_rollback
-Version: 20251009-120000
+Image tag: master-abc1234  ← Tag do GHCR
 Backup file: backup-20251009-120000.sql
 Confirm: CONFIRM
 ```
+**Tempo: ~2min**
 
 ---
 
-### 2. 📜 View Versions (`view-versions.yml`)
+### 3. 👀 View Versions (`view-versions.yml`)
 
 **Quando usar:** Ver versões disponíveis antes de fazer rollback
 
 **Como executar:**
-1. Ir para: `Actions` → `📜 View Versions` → `Run workflow`
+1. Ir para: `Actions` → `👀 View Versions` → `Run workflow`
 2. Escolher environment: `dev`, `prd` ou `both`
 3. Ver no **Summary** da action:
+   - **Tags GHCR** (novas imagens do registry) 🆕
    - Histórico de deploys
-   - Imagens Docker disponíveis
+   - Imagens Docker locais (VPS)
    - Backups de banco disponíveis
    - Uso de storage
 
 **Saída esperada:**
 ```
-📜 Deploy History
-Recent Deploys:
-20251009-143022|abc1234|prd|gas-e-agua-app:20251009-143022
-20251008-210015|def5678|dev|gas-e-agua-dev-app:20251008-210015
+📦 GHCR Images
+develop-latest
+develop-a1b2c3d
+develop-20241020-120000
+master-latest
+master-def5678
 
-🐳 Docker Images - PRD
+🖥️ Local VPS Images
 gas-e-agua-app    20251009-143022    2 hours ago    450MB
-gas-e-agua-app    20251008-210015    1 day ago      448MB
 gas-e-agua-app    backup-latest      2 hours ago    450MB
 
-💾 Database Backups - PRD
+📜 Deploy History
+20251009-143022|develop-a1b2c3d|dev|gas-e-agua-dev-app:20251009-143022
+
+💾 Database Backups
 backup-20251009-120000.sql    15M    Oct 9 12:00
-backup-20251008-120000.sql    14M    Oct 8 12:00
 ```
 
 ---
 
-### 3. 🧹 Cleanup Old Versions (`cleanup-versions.yml`)
+### 4. 🧹 Cleanup Old Versions (`cleanup-versions.yml`)
 
 **Quando usar:** Liberar espaço no servidor
 

@@ -30,7 +30,9 @@ Aplicação rodando em **http://localhost:3333**
 ## 📚 Documentação
 
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Desenvolvimento local e arquitetura
-- **[DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md)** - Deploy e monitoramento em produção
+- **[DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md)** - Deploy, monitoramento e GHCR
+- **[docs/VPS_RUNTIME_MIGRATION.md](./docs/VPS_RUNTIME_MIGRATION.md)** - Migração para VPS runtime-only
+- **[.github/workflows/README.md](./.github/workflows/README.md)** - Workflows disponíveis (rollback, cleanup)
 - **[scripts/README.md](./scripts/README.md)** - Referência dos scripts
 - **[prisma-flow.md](./prisma-flow.md)** - Fluxo de migrations do Prisma
 
@@ -48,7 +50,8 @@ Aplicação rodando em **http://localhost:3333**
 
 ### DevOps & Monitoramento
 - **Docker** - Containerização
-- **GitHub Actions** - CI/CD
+- **GitHub Actions** - CI/CD automatizado
+- **GitHub Container Registry (GHCR)** - Registry de imagens Docker
 - **Prometheus** - Métricas
 - **Grafana** - Dashboards
 - **Loki** - Logs centralizados
