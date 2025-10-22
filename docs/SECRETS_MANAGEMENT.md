@@ -70,6 +70,64 @@ Guia completo para gerenciamento de secrets via GitHub Secrets.
 
 ---
 
+## 🔄 Uso Local vs VPS
+
+### 💻 **Desenvolvimento Local**
+
+Para desenvolvimento local, você precisa criar o arquivo `.env.dev` manualmente:
+
+```bash
+# 1. Copiar exemplo
+cp env.app.dev.example .env.dev
+
+# 2. Editar com suas credenciais locais
+nano .env.dev
+
+# 3. Subir containers
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+
+# 4. Rodar app localmente (hot reload)
+npm run dev
+```
+
+**Por quê `.env.dev` local?**
+- ✅ Você tem controle total das credenciais
+- ✅ Pode usar senhas simples para testes
+- ✅ Funciona offline
+- ✅ Git ignora automaticamente (`.gitignore`)
+
+---
+
+### ☁️ **Deploy VPS (GitHub Actions)**
+
+Na VPS, o `.env` é criado **temporariamente** durante o deploy:
+
+```
+GitHub Actions
+  ↓
+SSH na VPS
+  ↓
+Cria .env com secrets do GitHub
+  ↓
+docker compose up (lê .env)
+  ↓
+Containers armazenam vars em MEMÓRIA
+  ↓
+Remove .env do disco
+  ↓
+✅ Zero secrets no disco!
+```
+
+**Por quê remover `.env` após deploy?**
+- ✅ Secrets ficam apenas na memória dos containers
+- ✅ Nenhum arquivo sensível exposto no disco
+- ✅ Containers continuam funcionando normalmente
+- ✅ Auditoria completa via GitHub Secrets
+
+⚠️ **Importante:** Os containers **não perdem** as variáveis ao remover o `.env`. Elas já foram injetadas na memória do container!
+
+---
+
 ## 🛠️ Como Configurar
 
 ### Passo 1: Gerar Secrets Fortes

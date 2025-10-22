@@ -80,21 +80,31 @@ jobs:
             # Login no GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Definir variáveis de GHCR
-            export DOCKER_IMAGE="ghcr.io/${{ github.repository }}"
-            export IMAGE_TAG="master-latest"
+            # Criar .env temporário com secrets do GitHub
+            cat > .env << ENVFILE
+MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
+MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE_PRD }}
+MYSQL_USER=${{ secrets.MYSQL_USER_PRD }}
+MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD_PRD }}
+NODE_ENV=production
+PORT=3333
+JWT_SECRET=${{ secrets.JWT_SECRET_PRD }}
+REDIS_URL=redis://redis:6379
+REDIS_HOST=redis
+REDIS_PORT=6379
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}
+GRAFANA_SECRET_KEY=${{ secrets.GRAFANA_SECRET_KEY_PRD }}
+DOCKER_IMAGE=ghcr.io/${{ github.repository }}
+IMAGE_TAG=master-latest
+ENVFILE
             
-            # Injetar secrets da aplicação (via GitHub Secrets)
-            export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}"
-            export MYSQL_DATABASE="${{ secrets.MYSQL_DATABASE_PRD }}"
-            export MYSQL_USER="${{ secrets.MYSQL_USER_PRD }}"
-            export MYSQL_PASSWORD="${{ secrets.MYSQL_PASSWORD_PRD }}"
-            export JWT_SECRET="${{ secrets.JWT_SECRET_PRD }}"
-            export GRAFANA_ADMIN_PASSWORD="${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}"
-            export GRAFANA_SECRET_KEY="${{ secrets.GRAFANA_SECRET_KEY_PRD }}"
-            
-            # Executar deploy script
+            # Executar deploy script (vai ler .env criado acima)
             bash ./scripts/deploy/deploy.sh prd
+            
+            # Remover .env após containers subirem
+            rm -f .env
+            echo "✅ Deploy completed and .env removed from disk"
           EOF
 
       # Etapa 5: Verificar saúde da aplicação (10 tentativas em produção)

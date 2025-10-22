@@ -72,20 +72,50 @@ bash scripts/setup/setup-vps-runtime.sh deploy <vps-ip>
 - Copiar scripts essenciais
 - Configurar permissões
 
-### Passo 4: Restaurar Variáveis de Ambiente
+### Passo 4: Configurar Secrets no GitHub
+
+**Agora os `.env` files NÃO ficam mais na VPS!** Eles são criados temporariamente durante o deploy e removidos.
 
 ```bash
-# SSH na VPS
-ssh deploy@vps
+# 1. Gerar secrets fortes
+bash scripts/security/rotate-secrets.sh dev
+bash scripts/security/rotate-secrets.sh prd
 
-# Restaurar .env files
-cd ~/gas-e-agua-backend
-cp ~/env.dev.backup .env.dev
-cp ~/env.backup .env
-
-# Verificar
-ls -la .env*
+# 2. Adicionar no GitHub:
+# Settings > Secrets and variables > Actions
+# Copiar e colar cada secret gerado
 ```
+
+**Secrets necessários:**
+
+**DEV:**
+- `MYSQL_ROOT_PASSWORD_DEV`
+- `MYSQL_DATABASE_DEV`
+- `MYSQL_USER_DEV`
+- `MYSQL_PASSWORD_DEV`
+- `JWT_SECRET_DEV`
+- `GRAFANA_ADMIN_PASSWORD_DEV`
+- `GRAFANA_SECRET_KEY_DEV`
+
+**PRD:**
+- `MYSQL_ROOT_PASSWORD_PRD`
+- `MYSQL_DATABASE_PRD`
+- `MYSQL_USER_PRD`
+- `MYSQL_PASSWORD_PRD`
+- `JWT_SECRET_PRD`
+- `GRAFANA_ADMIN_PASSWORD_PRD`
+- `GRAFANA_SECRET_KEY_PRD`
+
+**Infraestrutura:**
+- `SSH_PRIVATE_KEY`
+- `VPS_HOST`
+- `VPS_USER`
+- `GHCR_TOKEN`
+- `DISCORD_WEBHOOK_URL` (opcional)
+
+📖 **Ver:** `docs/SECRETS_MANAGEMENT.md` para detalhes completos.
+
+---
 
 ### Passo 5: Primeiro Deploy
 
@@ -139,7 +169,49 @@ curl http://localhost:3334/health
    └── Health check
 ```
 
-**Zero git, zero build na VPS!**
+**Zero git, zero build, zero `.env` permanente na VPS!**
+
+### 🔐 Ciclo de Vida dos Secrets
+
+**Desenvolvimento Local:**
+```
+Developer cria .env.dev manualmente
+  ↓
+docker-compose up (lê .env.dev)
+  ↓
+Containers rodam
+  ↓
+.env.dev permanece no disco (git ignora)
+```
+
+**Deploy VPS (GitHub Actions):**
+```
+GitHub Actions SSH na VPS
+  ↓
+Cria .env temporário (5 segundos)
+  ↓
+docker-compose up (lê .env)
+  ↓
+Containers armazenam vars em MEMÓRIA
+  ↓
+Remove .env do disco
+  ↓
+✅ Zero secrets no disco!
+```
+
+⚠️ **Importante:** Os containers **não perdem** as variáveis ao remover o `.env`. Elas já foram injetadas na memória do container!
+
+**Prova:**
+```bash
+# Após deploy (sem .env no disco)
+ssh deploy@vps
+cd ~/gas-e-agua-backend
+ls -la .env.dev  # ❌ Arquivo não existe!
+
+# Mas o container tem as vars:
+docker exec gas-e-agua-mysql-dev env | grep MYSQL_PASSWORD
+# MYSQL_PASSWORD=secret  ← ✅ Em memória!
+```
 
 ### 📦 O que é sincronizado a cada deploy:
 
@@ -200,6 +272,8 @@ curl http://localhost:3334/health
 | Git history exposto | Zero código-fonte |
 | Build local (2-3min) | Pull imagem (20s) |
 | Risco de modificação | Imutável |
+| `.env` permanente no disco | `.env` temporário (5s) + remoção |
+| Secrets no disco VPS | Secrets via GitHub + memória containers |
 | Ataque via código | Apenas runtime |
 
 ---

@@ -6,6 +6,84 @@ Backend para sistema de gerenciamento de pedidos de gás e água, construído co
 
 **Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md).
 
+---
+
+## 🚀 Setup Rápido (Desenvolvimento Local)
+
+### Pré-requisitos
+
+- Node.js 18+
+- Docker e Docker Compose
+- Git
+
+### Passos:
+
+```bash
+# 1. Clonar repositório
+git clone <repo-url>
+cd gas-e-agua-backend
+
+# 2. Instalar dependências
+npm install
+
+# 3. Configurar variáveis de ambiente
+cp env.app.dev.example .env.dev
+nano .env.dev  # Editar com suas credenciais locais
+
+# 4. Subir containers (MySQL, Redis)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+
+# 5. Rodar migrations
+npx prisma migrate dev
+
+# 6. (Opcional) Seed inicial
+npx prisma db seed
+
+# 7. Rodar aplicação em dev mode (hot reload)
+npm run dev
+
+# 8. Testar
+curl http://localhost:3333/health
+```
+
+**Pronto!** 🎉 Aplicação rodando em `http://localhost:3333`
+
+### 📝 Variáveis de Ambiente Locais
+
+O arquivo `.env.dev` contém suas configurações locais:
+
+```env
+# Banco de Dados
+MYSQL_ROOT_PASSWORD=password
+MYSQL_DATABASE=gas_e_agua_dev
+MYSQL_USER=gas_e_agua_dev
+MYSQL_PASSWORD=password
+
+# Aplicação
+NODE_ENV=development
+PORT=3333
+JWT_SECRET=jwt_secret_dev
+
+# Redis (rate limiting)
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_URL=redis://redis:6379
+
+# Grafana (monitoramento - opcional)
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin123
+GRAFANA_SECRET_KEY=grafana_secret_key_dev
+```
+
+⚠️ **Importante:**
+- O `.env.dev` é ignorado pelo Git (`.gitignore`)
+- Use senhas simples para desenvolvimento local
+- Nunca commite o `.env.dev` real!
+
+📖 **Ver também:** [`docs/SECRETS_MANAGEMENT.md`](./docs/SECRETS_MANAGEMENT.md) para entender como secrets são gerenciados na VPS.
+
+---
+
 ## Estrutura do Projeto
 
 ```
