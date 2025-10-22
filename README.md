@@ -1,108 +1,220 @@
 # ⚡ Gas e Água Backend
 
-Backend completo para gerenciamento de pedidos de gás e água, com sistema de autenticação, controle de estoque, monitoramento e deploy automatizado.
+> Sistema completo de gerenciamento de pedidos de gás e água com autenticação JWT, controle de estoque, monitoramento em tempo real e deploy automatizado via CI/CD.
 
-## 🚀 Quick Start
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18+-green.svg" alt="Node.js">
+  <img src="https://img.shields.io/badge/TypeScript-5.0+-blue.svg" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Docker-Ready-blue.svg" alt="Docker">
+  <img src="https://img.shields.io/badge/Tests-84%25-brightgreen.svg" alt="Coverage">
+</p>
 
-```bash
-# Clonar repositório
-git clone <seu-repositorio>
-cd gas-e-agua-backend
+---
 
-# Instalar dependências
-npm install
+## 🎯 O que é?
 
-# Copiar variáveis de ambiente
-cp env.docker.example .env.dev
+API REST robusta para gerenciar operações de distribuidoras de gás e água, incluindo:
 
-# Subir banco de dados
-docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis
+- 🔐 **Autenticação completa** - JWT com controle de permissões (Admin/User/Delivery)
+- 📦 **Gestão de pedidos** - CRUD completo com status e rastreamento
+- 📊 **Controle de estoque** - Gerenciamento de produtos e quantidades
+- 💰 **Sistema financeiro** - Controle de transações e pagamentos
+- 📱 **Notificações push** - Integração com Expo para apps mobile
+- 🚀 **Deploy automatizado** - CI/CD com GitHub Actions e GHCR
+- 📈 **Monitoramento 24/7** - Grafana + Prometheus + Loki
 
-# Aplicar migrations
-npx prisma migrate deploy
+---
 
-# Iniciar aplicação
-npm run dev
+## ✨ Destaques
+
+### 🏗️ Arquitetura Moderna
+
+```
+Clean Architecture + SOLID + TypeScript
+         ↓
+   Prisma ORM + MySQL
+         ↓
+Docker Containers (GHCR)
+         ↓
+    GitHub Actions
+         ↓
+   Deploy Automatizado
 ```
 
-Aplicação rodando em **http://localhost:3333**
+### 🚀 Deploy Inteligente
 
-## 📚 Documentação
+- ✅ **Build no GitHub Actions** - VPS apenas executa (runtime-only)
+- ✅ **Imagens versionadas** - Rollback em 30 segundos
+- ✅ **Zero downtime** - Migrations automáticas
+- ✅ **Secrets gerenciados** - GitHub Secrets (rotação automática)
+- ✅ **Backup automático** - Antes de cada deploy
 
-- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Desenvolvimento local e arquitetura
-- **[DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md)** - Deploy, monitoramento e GHCR
-- **[docs/VPS_RUNTIME_MIGRATION.md](./docs/VPS_RUNTIME_MIGRATION.md)** - Migração para VPS runtime-only
-- **[docs/SECRETS_MANAGEMENT.md](./docs/SECRETS_MANAGEMENT.md)** - Gerenciamento de secrets via GitHub
-- **[docs/SECRETS_ROTATION.md](./docs/SECRETS_ROTATION.md)** - Rotação automática de secrets
-- **[.github/workflows/README.md](./.github/workflows/README.md)** - Workflows disponíveis (rollback, cleanup)
-- **[scripts/README.md](./scripts/README.md)** - Referência dos scripts
-- **[prisma-flow.md](./prisma-flow.md)** - Fluxo de migrations do Prisma
+### 📊 Observabilidade Completa
+
+- **Grafana** - Dashboards customizados
+- **Prometheus** - Métricas em tempo real
+- **Loki** - Logs centralizados
+- **Alertmanager** - Notificações Discord/Slack
+
+### 🔒 Segurança em Primeiro Lugar
+
+- 🔐 Autenticação JWT com refresh tokens
+- 🔑 Secrets rotacionados automaticamente (quarterly)
+- 🛡️ Rate limiting com Redis
+- 🚨 Validação de dados com Zod
+- 📝 Logs de auditoria
+
+---
 
 ## 🛠️ Stack Tecnológica
 
-### Core
-- **Node.js 18+** - Runtime
-- **TypeScript** - Linguagem
-- **Express** - Framework web
-- **Prisma** - ORM
+| Camada | Tecnologia |
+|--------|------------|
+| **Runtime** | Node.js 18+ |
+| **Linguagem** | TypeScript 5.0+ |
+| **Framework** | Express |
+| **ORM** | Prisma |
+| **Banco de Dados** | MySQL 8.0 |
+| **Cache** | Redis |
+| **Containerização** | Docker + Docker Compose |
+| **CI/CD** | GitHub Actions |
+| **Registry** | GitHub Container Registry (GHCR) |
+| **Monitoramento** | Prometheus, Grafana, Loki |
+| **Testes** | Jest (84% coverage) |
+| **Linting** | ESLint |
+| **Validação** | Zod |
 
-### Banco de Dados
-- **MySQL 8.0** - Banco principal
-- **Redis** - Cache e rate limiting
+---
 
-### DevOps & Monitoramento
-- **Docker** - Containerização
-- **GitHub Actions** - CI/CD automatizado
-- **GitHub Container Registry (GHCR)** - Registry de imagens Docker
-- **Prometheus** - Métricas
-- **Grafana** - Dashboards
-- **Loki** - Logs centralizados
+## 🚀 Quick Start
 
-### Qualidade de Código
-- **Jest** - Testes
-- **ESLint** - Linting
-- **Husky** - Git hooks
+### Pré-requisitos
+- Node.js 18+
+- Docker e Docker Compose
+- Git
+
+### Instalação (3 minutos)
+
+```bash
+# 1. Clonar repositório
+git clone <seu-repositorio>
+cd gas-e-agua-backend
+
+# 2. Instalar dependências
+npm install
+
+# 3. Configurar ambiente
+cp env.app.dev.example .env.dev
+nano .env.dev  # Editar credenciais
+
+# 4. Subir containers
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+
+# 5. Aplicar migrations e seeds
+npx prisma migrate deploy
+npx prisma db seed
+
+# 6. Iniciar aplicação
+npm run dev
+```
+
+✅ **Pronto!** API rodando em `http://localhost:3333`
+
+📖 **Guia completo:** [`DEVELOPMENT.md`](./DEVELOPMENT.md)
+
+---
+
+## 🌟 Features
+
+### ✅ Aplicação
+
+| Feature | Status |
+|---------|--------|
+| Autenticação JWT | ✅ |
+| Controle de permissões (RBAC) | ✅ |
+| CRUD de pedidos | ✅ |
+| Gerenciamento de estoque | ✅ |
+| Sistema de adicionais (addons) | ✅ |
+| Controle de transações/pagamentos | ✅ |
+| Rate limiting | ✅ |
+| Logs estruturados (Winston) | ✅ |
+| Validação de dados (Zod) | ✅ |
+| Notificações push (Expo) | ✅ |
+| Health checks | ✅ |
+| Documentação Swagger | ✅ |
+
+### ✅ DevOps
+
+| Feature | Status |
+|---------|--------|
+| Deploy automático via GitHub Actions | ✅ |
+| Build no GHCR (sem build na VPS) | ✅ |
+| Backup automático antes de deploy | ✅ |
+| Rollback em 30s (imagens versionadas) | ✅ |
+| Health checks automatizados | ✅ |
+| Monitoramento com Prometheus + Grafana | ✅ |
+| Logs centralizados com Loki | ✅ |
+| Alertas configuráveis (Discord/Slack) | ✅ |
+| Múltiplos ambientes (DEV/PRD) | ✅ |
+| Secrets management (GitHub Secrets) | ✅ |
+| Rotação automática de secrets | ✅ |
+| VPS runtime-only (sem código-fonte) | ✅ |
+
+### ✅ Qualidade
+
+- ✅ Cobertura de testes **>84%**
+- ✅ Linting automático (ESLint)
+- ✅ Type safety com TypeScript
+- ✅ CI/CD automatizado
+- ✅ Clean Architecture
+- ✅ SOLID principles
+- ✅ Git hooks (Husky)
+
+---
 
 ## 📂 Estrutura do Projeto
 
 ```
 gas-e-agua-backend/
 ├── src/
-│   ├── modules/           # Módulos da aplicação
-│   │   ├── accounts/      # Autenticação e usuários
-│   │   ├── orders/        # Pedidos
-│   │   ├── stock/         # Estoque
-│   │   ├── addons/        # Produtos adicionais
-│   │   └── transactions/  # Pagamentos
-│   ├── shared/            # Código compartilhado
-│   │   ├── infra/         # Infraestrutura (HTTP, DB)
-│   │   ├── utils/         # Utilitários
-│   │   └── errors/        # Erros customizados
-│   └── config/            # Configurações
+│   ├── modules/              # Módulos da aplicação
+│   │   ├── accounts/         # Autenticação e usuários
+│   │   ├── orders/           # Pedidos
+│   │   ├── stock/            # Estoque
+│   │   ├── addons/           # Produtos adicionais
+│   │   └── transactions/     # Pagamentos
+│   ├── shared/               # Código compartilhado
+│   │   ├── infra/            # Infraestrutura (HTTP, DB)
+│   │   ├── utils/            # Utilitários
+│   │   └── errors/           # Erros customizados
+│   └── config/               # Configurações
 │
-├── scripts/               # Scripts organizados
-│   ├── deploy/            # Deploy e CI/CD
-│   ├── database/          # Banco de dados
-│   ├── monitoring/        # Monitoramento
-│   └── setup/             # Configuração inicial
+├── scripts/                  # Scripts organizados
+│   ├── deploy/               # Deploy e CI/CD
+│   ├── database/             # Banco de dados
+│   ├── monitoring/           # Monitoramento
+│   ├── security/             # Rotação de secrets
+│   └── setup/                # Configuração inicial
 │
 ├── .github/
-│   ├── actions/           # Actions customizadas
-│   └── workflows/         # CI/CD workflows
+│   ├── actions/              # Actions customizadas
+│   └── workflows/            # CI/CD workflows
 │
 ├── prisma/
-│   ├── migrations/        # Migrations do banco
-│   └── schema.prisma      # Schema do Prisma
+│   ├── migrations/           # Migrations do banco
+│   └── schema.prisma         # Schema do Prisma
 │
-├── docker/                # Docker configs
-│   └── mysql/init/        # Scripts de inicialização MySQL
+├── docker/                   # Docker configs
+│   └── mysql/init/           # Scripts de inicialização MySQL
 │
-└── monitoring/            # Configs de monitoramento
-    ├── prometheus/        # Regras e configurações
-    ├── grafana/           # Dashboards
-    ├── loki/              # Agregação de logs
-    └── promtail/          # Coleta de logs
+└── monitoring/               # Configs de monitoramento
+    ├── prometheus/           # Regras e configurações
+    ├── grafana/              # Dashboards
+    ├── loki/                 # Agregação de logs
+    └── promtail/             # Coleta de logs
 ```
+
+---
 
 ## 🔧 Comandos Principais
 
@@ -136,86 +248,86 @@ docker compose -p gas-e-agua-prd -f docker-compose.app.yml logs -f app
 ### Deploy
 ```bash
 # Via GitHub Actions (recomendado)
-git push origin develop  # Deploy DEV
-git push origin master   # Deploy PRD
+git push origin develop  # Deploy DEV automático
+git push origin master   # Deploy PRD automático
 
-# Manual na VPS
-bash scripts/deploy/deploy.sh dev   # DEV
-bash scripts/deploy/deploy.sh prd   # PRD
-```
-
-## 🌟 Features
-
-### ✅ Aplicação
-- Autenticação JWT
-- Controle de permissões (Admin/User)
-- CRUD de pedidos
-- Gerenciamento de estoque
-- Sistema de adicionais (addons)
-- Controle de transações/pagamentos
-- Rate limiting
-- Logs estruturados (Winston)
-- Validação de dados (Zod)
-
-### ✅ DevOps
-- Deploy automático via GitHub Actions
-- Backup automático antes de deploy
-- Rollback rápido em caso de falha
-- Health checks automatizados
-- Monitoramento com Prometheus + Grafana
-- Logs centralizados com Loki
-- Alertas configuráveis
-- Múltiplos ambientes (DEV/PRD)
-
-### ✅ Qualidade
-- Cobertura de testes > 84%
-- Linting automático
-- Type safety com TypeScript
-- CI/CD automatizado
-- Clean Architecture
-- SOLID principles
-
-## 🚀 Deploy em Produção
-
-### Pré-requisitos
-- VPS com Ubuntu/Debian
-- Docker e Docker Compose
-- Domínio (opcional, para HTTPS)
-
-### Setup
-```bash
-# Na VPS
-git clone <seu-repositorio>
-cd gas-e-agua-backend
-
-# Configurar variáveis
-cp env.docker.example .env
-nano .env  # Editar com valores reais
-
-# Deploy
+# Manual na VPS (se necessário)
+bash scripts/deploy/deploy.sh dev
 bash scripts/deploy/deploy.sh prd
 ```
 
-**Veja [DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md) para guia completo.**
+---
+
+## 🚀 Deploy em Produção
+
+### Método Recomendado: GitHub Actions ✅
+
+**1. Configurar secrets no GitHub:**
+
+GitHub → Settings → Secrets and variables → Actions
+
+```
+Aplicação:
+  MYSQL_ROOT_PASSWORD_DEV/PRD
+  MYSQL_PASSWORD_DEV/PRD
+  JWT_SECRET_DEV/PRD
+
+Monitoramento:
+  GRAFANA_ADMIN_PASSWORD_DEV/PRD
+  GRAFANA_SECRET_KEY_DEV/PRD
+
+Infraestrutura:
+  SSH_PRIVATE_KEY
+  VPS_HOST
+  VPS_USER
+  GHCR_TOKEN
+
+Notificações:
+  SMTP_USERNAME
+  SMTP_PASSWORD
+  NOTIFICATION_EMAIL
+  DISCORD_WEBHOOK_URL (opcional)
+```
+
+**2. Deploy automático:**
+```bash
+git push origin develop  # → Deploy DEV
+git push origin master   # → Deploy PRD
+```
+
+**3. Ou trigger manual:**
+
+GitHub → Actions → Deploy to VPS → Run workflow
+
+### VPS Runtime-Only (Sem Código)
+
+A VPS **não precisa** de Git ou código-fonte. Apenas Docker e configurações.
+
+**Setup inicial:** [`docs/VPS_RUNTIME_MIGRATION.md`](./docs/VPS_RUNTIME_MIGRATION.md)  
+**Guia completo:** [`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md)
+
+---
 
 ## 📊 Monitoramento
 
 ### Acessos (após configurar)
 
 **Com Domínio:**
-- API: https://api.seu-dominio.com
-- Grafana: https://monitoring.seu-dominio.com
-- Prometheus: https://prometheus.seu-dominio.com
+- API: `https://api.seu-dominio.com`
+- Grafana: `https://monitoring.seu-dominio.com`
+- Prometheus: `https://prometheus.seu-dominio.com`
 
 **Sem Domínio:**
-- API: http://IP_VPS:3333
-- Grafana: http://IP_VPS:3000
-- Prometheus: http://IP_VPS:9090
+- API: `http://IP_VPS:3333`
+- Grafana: `http://IP_VPS:3000`
+- Prometheus: `http://IP_VPS:9090`
 
 ### Dashboards Disponíveis
 - **Métricas da Aplicação** - CPU, Memória, Requisições
 - **Logs Centralizados** - Filtros por nível, timestamp, serviço
 - **Alertas** - Notificações Discord/Slack
+
+---
 
 ## 🧪 Testes
 
@@ -233,6 +345,29 @@ npm test -- --watch
 npm test -- CreateUserUseCase
 ```
 
+**Cobertura atual: 84%+** 🎯
+
+---
+
+## 📚 Documentação
+
+### Para Desenvolvedores
+- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Setup local e arquitetura
+- **[prisma-flow.md](./prisma-flow.md)** - Fluxo de migrations do Prisma
+- **[scripts/README.md](./scripts/README.md)** - Referência dos scripts
+
+### Para DevOps
+- **[DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md)** - Deploy e monitoramento
+- **[.github/workflows/README.md](./.github/workflows/README.md)** - Workflows GitHub Actions
+- **[docs/VPS_RUNTIME_MIGRATION.md](./docs/VPS_RUNTIME_MIGRATION.md)** - VPS runtime-only
+- **[scripts/deploy/ROLLBACK_GUIDE.md](./scripts/deploy/ROLLBACK_GUIDE.md)** - Guia de rollback
+
+### Para Segurança
+- **[docs/SECRETS_MANAGEMENT.md](./docs/SECRETS_MANAGEMENT.md)** - Gerenciamento de secrets
+- **[docs/SECRETS_ROTATION.md](./docs/SECRETS_ROTATION.md)** - Rotação automática
+
+---
+
 ## 🤝 Contribuindo
 
 1. Fork o projeto
@@ -249,8 +384,14 @@ npm test -- CreateUserUseCase
 - `test:` Testes
 - `chore:` Manutenção
 
+---
+
 ## 📝 Licença
 
 MIT
 
+---
 
+<p align="center">
+  Feito com ❤️ usando TypeScript, Node.js e boas práticas de desenvolvimento
+</p>

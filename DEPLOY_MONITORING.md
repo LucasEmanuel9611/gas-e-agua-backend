@@ -53,84 +53,106 @@ Tipo: A | Nome: api-dev        | Valor: IP_DA_VPS | TTL: 300
 ### Se não tem domínio:
 Pule para a seção 2.
 
-## 📦 2. Preparar o Projeto
+## 📦 2. Preparar a VPS (Runtime-Only)
+
+⚠️ **Mudança importante:** A VPS agora funciona em modo **runtime-only** (sem código-fonte ou Git).
+
+### **Setup inicial da VPS:**
 
 ```bash
-# Clonar o projeto
+# No seu computador local (não na VPS)
 git clone <SEU_REPO_GIT>
 cd gas-e-agua-backend
 
-# Criar estrutura de diretórios
-mkdir -p monitoring/data/{prometheus,loki,grafana,alertmanager} logs
-
-# Copiar arquivos de configuração
-cp env.monitoring.example .env.monitoring-prd
-cp env.monitoring.example .env.monitoring-dev
-cp env.docker.example .env
-cp env.docker.example .env.dev
+# Rodar script de setup (envia arquivos necessários via SCP)
+bash scripts/setup/setup-vps-runtime.sh deploy <IP_DA_VPS>
 ```
 
-## ⚙️ 3. Configurar Variáveis de Ambiente
+Este script cria a estrutura mínima na VPS:
+- Docker compose files
+- Scripts essenciais de deploy
+- Prisma schema (para migrations)
+- Diretórios de dados
+
+📖 **Guia completo:** [`docs/VPS_RUNTIME_MIGRATION.md`](./docs/VPS_RUNTIME_MIGRATION.md)
+
+## ⚙️ 3. Configurar Secrets no GitHub
+
+⚠️ Secrets agora são **injetados via GitHub Actions** (não mais em arquivos `.env` na VPS).
+
+### **Gerar secrets fortes:**
 
 ```bash
-# Editar configurações do monitoramento PRD
-nano .env.monitoring-prd
+# Gerar secrets DEV
+bash scripts/security/rotate-secrets.sh dev
+
+# Gerar secrets PRD
+bash scripts/security/rotate-secrets.sh prd
 ```
 
-Configure:
-- `GRAFANA_ADMIN_PASSWORD` (senha do admin PRD)
-- `SMTP_*` (para alertas por email)
-- `SLACK_WEBHOOK_URL` (para alertas no Slack)
+### **Adicionar no GitHub:**
 
-```bash
-# Editar configurações do monitoramento DEV
-nano .env.monitoring-dev
-```
+**GitHub** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-Configure (valores de desenvolvimento):
-- `GRAFANA_ADMIN_PASSWORD` (senha do admin DEV)
-- `SMTP_*` (para alertas por email DEV)
-- `SLACK_WEBHOOK_URL` (para alertas no Slack DEV)
+**Aplicação (DEV):**
+- `MYSQL_ROOT_PASSWORD_DEV`
+- `MYSQL_PASSWORD_DEV`
+- `JWT_SECRET_DEV`
 
-```bash
-# Editar configurações da aplicação PRD
-nano .env
-```
+**Aplicação (PRD):**
+- `MYSQL_ROOT_PASSWORD_PRD`
+- `MYSQL_PASSWORD_PRD`
+- `JWT_SECRET_PRD`
 
-Configure:
-- `MYSQL_ROOT_PASSWORD` (senha do root do MySQL)
-- `MYSQL_DATABASE` (nome do banco de dados)
-- `MYSQL_USER` (usuário do banco)
-- `MYSQL_PASSWORD` (senha do usuário)
-- `JWT_SECRET` (chave secreta)
-- `REDIS_URL` (URL do Redis)
+**Grafana (DEV):**
+- `GRAFANA_ADMIN_PASSWORD_DEV`
+- `GRAFANA_SECRET_KEY_DEV`
 
-```bash
-# Editar configurações da aplicação DEV
-nano .env.dev
-```
+**Grafana (PRD):**
+- `GRAFANA_ADMIN_PASSWORD_PRD`
+- `GRAFANA_SECRET_KEY_PRD`
 
-Configure (valores de desenvolvimento):
-- `MYSQL_ROOT_PASSWORD` (senha do root do MySQL DEV)
-- `MYSQL_DATABASE` (nome do banco de dados DEV)
-- `MYSQL_USER` (usuário do banco DEV)
-- `MYSQL_PASSWORD` (senha do usuário DEV)
-- `JWT_SECRET` (chave secreta DEV)
-- `REDIS_URL` (URL do Redis DEV)
+**VPS/SSH:**
+- `SSH_PRIVATE_KEY` (chave privada SSH para acessar VPS)
+- `VPS_HOST` (IP ou domínio da VPS)
+- `VPS_USER` (usuário SSH, geralmente `deploy`)
+
+**GHCR (GitHub Container Registry):**
+- `GHCR_TOKEN` (Personal Access Token com permissões `write:packages`, `read:packages`, `repo`)
+
+**Notificações:**
+- `SMTP_USERNAME` (email para envio de alertas)
+- `SMTP_PASSWORD` (senha de aplicativo do Gmail)
+- `NOTIFICATION_EMAIL` (email que receberá alertas)
+- `DISCORD_WEBHOOK_URL` (opcional - webhook do Discord)
+
+📖 **Guia completo:** [`docs/SECRETS_MANAGEMENT.md`](./docs/SECRETS_MANAGEMENT.md)
 
 ## 🐳 4. Deploy da Aplicação
 
-```bash
-# PROD (porta 3333)
-docker compose -f docker-compose.app.yml up -d
-docker compose -f docker-compose.app.yml ps
-curl -f http://localhost:3333/health
+⚠️ **Deploy agora é via GitHub Actions** (automático após push).
 
-# DEV (porta 3334)
-docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml ps
-curl -f http://localhost:3334/health
+### **Deploy DEV:**
+```bash
+git push origin develop
 ```
+
+Workflow **Build and Push to GHCR** → **Deploy to VPS (DEV)** será executado automaticamente.
+
+### **Deploy PRD:**
+```bash
+git push origin master
+```
+
+Workflow **Build and Push to GHCR** → **Deploy to VPS (PRD)** será executado automaticamente.
+
+### **Deploy manual (se necessário):**
+```bash
+# Via GitHub Actions UI
+# GitHub → Actions → Deploy to VPS (DEV/PRD) → Run workflow
+```
+
+📖 **Detalhes do fluxo:** [Arquitetura de Deploy com GHCR](#-arquitetura-de-deploy-com-ghcr)
 
 ## 📊 5. Deploy do Sistema de Monitoramento
 
