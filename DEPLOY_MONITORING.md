@@ -14,7 +14,8 @@ Guia completo para deploy, monitoramento e manutenção da aplicação.
 7. [Configurar Segurança](#-6-configurar-segurança-e-https)
 
 ### Deploy Dia a Dia
-- [Deploy Automático (GitHub Actions)](#-deploy-automático-github-actions)
+- [Arquitetura de Deploy (GHCR)](#-arquitetura-de-deploy-com-ghcr)
+- [Deploy Automático (GitHub Actions + GHCR)](#-deploy-automático-github-actions)
 - [Deploy Manual (Scripts)](#️-deploy-manual-scripts)
 - [Rollback (Emergências)](#-rollback-emergências)
 
@@ -52,84 +53,106 @@ Tipo: A | Nome: api-dev        | Valor: IP_DA_VPS | TTL: 300
 ### Se não tem domínio:
 Pule para a seção 2.
 
-## 📦 2. Preparar o Projeto
+## 📦 2. Preparar a VPS (Runtime-Only)
+
+⚠️ **Mudança importante:** A VPS agora funciona em modo **runtime-only** (sem código-fonte ou Git).
+
+### **Setup inicial da VPS:**
 
 ```bash
-# Clonar o projeto
+# No seu computador local (não na VPS)
 git clone <SEU_REPO_GIT>
 cd gas-e-agua-backend
 
-# Criar estrutura de diretórios
-mkdir -p monitoring/data/{prometheus,loki,grafana,alertmanager} logs
-
-# Copiar arquivos de configuração
-cp env.monitoring.example .env.monitoring-prd
-cp env.monitoring.example .env.monitoring-dev
-cp env.docker.example .env
-cp env.docker.example .env.dev
+# Rodar script de setup (envia arquivos necessários via SCP)
+bash scripts/setup/setup-vps-runtime.sh deploy <IP_DA_VPS>
 ```
 
-## ⚙️ 3. Configurar Variáveis de Ambiente
+Este script cria a estrutura mínima na VPS:
+- Docker compose files
+- Scripts essenciais de deploy
+- Prisma schema (para migrations)
+- Diretórios de dados
+
+📖 **Guia completo:** [`docs/VPS_RUNTIME_MIGRATION.md`](./docs/VPS_RUNTIME_MIGRATION.md)
+
+## ⚙️ 3. Configurar Secrets no GitHub
+
+⚠️ Secrets agora são **injetados via GitHub Actions** (não mais em arquivos `.env` na VPS).
+
+### **Gerar secrets fortes:**
 
 ```bash
-# Editar configurações do monitoramento PRD
-nano .env.monitoring-prd
+# Gerar secrets DEV
+bash scripts/security/rotate-secrets.sh dev
+
+# Gerar secrets PRD
+bash scripts/security/rotate-secrets.sh prd
 ```
 
-Configure:
-- `GRAFANA_ADMIN_PASSWORD` (senha do admin PRD)
-- `SMTP_*` (para alertas por email)
-- `SLACK_WEBHOOK_URL` (para alertas no Slack)
+### **Adicionar no GitHub:**
 
-```bash
-# Editar configurações do monitoramento DEV
-nano .env.monitoring-dev
-```
+**GitHub** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-Configure (valores de desenvolvimento):
-- `GRAFANA_ADMIN_PASSWORD` (senha do admin DEV)
-- `SMTP_*` (para alertas por email DEV)
-- `SLACK_WEBHOOK_URL` (para alertas no Slack DEV)
+**Aplicação (DEV):**
+- `MYSQL_ROOT_PASSWORD_DEV`
+- `MYSQL_PASSWORD_DEV`
+- `JWT_SECRET_DEV`
 
-```bash
-# Editar configurações da aplicação PRD
-nano .env
-```
+**Aplicação (PRD):**
+- `MYSQL_ROOT_PASSWORD_PRD`
+- `MYSQL_PASSWORD_PRD`
+- `JWT_SECRET_PRD`
 
-Configure:
-- `MYSQL_ROOT_PASSWORD` (senha do root do MySQL)
-- `MYSQL_DATABASE` (nome do banco de dados)
-- `MYSQL_USER` (usuário do banco)
-- `MYSQL_PASSWORD` (senha do usuário)
-- `JWT_SECRET` (chave secreta)
-- `REDIS_URL` (URL do Redis)
+**Grafana (DEV):**
+- `GRAFANA_ADMIN_PASSWORD_DEV`
+- `GRAFANA_SECRET_KEY_DEV`
 
-```bash
-# Editar configurações da aplicação DEV
-nano .env.dev
-```
+**Grafana (PRD):**
+- `GRAFANA_ADMIN_PASSWORD_PRD`
+- `GRAFANA_SECRET_KEY_PRD`
 
-Configure (valores de desenvolvimento):
-- `MYSQL_ROOT_PASSWORD` (senha do root do MySQL DEV)
-- `MYSQL_DATABASE` (nome do banco de dados DEV)
-- `MYSQL_USER` (usuário do banco DEV)
-- `MYSQL_PASSWORD` (senha do usuário DEV)
-- `JWT_SECRET` (chave secreta DEV)
-- `REDIS_URL` (URL do Redis DEV)
+**VPS/SSH:**
+- `SSH_PRIVATE_KEY` (chave privada SSH para acessar VPS)
+- `VPS_HOST` (IP ou domínio da VPS)
+- `VPS_USER` (usuário SSH, geralmente `deploy`)
+
+**GHCR (GitHub Container Registry):**
+- `GHCR_TOKEN` (Personal Access Token com permissões `write:packages`, `read:packages`, `repo`)
+
+**Notificações:**
+- `SMTP_USERNAME` (email para envio de alertas)
+- `SMTP_PASSWORD` (senha de aplicativo do Gmail)
+- `NOTIFICATION_EMAIL` (email que receberá alertas)
+- `DISCORD_WEBHOOK_URL` (opcional - webhook do Discord)
+
+📖 **Guia completo:** [`docs/SECRETS_MANAGEMENT.md`](./docs/SECRETS_MANAGEMENT.md)
 
 ## 🐳 4. Deploy da Aplicação
 
-```bash
-# PROD (porta 3333)
-docker compose -f docker-compose.app.yml up -d
-docker compose -f docker-compose.app.yml ps
-curl -f http://localhost:3333/health
+⚠️ **Deploy agora é via GitHub Actions** (automático após push).
 
-# DEV (porta 3334)
-docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml ps
-curl -f http://localhost:3334/health
+### **Deploy DEV:**
+```bash
+git push origin develop
 ```
+
+Workflow **Build and Push to GHCR** → **Deploy to VPS (DEV)** será executado automaticamente.
+
+### **Deploy PRD:**
+```bash
+git push origin master
+```
+
+Workflow **Build and Push to GHCR** → **Deploy to VPS (PRD)** será executado automaticamente.
+
+### **Deploy manual (se necessário):**
+```bash
+# Via GitHub Actions UI
+# GitHub → Actions → Deploy to VPS (DEV/PRD) → Run workflow
+```
+
+📖 **Detalhes do fluxo:** [Arquitetura de Deploy com GHCR](#-arquitetura-de-deploy-com-ghcr)
 
 ## 📊 5. Deploy do Sistema de Monitoramento
 
@@ -292,6 +315,107 @@ MYSQL_PASSWORD=senha_usuario
 
 ---
 
+## 🏗️ Arquitetura de Deploy com GHCR
+
+### **O que é GHCR?**
+
+**GitHub Container Registry (GHCR)** é o registro de containers do GitHub. O projeto usa GHCR para armazenar imagens Docker pré-buildadas, separando o processo de **build** do **deploy**.
+
+### **Arquitetura:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     GitHub Actions                          │
+│                                                             │
+│  ┌──────────────┐         ┌──────────────┐                  │
+│  │              │         │              │                  │
+│  │ Build & Push │ ───────▶│     GHCR     │                  │
+│  │              │         │              │                  │
+│  └──────────────┘         └──────────────┘                  │
+│                                  │                          │
+│                                  │ trigger                  │
+│                                  ▼                          │
+│  ┌──────────────────────────────────────┐                   │
+│  │           Deploy Workflow            │                   │
+│  └──────────────────────────────────────┘                   │
+└─────────────────────────────────────────────────────────────┘
+                      │
+                      │    SSH + docker pull
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        VPS                                  │
+│                                                             │
+│  ┌──────────────┐     ┌──────────────┐     ┌────────────┐   │
+│  │   Pull Image │────▶│  Migrations  │────▶│    Start   │   │
+│  │   from GHCR  │     │              │     │ Containers │   │
+│  └──────────────┘     └──────────────┘     └────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### **Benefícios:**
+
+✅ **Build padronizado e reproduzível**
+- Mesmo processo de build para DEV e PRD (mesmo Dockerfile, mesmo CI)
+- Se funciona em DEV, funcionará em PRD (ambiente de build controlado)
+- Elimina "funciona na minha máquina"
+
+✅ **Deploy mais rápido**
+- Sem rebuild no VPS (apenas pull da imagem pronta)
+- Deploy típico: ~30s vs ~2-3min (build local)
+- Build paralelo ao desenvolvimento
+
+✅ **Rollback instantâneo**
+- Trocar tag da imagem (segundos)
+- Sem necessidade de rebuild
+- Histórico completo de versões no GHCR
+
+✅ **Versionamento robusto**
+- Tags por branch: `develop-latest`, `master-latest`
+- Tags por commit: `develop-abc123`, `master-def456`
+- Rastreabilidade completa (build → commit → deploy)
+
+✅ **Zero código na VPS**
+- VPS apenas executa containers (infraestrutura de runtime)
+- Código-fonte fica isolado no CI/CD (segurança)
+
+### **Como Funciona:**
+
+1. **Developer faz push**
+   ```bash
+   git push origin develop
+   ```
+
+2. **GitHub Actions - Build**
+   - Build da imagem Docker
+   - Tag: `ghcr.io/.../backend:develop-latest`
+   - Push para GHCR
+
+3. **GitHub Actions - Deploy (automático)**
+   - SSH na VPS
+   - `docker login ghcr.io`
+   - `export DOCKER_IMAGE="ghcr.io/.../backend"`
+   - `export IMAGE_TAG="develop-latest"`
+   - `bash deploy.sh dev`
+
+4. **VPS - Script de Deploy**
+   - Pull da imagem do GHCR
+   - Sobe containers (SEM build)
+   - Roda migrations
+   - Health check
+
+### **Secrets Necessários:**
+
+Configure em `Settings > Secrets and variables > Actions`:
+
+| Secret | Descrição |
+|--------|-----------|
+| `GHCR_TOKEN` | Personal Access Token com `write:packages` |
+| `SSH_PRIVATE_KEY` | Chave SSH para acessar VPS |
+| `VPS_HOST` | IP ou domínio da VPS |
+| `VPS_USER` | Usuário SSH da VPS |
+
+---
+
 ## 🔄 Deploy Automático (GitHub Actions)
 
 ### **Recomendado para uso diário**
@@ -328,21 +452,38 @@ No repositório → `Settings` → `Secrets and variables` → `Actions`:
   - Verifica linting
   - Roda migrations em banco de teste
 
-#### **2. Deploy DEV**
-- **Quando:** Push para `develop`
+#### **2. Build and Push (GHCR)**
+- **Quando:** Push para `develop` ou `master`
 - **O que faz:**
-  - Backup do banco DEV
-  - Deploy em DEV (porta 3334)
+  - Build da imagem Docker no GitHub Actions
+  - Push para GHCR com múltiplas tags:
+    - `{branch}-latest` (ex: `develop-latest`)
+    - `{branch}-{sha}` (ex: `develop-a1b2c3d`)
+  - Cache de layers para builds futuros
+  - **Tempo:** ~2min (paralelo, não bloqueia)
+
+#### **3. Deploy DEV**
+- **Quando:** Após build concluído com sucesso (branch `develop`)
+- **O que faz:**
+  - Login no GHCR na VPS
+  - Exporta `DOCKER_IMAGE` e `IMAGE_TAG`
+  - Pull da imagem pré-buildada
+  - Deploy em DEV (porta 3334) **SEM rebuild**
   - Health check
   - Notificação
+  - **Tempo:** ~30s (vs ~2-3min antes)
 
-#### **3. Deploy PRD**
-- **Quando:** Push (merge) para `master`
+#### **4. Deploy PRD**
+- **Quando:** Após build concluído com sucesso (branch `master`)
 - **O que faz:**
+  - Login no GHCR na VPS
+  - Exporta `DOCKER_IMAGE` e `IMAGE_TAG`
+  - Pull da imagem pré-buildada
   - Backup do banco PRD
-  - Deploy em PRD (porta 3333)
+  - Deploy em PRD (porta 3333) **SEM rebuild**
   - Health check (10 tentativas)
   - Notificação crítica
+  - **Tempo:** ~30s (vs ~2-3min antes)
 
 ### **📦 GitHub Actions Customizadas:**
 
@@ -427,7 +568,54 @@ docker compose -p gas-e-agua-prd -f docker-compose.monitoring-prd.yml up -d
 - ❌ Aplicação não responde
 - ❌ Dados sendo corrompidos
 
-### **🚨 Como fazer Rollback:**
+### **🔄 Rollback com GHCR (Instantâneo - Recomendado)**
+
+Com GHCR, o rollback fica **instantâneo** (~30s vs 2-5min).
+
+#### **Opção 1: Via GitHub Actions (Mais Seguro)**
+
+1. **Ver versões disponíveis:**
+   - Ir em **Actions** > **👀 View Versions**
+   - Executar para ver tags disponíveis no GHCR
+   - Copiar a tag desejada (ex: `develop-a1b2c3d`)
+
+2. **Executar rollback:**
+   - Ir em **Actions** > **🔄 Rollback**
+   - Preencher:
+     - **Environment**: `dev` ou `prd`
+     - **Rollback type**: `image_only` (mais rápido)
+     - **Image tag**: `develop-a1b2c3d` (tag copiada)
+     - **Confirm**: `CONFIRM`
+
+**Tempo total: ~30s** ⚡
+
+#### **Opção 2: Via SSH Manual**
+
+```bash
+# 1. SSH na VPS
+ssh deploy@vps
+
+# 2. Ver versões disponíveis
+cd /home/deploy/gas-e-agua-backend
+cat .deploy-history/deploys.log | tail -20
+
+# 3. Rollback para versão do GHCR
+export DOCKER_IMAGE="ghcr.io/lucasemanuel9611/gas-e-agua-backend"
+export IMAGE_TAG="develop-a1b2c3d"  # SHA do commit anterior
+bash scripts/deploy/deploy.sh dev
+
+# Tempo: ~30s ⚡
+```
+
+### **Tipos de Rollback Disponíveis:**
+
+| Tipo | Tempo | Uso |
+|------|-------|-----|
+| **Image Only** | ~30s | Reverter código/features (sem mudar DB) |
+| **Database Only** | ~1-2min | Reverter apenas dados |
+| **Full Rollback** | ~2min | Reverter tudo (imagem + DB) |
+
+### **🚨 Rollback de Database (Tradicional):**
 
 #### **1. Listar backups disponíveis:**
 ```bash
@@ -438,7 +626,18 @@ ls -lt ../backups/dev/
 ls -lt ../backups/prd/
 ```
 
-#### **2. Executar rollback:**
+#### **2. Rollback Completo (Imagem + Database):**
+
+**Via GitHub Actions:**
+```
+Actions > Rollback
+- Type: full_rollback
+- Image tag: develop-a1b2c3d
+- Backup file: backup-20241020-120000.sql
+- Confirm: CONFIRM
+```
+
+**Via SSH:**
 ```bash
 # DEV
 bash scripts/deploy/rollback.sh dev ../backups/dev/backup-YYYYMMDD-HHMMSS.sql
@@ -456,18 +655,22 @@ curl http://localhost:3334/health
 curl http://localhost:3333/health
 ```
 
-### **⏱️ Tempo de Recuperação:**
-- Sem rollback: 30-60 minutos (corrigir + testar + deploy)
-- Com rollback: 2-5 minutos (restaurar backup)
+### **⏱️ Comparação de Tempos:**
 
-### **🎯 Fluxo de Rollback:**
+| Cenário | Antes (Build Local) | Depois (GHCR) |
+|---------|---------------------|---------------|
+| **Rollback de Imagem** | 3-5min (rebuild) | **30s** ⚡ |
+| **Rollback de Database** | 2-5min | 2-5min |
+| **Rollback Full** | 5-10min | **2min** ⚡ |
+
+### **🎯 Fluxo de Rollback Moderno:**
 
 ```
-Deploy com problema → Rollback (2-5 min) → Corrige código → Novo Deploy
-       ❌                     ✅                  ✅              ✅
+Deploy com problema → Rollback GHCR (30s) → Corrige código → Novo Deploy
+       ❌                      ✅                   ✅              ✅
 ```
 
-📚 **Scripts disponíveis em:** `scripts/`
+📚 **Workflows disponíveis em:** `.github/workflows/`
 
 ## 🚀 12. Script Automático para Adicionar IPs
 
@@ -524,6 +727,7 @@ cat /etc/nginx/sites-enabled/monitoring | grep -A 5 -B 5 "allow"
 ## 📚 Documentação Adicional
 
 - **`.github/actions/README.md`** - Referência das GitHub Actions customizadas
+- **`.github/workflows/README.md`** - Referência dos workflows (rollback, view versions)
 - **`scripts/README.md`** - Referência dos scripts de manutenção
 - **`DEVELOPMENT.md`** - Guia de desenvolvimento local
 - **`prisma-flow.md`** - Fluxo de migrações do banco

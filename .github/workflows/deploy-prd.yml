@@ -1,24 +1,27 @@
-# Nome do workflow que aparecerá na aba "Actions" do GitHub
 name: Deploy to VPS (PRD)
 
-# Quando esse workflow será executado
 on:
-  push:
+  workflow_run:
+    workflows: ["🏗️ Build and Push to GHCR"]
+    types:
+      - completed
     branches:
       - master
+  workflow_dispatch:
 
 concurrency:
-  group: vps-deploy
+  group: vps-deploy-prd
   cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # Job rodará em máquina virtual Ubuntu
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       # Etapa 1: Fazer checkout (clonar) o código do repositório
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Etapa 2: Configurar SSH para conectar na VPS
       - name: Setup SSH
@@ -28,17 +31,34 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Ensure correct branch
+      - name: Sync configuration files to VPS
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e
-            cd /home/deploy/gas-e-agua-backend
-            git fetch --all
-            git checkout master
-            git pull --ff-only
-            chmod +x scripts/**/*.sh
-            echo "✅ Repository updated to master branch"
-          EOF
+          echo "📦 Syncing docker-compose and scripts to VPS..."
+
+          # Sync docker-compose files
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            docker-compose.app.yml \
+            docker-compose.monitoring-prd.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Sync essential scripts
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            scripts/deploy/deploy.sh \
+            scripts/deploy/backup-db.sh \
+            scripts/deploy/rollback.sh \
+            scripts/deploy/cleanup-old-versions.sh \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/scripts/deploy/
+
+          # Sync Prisma files (for migrations)
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
+            prisma \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Set permissions
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "chmod +x /home/deploy/gas-e-agua-backend/scripts/deploy/*.sh"
+
+          echo "✅ Configuration synced"
 
       # Etapa 3: Criar backup do banco ANTES do deploy (CRÍTICO em produção)
       - name: Backup database
@@ -52,12 +72,49 @@ jobs:
       # Etapa 4: Deploy em PRODUÇÃO (build, migrations, containers)
       - name: Deploy application
         id: deploy
-        uses: ./.github/actions/deploy
-        with:
-          environment: prd
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          vps-host: ${{ secrets.VPS_HOST }}
-          vps-user: ${{ secrets.VPS_USER }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
+          MYSQL_ROOT_PASSWORD_PRD: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
+          MYSQL_PASSWORD_PRD: ${{ secrets.MYSQL_PASSWORD_PRD }}
+          JWT_SECRET_PRD: ${{ secrets.JWT_SECRET_PRD }}
+          GRAFANA_ADMIN_PASSWORD_PRD: ${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}
+          GRAFANA_SECRET_KEY_PRD: ${{ secrets.GRAFANA_SECRET_KEY_PRD }}
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            # Login no GHCR
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            
+            # Criar .env temporário com secrets do GitHub
+            cat > .env <<'ENVFILE'
+            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_PRD}
+            MYSQL_DATABASE=gas_e_agua
+            MYSQL_USER=gas_e_agua
+            MYSQL_PASSWORD=${MYSQL_PASSWORD_PRD}
+            NODE_ENV=production
+            PORT=3333
+            JWT_SECRET=${JWT_SECRET_PRD}
+            REDIS_URL=redis://redis:6379
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            GRAFANA_ADMIN_USER=admin
+            GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD_PRD}
+            GRAFANA_SECRET_KEY=${GRAFANA_SECRET_KEY_PRD}
+            DOCKER_IMAGE=ghcr.io/${GITHUB_REPO}
+            IMAGE_TAG=master-latest
+            ENVFILE
+            
+            # Executar deploy script (vai ler .env criado acima)
+            bash ./scripts/deploy/deploy.sh prd
+            
+            # Remover .env após containers subirem
+            rm -f .env
+            echo "✅ Deploy completed and .env removed from disk"
+          EOF
 
       # Etapa 5: Verificar saúde da aplicação (10 tentativas em produção)
       - name: Health check
@@ -67,7 +124,6 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
-          max-retries: "10" # Mais tentativas em produção
 
       # Etapa 6: Notificar sucesso (Discord + Slack)
       - name: Notify success
@@ -76,9 +132,8 @@ jobs:
         with:
           status: success
           environment: prd
-          message: "Production deploy completed in ${{ steps.deploy.outputs.deploy-time }}s"
+          message: "Deploy completed successfully"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       # Etapa 7: Notificar FALHA CRÍTICA em produção (Discord + Slack)
       - name: Notify failure
@@ -87,6 +142,5 @@ jobs:
         with:
           status: failure
           environment: prd
-          message: "🚨 PRODUCTION DEPLOY FAILED - Immediate action required!"
+          message: "Deploy failed - check logs for details"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}

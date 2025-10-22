@@ -1,21 +1,27 @@
 name: Deploy to VPS (DEV)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["🏗️ Build and Push to GHCR"]
+    types:
+      - completed
     branches:
       - develop
+  workflow_dispatch:
 
 concurrency:
-  group: vps-deploy
+  group: vps-deploy-dev
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
     steps:
       # Etapa 1: Fazer checkout do código do repositório
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Etapa 2: Configurar SSH para conectar na VPS
       - name: Setup SSH
@@ -25,17 +31,33 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Ensure correct branch
+      - name: Sync configuration files to VPS
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e
-            cd /home/deploy/gas-e-agua-backend
-            git fetch --all
-            git checkout develop
-            git pull --ff-only
-            chmod +x scripts/**/*.sh
-            echo "✅ Repository updated to develop branch"
-          EOF
+          echo "📦 Syncing docker-compose and scripts to VPS..."
+
+          # Sync docker-compose files
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            docker-compose.dev.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Sync essential scripts
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            scripts/deploy/deploy.sh \
+            scripts/deploy/backup-db.sh \
+            scripts/deploy/rollback.sh \
+            scripts/deploy/cleanup-old-versions.sh \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/scripts/deploy/
+
+          # Sync Prisma files (for migrations)
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
+            prisma \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Set permissions
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "chmod +x /home/deploy/gas-e-agua-backend/scripts/deploy/*.sh"
+
+          echo "✅ Configuration synced"
 
       # Etapa 3: Criar backup do banco antes do deploy (segurança)
       - name: Backup database
@@ -49,12 +71,49 @@ jobs:
       # Etapa 4: Deploy da aplicação (build, migrations, containers)
       - name: Deploy application
         id: deploy
-        uses: ./.github/actions/deploy
-        with:
-          environment: dev
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          vps-host: ${{ secrets.VPS_HOST }}
-          vps-user: ${{ secrets.VPS_USER }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
+          MYSQL_ROOT_PASSWORD_DEV: ${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
+          MYSQL_PASSWORD_DEV: ${{ secrets.MYSQL_PASSWORD_DEV }}
+          JWT_SECRET_DEV: ${{ secrets.JWT_SECRET_DEV }}
+          GRAFANA_ADMIN_PASSWORD_DEV: ${{ secrets.GRAFANA_ADMIN_PASSWORD_DEV }}
+          GRAFANA_SECRET_KEY_DEV: ${{ secrets.GRAFANA_SECRET_KEY_DEV }}
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            # Login no GHCR
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            
+            # Criar .env.dev temporário com secrets do GitHub
+            cat > .env.dev <<'ENVFILE'
+            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_DEV}
+            MYSQL_DATABASE=gas_e_agua_dev
+            MYSQL_USER=gas_e_agua_dev
+            MYSQL_PASSWORD=${MYSQL_PASSWORD_DEV}
+            NODE_ENV=development
+            PORT=3333
+            JWT_SECRET=${JWT_SECRET_DEV}
+            REDIS_URL=redis://redis:6379
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            GRAFANA_ADMIN_USER=admin
+            GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD_DEV}
+            GRAFANA_SECRET_KEY=${GRAFANA_SECRET_KEY_DEV}
+            DOCKER_IMAGE=ghcr.io/${GITHUB_REPO}
+            IMAGE_TAG=develop-latest
+            ENVFILE
+            
+            # Executar deploy script (vai ler .env.dev criado acima)
+            bash ./scripts/deploy/deploy.sh dev
+            
+            # Remover .env.dev após containers subirem
+            rm -f .env.dev
+            echo "✅ Deploy completed and .env.dev removed from disk"
+          EOF
 
       # Etapa 5: Verificar se a aplicação está saudável após deploy
       - name: Health check
@@ -72,7 +131,7 @@ jobs:
         with:
           status: success
           environment: dev
-          message: "Deploy completed in ${{ steps.deploy.outputs.deploy-time }}s"
+          message: "Deploy completed successfully"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       # Etapa 7: Notificar falha do deploy (se algo deu errado)
