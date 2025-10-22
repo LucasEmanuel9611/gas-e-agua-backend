@@ -71,32 +71,41 @@ jobs:
       # Etapa 4: Deploy da aplicação (build, migrations, containers)
       - name: Deploy application
         id: deploy
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
+          MYSQL_ROOT_PASSWORD_DEV: ${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
+          MYSQL_PASSWORD_DEV: ${{ secrets.MYSQL_PASSWORD_DEV }}
+          JWT_SECRET_DEV: ${{ secrets.JWT_SECRET_DEV }}
+          GRAFANA_ADMIN_PASSWORD_DEV: ${{ secrets.GRAFANA_ADMIN_PASSWORD_DEV }}
+          GRAFANA_SECRET_KEY_DEV: ${{ secrets.GRAFANA_SECRET_KEY_DEV }}
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'EOF'
             set -e
             cd /home/deploy/gas-e-agua-backend
             
             # Login no GHCR
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
             # Criar .env.dev temporário com secrets do GitHub
-            cat > .env.dev << ENVFILE
-MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
-MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE_DEV }}
-MYSQL_USER=${{ secrets.MYSQL_USER_DEV }}
-MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD_DEV }}
-NODE_ENV=development
-PORT=3333
-JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}
-REDIS_URL=redis://redis:6379
-REDIS_HOST=redis
-REDIS_PORT=6379
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD_DEV }}
-GRAFANA_SECRET_KEY=${{ secrets.GRAFANA_SECRET_KEY_DEV }}
-DOCKER_IMAGE=ghcr.io/${{ github.repository }}
-IMAGE_TAG=develop-latest
-ENVFILE
+            cat > .env.dev <<'ENVFILE'
+            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_DEV}
+            MYSQL_DATABASE=gas_e_agua_dev
+            MYSQL_USER=gas_e_agua_dev
+            MYSQL_PASSWORD=${MYSQL_PASSWORD_DEV}
+            NODE_ENV=development
+            PORT=3333
+            JWT_SECRET=${JWT_SECRET_DEV}
+            REDIS_URL=redis://redis:6379
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            GRAFANA_ADMIN_USER=admin
+            GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD_DEV}
+            GRAFANA_SECRET_KEY=${GRAFANA_SECRET_KEY_DEV}
+            DOCKER_IMAGE=ghcr.io/${GITHUB_REPO}
+            IMAGE_TAG=develop-latest
+            ENVFILE
             
             # Executar deploy script (vai ler .env.dev criado acima)
             bash ./scripts/deploy/deploy.sh dev

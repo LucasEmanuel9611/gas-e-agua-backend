@@ -72,32 +72,41 @@ jobs:
       # Etapa 4: Deploy em PRODUÇÃO (build, migrations, containers)
       - name: Deploy application
         id: deploy
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
+          MYSQL_ROOT_PASSWORD_PRD: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
+          MYSQL_PASSWORD_PRD: ${{ secrets.MYSQL_PASSWORD_PRD }}
+          JWT_SECRET_PRD: ${{ secrets.JWT_SECRET_PRD }}
+          GRAFANA_ADMIN_PASSWORD_PRD: ${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}
+          GRAFANA_SECRET_KEY_PRD: ${{ secrets.GRAFANA_SECRET_KEY_PRD }}
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'EOF'
             set -e
             cd /home/deploy/gas-e-agua-backend
             
             # Login no GHCR
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
             # Criar .env temporário com secrets do GitHub
-            cat > .env << ENVFILE
-MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
-MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE_PRD }}
-MYSQL_USER=${{ secrets.MYSQL_USER_PRD }}
-MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD_PRD }}
-NODE_ENV=production
-PORT=3333
-JWT_SECRET=${{ secrets.JWT_SECRET_PRD }}
-REDIS_URL=redis://redis:6379
-REDIS_HOST=redis
-REDIS_PORT=6379
-GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}
-GRAFANA_SECRET_KEY=${{ secrets.GRAFANA_SECRET_KEY_PRD }}
-DOCKER_IMAGE=ghcr.io/${{ github.repository }}
-IMAGE_TAG=master-latest
-ENVFILE
+            cat > .env <<'ENVFILE'
+            MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_PRD}
+            MYSQL_DATABASE=gas_e_agua
+            MYSQL_USER=gas_e_agua
+            MYSQL_PASSWORD=${MYSQL_PASSWORD_PRD}
+            NODE_ENV=production
+            PORT=3333
+            JWT_SECRET=${JWT_SECRET_PRD}
+            REDIS_URL=redis://redis:6379
+            REDIS_HOST=redis
+            REDIS_PORT=6379
+            GRAFANA_ADMIN_USER=admin
+            GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD_PRD}
+            GRAFANA_SECRET_KEY=${GRAFANA_SECRET_KEY_PRD}
+            DOCKER_IMAGE=ghcr.io/${GITHUB_REPO}
+            IMAGE_TAG=master-latest
+            ENVFILE
             
             # Executar deploy script (vai ler .env criado acima)
             bash ./scripts/deploy/deploy.sh prd
