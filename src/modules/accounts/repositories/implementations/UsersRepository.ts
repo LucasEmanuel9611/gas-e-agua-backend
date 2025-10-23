@@ -1,10 +1,10 @@
-import { Prisma } from "@prisma/client";
-
 import { prisma } from "@shared/infra/database/prisma";
 
 import {
   AddressDates,
+  ICreateAddressRequestDTO,
   ICreateUserDTO,
+  IUpdateAddressRequestDTO,
   IUpdateUserDTO,
   UserDates,
   UserRole,
@@ -81,79 +81,11 @@ export class UsersRepository implements IUsersRepository {
     return foundUser;
   }
 
-  async update({ id, username, telephone, addresses }: IUpdateUserDTO) {
-    if (!addresses) {
-      return this.updateUserBasicInfo(id, username, telephone);
-    }
-
-    return prisma.$transaction(async (tx) => {
-      await this.updateExistingAddresses(tx, id, addresses);
-      return this.updateUserWithNewAddresses(
-        tx,
-        id,
-        username,
-        telephone,
-        addresses
-      );
-    });
-  }
-
-  private async updateUserBasicInfo(
-    id: number,
-    username?: string,
-    telephone?: string
-  ) {
+  async update({ id, username, telephone }: IUpdateUserDTO) {
     return prisma.user.update({
       data: { username, telephone },
       include: { addresses: true },
       where: { id },
-    });
-  }
-
-  private async updateExistingAddresses(
-    tx: Prisma.TransactionClient,
-    userId: number,
-    addresses: Partial<AddressDates>[]
-  ) {
-    const existingAddresses = addresses.filter((addr) => addr.id);
-
-    if (existingAddresses.length === 0) return;
-
-    await Promise.all(
-      existingAddresses.map((addr) => {
-        const { id: addressId, ...addressData } = addr;
-        return tx.address.update({
-          where: { id: addressId, user_id: userId },
-          data: addressData,
-        });
-      })
-    );
-  }
-
-  private async updateUserWithNewAddresses(
-    tx: Prisma.TransactionClient,
-    userId: number,
-    username?: string,
-    telephone?: string,
-    addresses?: Partial<AddressDates>[]
-  ) {
-    const newAddresses = addresses?.filter((addr) => !addr.id) || [];
-
-    return tx.user.update({
-      data: {
-        username,
-        telephone,
-        addresses:
-          newAddresses.length > 0
-            ? {
-                create: newAddresses.map(
-                  ({ id, ...addr }) => addr as AddressDates
-                ),
-              }
-            : undefined,
-      },
-      include: { addresses: true },
-      where: { id: userId },
     });
   }
 
@@ -164,6 +96,33 @@ export class UsersRepository implements IUsersRepository {
         user_id: userId,
       },
     });
+  }
+
+  async createAddress(data: ICreateAddressRequestDTO): Promise<AddressDates> {
+    const { userId, address } = data;
+
+    const createdAddress = await prisma.address.create({
+      data: {
+        ...address,
+        user_id: userId,
+      },
+    });
+
+    return createdAddress;
+  }
+
+  async updateAddress(data: IUpdateAddressRequestDTO): Promise<AddressDates> {
+    const { userId, addressId, address } = data;
+
+    const updatedAddress = await prisma.address.update({
+      where: {
+        id: addressId,
+        user_id: userId,
+      },
+      data: address,
+    });
+
+    return updatedAddress;
   }
 
   async findAll({
