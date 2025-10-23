@@ -11,6 +11,7 @@ describe("UpdateUserUseCase", () => {
   let useCase: UpdateUserUseCase;
   const mockUsersRepository = {
     update: jest.fn(),
+    findById: jest.fn(),
   };
 
   beforeEach(() => {
@@ -23,14 +24,6 @@ describe("UpdateUserUseCase", () => {
       id: 123,
       username: "updatedUser",
       telephone: "11987654321",
-      addresses: [
-        {
-          street: "New Street",
-          number: "456",
-          reference: "New Reference",
-          local: "New City",
-        },
-      ],
     };
 
     const updatedUser: UserDates = {
@@ -59,6 +52,16 @@ describe("UpdateUserUseCase", () => {
       notificationTokens: [],
     };
 
+    mockUsersRepository.findById.mockResolvedValue({
+      id: 123,
+      username: "existingUser",
+      email: "existing@example.com",
+      password: "hashed_password",
+      role: "USER",
+      created_at: new Date(),
+      telephone: "81999999999",
+      addresses: [],
+    });
     mockUsersRepository.update.mockResolvedValue(updatedUser);
     const toDTOSpy = jest.spyOn(UserMap, "toDTO").mockReturnValue(expectedDTO);
 

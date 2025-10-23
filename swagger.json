@@ -177,14 +177,19 @@
                     "email": { "type": "string" },
                     "telephone": { "type": "string" },
                     "role": { "type": "string" },
-                    "address": {
-                      "type": "object",
-                      "properties": {
-                        "id": { "type": "integer" },
-                        "street": { "type": "string" },
-                        "number": { "type": "string" },
-                        "reference": { "type": "string" },
-                        "local": { "type": "string" }
+                    "addresses": {
+                      "type": "array",
+                      "description": "Lista de endereços do usuário (máximo 5)",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "street": { "type": "string" },
+                          "number": { "type": "string" },
+                          "reference": { "type": "string" },
+                          "local": { "type": "string" },
+                          "isDefault": { "type": "boolean" }
+                        }
                       }
                     },
                     "notificationTokens": {
@@ -208,7 +213,8 @@
         }
       },
       "put": {
-        "summary": "Atualiza o perfil do usuário autenticado",
+        "summary": "Atualiza dados básicos do perfil do usuário",
+        "description": "Atualiza apenas dados básicos do usuário (username e telephone). Para gerenciar endereços, use os endpoints específicos de endereços.",
         "tags": ["Users"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
@@ -218,16 +224,15 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "username": { "type": "string" },
-                  "telephone": { "type": "string" },
-                  "address": {
-                    "type": "object",
-                    "properties": {
-                      "street": { "type": "string" },
-                      "number": { "type": "string" },
-                      "reference": { "type": "string" },
-                      "local": { "type": "string" }
-                    }
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "example": "joao_silva_atualizado"
+                  },
+                  "telephone": {
+                    "type": "string",
+                    "pattern": "^[0-9]{11}$",
+                    "example": "11987654321"
                   }
                 }
               }
@@ -242,10 +247,183 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": { "type": "integer" },
+                    "username": { "type": "string" },
+                    "email": { "type": "string" },
+                    "role": { "type": "string" },
+                    "notificationTokens": {
+                      "type": "array",
+                      "items": { "type": "object" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Perfil atualizado com sucesso"
+                      "example": "Campos não permitidos para atualização"
                     }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        }
+      }
+    },
+    "/users/addresses": {
+      "post": {
+        "summary": "Cria um novo endereço para o usuário",
+        "description": "Cria um novo endereço para o usuário autenticado. Máximo de 5 endereços por usuário. O primeiro endereço é automaticamente definido como padrão.",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "street": {
+                    "type": "string",
+                    "example": "Rua das Flores"
+                  },
+                  "number": {
+                    "type": "string",
+                    "example": "123"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "example": "Próximo ao mercado"
+                  },
+                  "local": {
+                    "type": "string",
+                    "example": "Centro"
+                  }
+                },
+                "required": ["reference", "local"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Endereço criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "street": { "type": "string" },
+                    "number": { "type": "string" },
+                    "reference": { "type": "string" },
+                    "local": { "type": "string" },
+                    "user_id": { "type": "integer" },
+                    "isDefault": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação ou limite de endereços excedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Usuário pode ter no máximo 5 endereços"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        }
+      }
+    },
+    "/users/addresses/{addressId}": {
+      "put": {
+        "summary": "Atualiza um endereço específico do usuário",
+        "description": "Atualiza um endereço específico do usuário autenticado. O usuário só pode atualizar seus próprios endereços.",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "description": "ID do endereço a ser atualizado",
+            "schema": {
+              "type": "integer",
+              "example": 123
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "street": {
+                    "type": "string",
+                    "example": "Rua das Flores Atualizada"
+                  },
+                  "number": {
+                    "type": "string",
+                    "example": "456"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "example": "Próximo ao shopping"
+                  },
+                  "local": {
+                    "type": "string",
+                    "example": "Centro"
+                  },
+                  "isDefault": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Endereço atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "street": { "type": "string" },
+                    "number": { "type": "string" },
+                    "reference": { "type": "string" },
+                    "local": { "type": "string" },
+                    "user_id": { "type": "integer" },
+                    "isDefault": { "type": "boolean" }
                   }
                 }
               }
@@ -256,6 +434,54 @@
           },
           "401": {
             "description": "Não autorizado"
+          },
+          "404": {
+            "description": "Endereço não encontrado ou não pertence ao usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Endereço não encontrado"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove um endereço do usuário",
+        "description": "Remove um endereço específico do usuário autenticado. O usuário só pode remover seus próprios endereços.",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "required": true,
+            "description": "ID do endereço a ser removido",
+            "schema": {
+              "type": "integer",
+              "example": 123
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Endereço removido com sucesso"
+          },
+          "401": {
+            "description": "Não autorizado"
+          },
+          "404": {
+            "description": "Endereço não encontrado ou não pertence ao usuário"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
           }
         }
       }

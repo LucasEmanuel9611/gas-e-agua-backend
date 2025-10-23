@@ -2,7 +2,9 @@ import { prisma } from "@shared/infra/database/prisma";
 
 import {
   AddressDates,
+  ICreateAddressRequestDTO,
   ICreateUserDTO,
+  IUpdateAddressRequestDTO,
   IUpdateUserDTO,
   UserDates,
   UserRole,
@@ -79,35 +81,55 @@ export class UsersRepository implements IUsersRepository {
     return foundUser;
   }
 
-  async update({ id, username, telephone, addresses }: IUpdateUserDTO) {
-    const foundUser = await prisma.user.update({
-      data: {
-        username,
-        telephone,
-        addresses: addresses
-          ? {
-              create: addresses as AddressDates[],
-            }
-          : undefined,
-      },
-      include: {
-        addresses: true,
-      },
+  async update({ id, username, telephone }: IUpdateUserDTO) {
+    return prisma.user.update({
+      data: { username, telephone },
+      include: { addresses: true },
+      where: { id },
+    });
+  }
+
+  async deleteAddress(userId: number, addressId: number): Promise<void> {
+    await prisma.address.deleteMany({
       where: {
-        id,
+        id: addressId,
+        user_id: userId,
+      },
+    });
+  }
+
+  async createAddress(data: ICreateAddressRequestDTO): Promise<AddressDates> {
+    const { userId, address } = data;
+
+    const createdAddress = await prisma.address.create({
+      data: {
+        ...address,
+        user_id: userId,
       },
     });
 
-    return foundUser;
+    return createdAddress;
+  }
+
+  async updateAddress(data: IUpdateAddressRequestDTO): Promise<AddressDates> {
+    const { userId, addressId, address } = data;
+
+    const updatedAddress = await prisma.address.update({
+      where: {
+        id: addressId,
+        user_id: userId,
+      },
+      data: address,
+    });
+
+    return updatedAddress;
   }
 
   async findAll({
-    page,
     limit,
     offset,
     search,
   }: {
-    page: number;
     limit: number;
     offset: number;
     search?: string;
