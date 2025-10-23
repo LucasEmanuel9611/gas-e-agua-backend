@@ -6,6 +6,7 @@ export interface IUsersRepository {
   findById(id: number): Promise<UserDates>;
   findAdmin(): Promise<UserDates>;
   update(data: IUpdateUserDTO): Promise<UserDates>;
+  deleteAddress(userId: number, addressId: number): Promise<void>;
   findAll(data: {
     page: number;
     limit: number;

@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@shared/infra/database/prisma";
 
 import {
@@ -80,34 +82,95 @@ export class UsersRepository implements IUsersRepository {
   }
 
   async update({ id, username, telephone, addresses }: IUpdateUserDTO) {
-    const foundUser = await prisma.user.update({
+    if (!addresses) {
+      return this.updateUserBasicInfo(id, username, telephone);
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await this.updateExistingAddresses(tx, id, addresses);
+      return this.updateUserWithNewAddresses(
+        tx,
+        id,
+        username,
+        telephone,
+        addresses
+      );
+    });
+  }
+
+  private async updateUserBasicInfo(
+    id: number,
+    username?: string,
+    telephone?: string
+  ) {
+    return prisma.user.update({
+      data: { username, telephone },
+      include: { addresses: true },
+      where: { id },
+    });
+  }
+
+  private async updateExistingAddresses(
+    tx: Prisma.TransactionClient,
+    userId: number,
+    addresses: Partial<AddressDates>[]
+  ) {
+    const existingAddresses = addresses.filter((addr) => addr.id);
+
+    if (existingAddresses.length === 0) return;
+
+    await Promise.all(
+      existingAddresses.map((addr) => {
+        const { id: addressId, ...addressData } = addr;
+        return tx.address.update({
+          where: { id: addressId, user_id: userId },
+          data: addressData,
+        });
+      })
+    );
+  }
+
+  private async updateUserWithNewAddresses(
+    tx: Prisma.TransactionClient,
+    userId: number,
+    username?: string,
+    telephone?: string,
+    addresses?: Partial<AddressDates>[]
+  ) {
+    const newAddresses = addresses?.filter((addr) => !addr.id) || [];
+
+    return tx.user.update({
       data: {
         username,
         telephone,
-        addresses: addresses
-          ? {
-              create: addresses as AddressDates[],
-            }
-          : undefined,
+        addresses:
+          newAddresses.length > 0
+            ? {
+                create: newAddresses.map(
+                  ({ id, ...addr }) => addr as AddressDates
+                ),
+              }
+            : undefined,
       },
-      include: {
-        addresses: true,
-      },
+      include: { addresses: true },
+      where: { id: userId },
+    });
+  }
+
+  async deleteAddress(userId: number, addressId: number): Promise<void> {
+    await prisma.address.deleteMany({
       where: {
-        id,
+        id: addressId,
+        user_id: userId,
       },
     });
-
-    return foundUser;
   }
 
   async findAll({
-    page,
     limit,
     offset,
     search,
   }: {
-    page: number;
     limit: number;
     offset: number;
     search?: string;

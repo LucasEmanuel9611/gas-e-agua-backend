@@ -1,4 +1,5 @@
 import { CreateUserController } from "@modules/accounts/useCases/createUser/CreateUserController";
+import { DeleteAddressController } from "@modules/accounts/useCases/deleteAddress/deleteAddressController";
 import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { ListUsersController } from "@modules/accounts/useCases/listUsers/ListUsersController";
 import { ProfileUserController } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserController";
@@ -15,6 +16,7 @@ export const usersRoutes = Router();
 const createUserController = new CreateUserController();
 const profileUserController = new ProfileUserController();
 const updateUserController = new UpdateUserController();
+const deleteAddressController = new DeleteAddressController();
 const listUsersController = new ListUsersController();
 const sendNotificationController =
   new SendNewOrderNotificationAdminController();
@@ -27,6 +29,12 @@ usersRoutes.post("/", createUserController.handle);
 usersRoutes.get("/profile", ensureAuthenticated, profileUserController.handle);
 
 usersRoutes.put("/profile", ensureAuthenticated, updateUserController.handle);
+
+usersRoutes.delete(
+  "/addresses/:addressId",
+  ensureAuthenticated,
+  deleteAddressController.handle
+);
 
 usersRoutes.get(
   "/list/:page/:limit",

@@ -85,6 +85,7 @@ describe(OrderCreationService.name, () => {
       update: jest.fn(),
       findAll: jest.fn(),
       findAdmin: jest.fn(),
+      deleteAddress: jest.fn(),
     };
 
     mockOrdersRepository = {
