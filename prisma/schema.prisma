@@ -23,10 +23,10 @@ enum TransactionType {
 model User {
   id                 Int                 @id @default(autoincrement())
   username           String
-  email              String
+  email              String              @unique
   password           String
   role               UserRole            @default(USER)
-  telephone          String
+  telephone          String              @unique
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
   addresses          Address[]
@@ -35,12 +35,15 @@ model User {
 }
 
 model NotificationToken {
-  id      Int    @id @default(autoincrement())
-  token   String
-  user_id Int
-  user    User   @relation(fields: [user_id], references: [id])
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  user_id    Int
+  is_valid   Boolean  @default(true)
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id])
 
   @@index([user_id], map: "NotificationToken_user_id_fkey")
+  @@index([is_valid])
 }
 
 model Address {
