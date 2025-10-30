@@ -1,5 +1,43 @@
 import { PrismaClient } from "@prisma/client";
 
+const isDevelopment = process.env.NODE_ENV === "development";
+const isProduction = process.env.NODE_ENV === "production";
+
 export const prisma = new PrismaClient({
-  // log: ["query", "info", "warn", "error"],
+  log: isDevelopment
+    ? ["query", "error", "warn"]
+    : isProduction
+    ? ["error"]
+    : [],
+
+  errorFormat: isDevelopment ? "pretty" : "minimal",
+});
+
+export async function checkDatabaseHealth(): Promise<boolean> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return true;
+  } catch (error) {
+    console.error("Database health check failed:", error);
+    return false;
+  }
+}
+
+async function disconnectPrisma() {
+  await prisma.$disconnect();
+  console.log("✅ Prisma disconnected gracefully");
+}
+
+process.on("beforeExit", async () => {
+  await disconnectPrisma();
+});
+
+process.on("SIGTERM", async () => {
+  await disconnectPrisma();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  await disconnectPrisma();
+  process.exit(0);
 });

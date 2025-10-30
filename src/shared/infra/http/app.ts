@@ -30,11 +30,18 @@ app.get("/metrics", async (req: Request, res: Response) => {
   res.send(metrics);
 });
 
-app.get("/health", (req: Request, res: Response) => {
-  res.json({
-    status: "healthy",
+app.get("/health", async (req: Request, res: Response) => {
+  const { checkDatabaseHealth } = await import("../../database/prisma");
+  const dbHealthy = await checkDatabaseHealth();
+  
+  const status = dbHealthy ? "healthy" : "degraded";
+  const statusCode = dbHealthy ? 200 : 503;
+  
+  res.status(statusCode).json({
+    status,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    database: dbHealthy ? "connected" : "disconnected",
   });
 });
 
