@@ -14,7 +14,7 @@ import { LoggerService } from "../../services/LoggerService";
 import { metricsService } from "../../services/MetricsService";
 import { loggingMiddleware } from "./middlewares/loggingMiddleware";
 import { metricsMiddleware } from "./middlewares/metricsMiddleware";
-import rateLimiter from "./middlewares/rateLimiter";
+import rateLimiterMiddleware from "./middlewares/rateLimiter";
 import { router } from "./routes";
 
 const app = express();
@@ -42,7 +42,7 @@ app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 const port = process.env.PORT || 3333;
 
 if (process.env.NODE_ENV !== "test") {
-  app.use(rateLimiter);
+  app.use(rateLimiterMiddleware);
 }
 
 app.use(express.json());
