@@ -1,107 +1,106 @@
-# Scripts
+# 📜 Scripts - Referência Rápida
 
-Estrutura organizada de scripts para gerenciar a aplicação.
+> Documentação de todos os scripts utilitários do projeto
+
+---
 
 ## 📁 Estrutura
 
 ```
 scripts/
-├── deploy/           # Scripts de deploy e CI/CD
-│   ├── deploy.sh                  # Script principal de deploy
-│   ├── backup-db.sh               # Backup do banco de dados
-│   ├── rollback.sh                # Rollback (local ou GHCR)
-│   ├── cleanup-old-versions.sh    # Limpeza de versões antigas
-│   └── ROLLBACK_GUIDE.md          # Guia completo de rollback
-│
-├── database/         # Scripts de banco de dados
-│   └── seed.sh             # Executa seeds (dev/prod)
-│
-├── monitoring/       # Scripts de monitoramento
-│   ├── deploy-monitoring.sh      # Deploy do stack de monitoring
-│   ├── backup-monitoring.sh      # Backup das configs de monitoring
-│   ├── monitoring-setup.sh       # Setup inicial do monitoring
-│   └── configure-domains.sh      # Configuração de domínios
-│
-├── docker/           # Scripts relacionados ao Docker
-│   └── docker-app.sh             # Gerenciamento de containers
-│
-├── setup/            # Scripts de setup inicial
-│   ├── get-docker.sh             # Instalação do Docker
-│   ├── setup-security.sh         # Configurações de segurança
-│   ├── setup-vps-runtime.sh      # Setup VPS runtime-only (sem git)
-│   └── test-app.sh               # Testes da aplicação
-│
-└── security/         # Scripts de segurança
-    └── rotate-secrets.sh         # Rotação de secrets (gerar novos)
+├── deploy/          # Scripts de deploy
+├── database/        # Backup e restore de DB
+├── monitoring/      # Setup de monitoramento
+├── security/        # Rotação de secrets
+└── setup/           # Configuração inicial
 ```
 
-## 🚀 Uso
+---
 
-### Deploy
+## 🚀 Scripts de Deploy
 
+Localizados em `scripts/deploy/`
+
+### Setup Inicial VPS
 ```bash
-# Deploy em desenvolvimento
-bash scripts/deploy/deploy.sh dev
-
-# Deploy em produção
-bash scripts/deploy/deploy.sh prd
+bash scripts/deploy/setup-vps.sh
 ```
+Instala Docker, Docker Compose e dependências na VPS.
+
+### Deploy Manual
+```bash
+bash scripts/deploy/deploy.sh dev   # Deploy DEV
+bash scripts/deploy/deploy.sh prd   # Deploy PRD
+```
+
+### Rollback
+Ver documentação completa: [`docs/deployment/rollback.md`](../deployment/rollback.md)
+
+---
+
+## 💾 Scripts de Database
+
+Localizados em `scripts/database/`
 
 ### Backup
-
 ```bash
-# Criar backup manual
-bash scripts/deploy/backup-db.sh dev
-bash scripts/deploy/backup-db.sh prd
+bash scripts/database/backup.sh
 ```
 
-### Seeds
-
+### Restore
 ```bash
-# Rodar seeds (detecta automaticamente dev/prod)
-npm run prisma db seed
-
-# Ou diretamente
-bash scripts/database/seed.sh
+bash scripts/database/restore.sh backup-20251030-120000.sql
 ```
 
-### Monitoramento
+---
 
+## 📊 Scripts de Monitoramento
+
+Localizados em `scripts/monitoring/`
+
+### Setup Stack
 ```bash
-# Setup inicial do monitoring
-bash scripts/monitoring/monitoring-setup.sh
+bash scripts/monitoring/setup-monitoring.sh
+```
+Configura Grafana, Prometheus, Loki, Promtail.
 
-# Deploy do stack de monitoring
-bash scripts/monitoring/deploy-monitoring.sh
+---
+
+## 🔒 Scripts de Segurança
+
+Localizados em `scripts/security/`
+
+### Rotação de Secrets
+```bash
+bash scripts/security/rotate-secrets.sh
 ```
 
-### Setup VPS Runtime-Only
+Ver documentação completa: [`docs/security/rotation.md`](../security/rotation.md)
 
+---
+
+## 🛠️ Scripts de Setup
+
+Localizados em `scripts/setup/`
+
+### Configuração Inicial Projeto
 ```bash
-# Setup inicial da VPS sem git
-bash scripts/setup/setup-vps-runtime.sh deploy <vps-ip>
+bash scripts/setup/init-project.sh
 ```
 
-### Segurança
+---
 
-```bash
-# Gerar novos secrets fortes (DEV)
-bash scripts/security/rotate-secrets.sh dev
+## 💡 Boas Práticas
 
-# Gerar novos secrets fortes (PRD)
-bash scripts/security/rotate-secrets.sh prd
+- ✅ Sempre leia o script antes de executar
+- ✅ Execute primeiro em ambiente de DEV
+- ✅ Mantenha backups antes de operações destrutivas
+- ✅ Verifique logs após execução
+- ❌ Nunca execute scripts não confiáveis
 
-# Copiar secrets e adicionar no GitHub:
-# Settings > Secrets and variables > Actions
-```
+---
 
-## 📝 Notas
-
-- Todos os scripts são executáveis (`chmod +x`)
-- Scripts de deploy são chamados automaticamente pelo GitHub Actions
-- Scripts seguem padrões de logging para GitHub Actions (::group::, ::error::, etc)
-- Variáveis de ambiente podem vir de arquivos `.env` ou GitHub Secrets
-- Deploy agora usa imagens do GHCR (build no GitHub Actions, não na VPS)
-- VPS funciona em modo runtime-only (~100KB vs ~200MB antes)
-- Secrets gerenciados via GitHub Secrets (auditoria e rotação facilitada)
+<p align="center">
+  <strong>📜 Scripts organizados para operações seguras</strong>
+</p>
 

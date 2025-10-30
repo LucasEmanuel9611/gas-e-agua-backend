@@ -31,4 +31,23 @@ export class UserNotificationTokensRepository
 
     return createdUserNotificationToken;
   }
+
+  async delete(tokenId: number): Promise<void> {
+    await prisma.notificationToken.delete({
+      where: {
+        id: tokenId,
+      },
+    });
+  }
+
+  async markAsInvalid(tokenId: number): Promise<void> {
+    await prisma.notificationToken.update({
+      where: {
+        id: tokenId,
+      },
+      data: {
+        is_valid: false,
+      },
+    });
+  }
 }
