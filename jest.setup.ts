@@ -32,10 +32,12 @@ import {
   mockUpdateUserNotificationTokensUseCase,
 } from "./jest/mocks/useCaseMocks";
 import { ListAdminUserUseCase } from "./src/modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
+import { SendPaymentDueIn5DaysNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
+import { SendPaymentDueTomorrowNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
+import { SendPaymentLateNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
 import { EditOrderUseCase } from "./src/modules/orders/useCases/editOrderUseCase/EditOrderUseCase";
 import { SendNotificationUseCase } from "./src/modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
-import { SendOrderPaymentNotificationsUseCase } from "./src/modules/orders/useCases/sendOrderPaymentNotifications/SendOrderPaymentNotificationsUseCase";
 import { GetStockUseCase } from "./src/modules/stock/useCases/getStock/GetStockUseCase";
 
 dotenv.config({ path: ".env.test" });
@@ -104,7 +106,13 @@ jest.mock("tsyringe", () => {
         if (token === EditOrderUseCase) {
           return mockEditOrderUseCase;
         }
-        if (token === SendOrderPaymentNotificationsUseCase) {
+        if (token === SendPaymentDueIn5DaysNotificationsUseCase) {
+          return mockSendOrderPaymentNotificationsUseCase;
+        }
+        if (token === SendPaymentDueTomorrowNotificationsUseCase) {
+          return mockSendOrderPaymentNotificationsUseCase;
+        }
+        if (token === SendPaymentLateNotificationsUseCase) {
           return mockSendOrderPaymentNotificationsUseCase;
         }
         if (token === UpdateUserNotificationTokensUseCase) {
