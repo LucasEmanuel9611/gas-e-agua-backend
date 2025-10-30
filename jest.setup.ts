@@ -1,5 +1,9 @@
 import "reflect-metadata";
 
+process.env.NODE_ENV = "test";
+process.env.JWT_SECRET = "test-jwt-secret-minimum-32-characters-long";
+process.env.JWT_REFRESH_SECRET = "test-jwt-refresh-secret-minimum-32-characters-long";
+
 import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserUseCase";
 import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
 import { ListUserNotificationTokensUseCase } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensUseCase";

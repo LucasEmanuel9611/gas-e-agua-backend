@@ -2,12 +2,33 @@ export interface IAuthConfig {
   secret_token: string;
   expires_in_token: string;
   secret_refresh_token: string;
+  expires_in_refresh_token: string;
+}
+
+function validateRequiredEnvVars(): void {
+  const required = ["JWT_SECRET", "JWT_REFRESH_SECRET"];
+  const missing = required.filter((key) => !process.env[key]);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `CRITICAL SECURITY ERROR: Missing required environment variables: ${missing.join(
+        ", "
+      )}\n` +
+        "These secrets MUST be configured before starting the application.\n" +
+        "See docs/security/secrets.md for setup instructions."
+    );
+  }
+}
+
+if (process.env.NODE_ENV !== "test") {
+  validateRequiredEnvVars();
 }
 
 const authConfig: IAuthConfig = {
-  secret_token: "3ec4bedcab551f96573450f68236a641",
-  expires_in_token: "15d",
-  secret_refresh_token: "122321b074f2d42b189b5aeecc912f9f",
+  secret_token: process.env.JWT_SECRET!,
+  expires_in_token: process.env.JWT_EXPIRES_IN || "15m",
+  secret_refresh_token: process.env.JWT_REFRESH_SECRET!,
+  expires_in_refresh_token: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
 };
 
 export default authConfig;
