@@ -19,7 +19,11 @@ API REST robusta para gerenciar operações de distribuidoras de gás e água, i
 - 📦 **Gestão de pedidos** - CRUD completo com status e rastreamento
 - 📊 **Controle de estoque** - Gerenciamento de produtos e quantidades
 - 💰 **Sistema financeiro** - Controle de transações e pagamentos
-- 📱 **Notificações push** - Integração com Expo para apps mobile
+- 📱 **Notificações push** - Sistema completo com BullMQ + Redis
+  - Notificações automáticas de pagamento (5 dias, 1 dia, atrasos)
+  - Agendamento flexível com recorrência
+  - Histórico completo por usuário
+  - Limpeza automática de tokens inválidos
 - 🚀 **Deploy automatizado** - CI/CD com GitHub Actions e GHCR
 - 📈 **Monitoramento 24/7** - Grafana + Prometheus + Loki
 
@@ -139,7 +143,12 @@ npm run dev
 | Rate limiting | ✅ |
 | Logs estruturados (Winston) | ✅ |
 | Validação de dados (Zod) | ✅ |
-| Notificações push (Expo) | ✅ |
+| Sistema de notificações profissional | ✅ |
+| - Notificações automáticas de pagamento | ✅ |
+| - Agendamento com recorrência | ✅ |
+| - Histórico por usuário | ✅ |
+| - Limpeza automática de tokens | ✅ |
+| - Dashboard de métricas (Grafana) | ✅ |
 | Health checks | ✅ |
 | Documentação Swagger | ✅ |
 
@@ -351,20 +360,31 @@ npm test -- CreateUserUseCase
 
 ## 📚 Documentação
 
-### Para Desenvolvedores
-- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Setup local e arquitetura
-- **[prisma-flow.md](./prisma-flow.md)** - Fluxo de migrations do Prisma
-- **[scripts/README.md](./scripts/README.md)** - Referência dos scripts
+> **📖 [Ver índice completo](./docs/README.md)** com guias de navegação e cenários comuns
 
-### Para DevOps
-- **[DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md)** - Deploy e monitoramento
-- **[.github/workflows/README.md](./.github/workflows/README.md)** - Workflows GitHub Actions
-- **[docs/VPS_RUNTIME_MIGRATION.md](./docs/VPS_RUNTIME_MIGRATION.md)** - VPS runtime-only
-- **[scripts/deploy/ROLLBACK_GUIDE.md](./scripts/deploy/ROLLBACK_GUIDE.md)** - Guia de rollback
+Toda documentação está organizada em **`/docs`** por domínio:
 
-### Para Segurança
-- **[docs/SECRETS_MANAGEMENT.md](./docs/SECRETS_MANAGEMENT.md)** - Gerenciamento de secrets
-- **[docs/SECRETS_ROTATION.md](./docs/SECRETS_ROTATION.md)** - Rotação automática
+### 👨‍💻 **Desenvolvimento**
+- **[Setup Local](./docs/development/setup.md)** - Configuração do ambiente de desenvolvimento
+- **[Database & Migrations](./docs/development/database.md)** - Fluxo de trabalho com Prisma
+
+### 🚀 **Deploy & Produção**
+- **[Guia de Deploy](./docs/deployment/guide.md)** - Deploy completo + monitoramento
+- **[Setup VPS](./docs/deployment/vps-setup.md)** - Configurar VPS runtime-only
+- **[Rollback](./docs/deployment/rollback.md)** - Reverter deploy em caso de problemas
+
+### 🔄 **CI/CD**
+- **[GitHub Actions](./docs/ci-cd/README.md)** - Pipeline automatizado, workflows, secrets
+
+### 🔔 **Sistema de Notificações**
+- **[Documentação Completa](./docs/notifications/README.md)** - Funcionalidades, API, Monitoramento, Implementação
+
+### 🔒 **Segurança**
+- **[Secrets Management](./docs/security/secrets.md)** - Gerenciamento de credenciais
+- **[Secrets Rotation](./docs/security/rotation.md)** - Rotação automática de secrets
+
+### 📜 **Scripts**
+- **[Referência de Scripts](./scripts/README.md)** - Deploy, backup, monitoramento, segurança
 
 ---
 
