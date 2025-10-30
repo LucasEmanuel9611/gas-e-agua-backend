@@ -28,13 +28,13 @@ export type UserDates = {
 };
 
 export type ICreateUserTokenDTO = {
-  user_id: string;
+  user_id: number;
   expires_date: Date;
   refresh_token: string;
 };
 
 export class UserTokens {
-  id: string;
+  id: number;
   user_id: string;
   user: UserDates;
   expires_date: Date;

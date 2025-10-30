@@ -5,23 +5,34 @@ import { sign } from "jsonwebtoken";
 import { AppError } from "@shared/errors/AppError";
 
 import { IUsersRepository } from "../../repositories/interfaces/IUserRepository";
+import { IUsersTokensRepository } from "../../repositories/interfaces/IUserTokensRepository";
 import { AuthenticateUserUseCase } from "./AuthenticateUserUseCase";
 
 interface IMockUsersRepository extends Partial<IUsersRepository> {
   findByEmail: jest.Mock<Promise<UserDates | null>>;
 }
 
+interface IMockUsersTokensRepository extends Partial<IUsersTokensRepository> {
+  create: jest.Mock;
+}
+
 describe("AuthenticateUserUseCase", () => {
   let authenticateUserUseCase: AuthenticateUserUseCase;
   let usersRepository: IMockUsersRepository;
+  let usersTokensRepository: IMockUsersTokensRepository;
 
   beforeEach(() => {
     usersRepository = {
       findByEmail: jest.fn(),
     };
 
+    usersTokensRepository = {
+      create: jest.fn(),
+    };
+
     authenticateUserUseCase = new AuthenticateUserUseCase(
-      usersRepository as IUsersRepository
+      usersRepository as IUsersRepository,
+      usersTokensRepository as IUsersTokensRepository
     );
   });
 
@@ -56,12 +67,17 @@ describe("AuthenticateUserUseCase", () => {
       "test@example.com"
     );
     expect(compare).toHaveBeenCalledWith("123456", "hashed_password");
-    expect(sign).toHaveBeenCalledWith({ role: "USER" }, expect.any(String), {
-      subject: "123",
-      expiresIn: expect.any(String),
-    });
+    expect(sign).toHaveBeenCalledTimes(2);
+    expect(usersTokensRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 123,
+        refresh_token: expect.any(String),
+        expires_date: expect.any(Date),
+      })
+    );
     expect(result).toEqual({
       token: "mocked_token",
+      refreshToken: "mocked_token",
       user: {
         name: "testUser",
         email: "test@example.com",

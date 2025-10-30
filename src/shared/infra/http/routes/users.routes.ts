@@ -2,6 +2,7 @@ import { CreateUserController } from "@modules/accounts/useCases/createUser/Crea
 import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { ListUsersController } from "@modules/accounts/useCases/listUsers/ListUsersController";
 import { ProfileUserController } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserController";
+import { RefreshTokenController } from "@modules/accounts/useCases/refreshToken/RefreshTokenController";
 import { UpdateUserController } from "@modules/accounts/useCases/updateUser/updateUserController";
 import { UpdateUserNotificationTokensController } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensController";
 import { SendNewOrderNotificationAdminController } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminController";
@@ -16,6 +17,7 @@ const createUserController = new CreateUserController();
 const profileUserController = new ProfileUserController();
 const updateUserController = new UpdateUserController();
 const listUsersController = new ListUsersController();
+const refreshTokenController = new RefreshTokenController();
 const sendNotificationController =
   new SendNewOrderNotificationAdminController();
 const updateUserNotificationTokensController =
@@ -23,6 +25,8 @@ const updateUserNotificationTokensController =
 const listUserNotificationController = new ListUserNotificationController();
 
 usersRoutes.post("/", createUserController.handle);
+
+usersRoutes.post("/refresh-token", refreshTokenController.handle);
 
 usersRoutes.get("/profile", ensureAuthenticated, profileUserController.handle);
 

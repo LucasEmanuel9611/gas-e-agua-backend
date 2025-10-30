@@ -1,15 +1,16 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
 
-export const prisma = new PrismaClient({
-  log: isDevelopment
-    ? ["query", "error", "warn"]
-    : isProduction
-    ? ["error"]
-    : [],
+function getLogLevel(): Prisma.LogLevel[] {
+  if (isDevelopment) return ["query", "error", "warn"];
+  if (isProduction) return ["error"];
+  return [];
+}
 
+export const prisma = new PrismaClient({
+  log: getLogLevel(),
   errorFormat: isDevelopment ? "pretty" : "minimal",
 });
 

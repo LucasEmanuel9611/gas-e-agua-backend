@@ -21,4 +21,20 @@ export class UsersTokensRepository implements IUsersTokensRepository {
 
     return userToken;
   }
+
+  async findByRefreshToken(refreshToken: string): Promise<UserTokens | null> {
+    const userToken = this.usersTokens.find(
+      (token) => token.refresh_token === refreshToken
+    );
+
+    return userToken || null;
+  }
+
+  async deleteById(id: number): Promise<void> {
+    const tokenIndex = this.usersTokens.findIndex((token) => token.id === id);
+
+    if (tokenIndex > -1) {
+      this.usersTokens.splice(tokenIndex, 1);
+    }
+  }
 }
