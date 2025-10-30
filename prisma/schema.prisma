@@ -35,10 +35,12 @@ model User {
 }
 
 model NotificationToken {
-  id      Int    @id @default(autoincrement())
-  token   String
-  user_id Int
-  user    User   @relation(fields: [user_id], references: [id])
+  id         Int      @id @default(autoincrement())
+  token      String
+  user_id    Int
+  is_valid   Boolean  @default(true)
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id])
 
   @@index([user_id], map: "NotificationToken_user_id_fkey")
 }
@@ -140,4 +142,42 @@ model OrderAddons {
 
   @@index([orderId], map: "OrderAddons_orderId_fkey")
   @@index([addonId], map: "OrderAddons_addonId_fkey")
+}
+
+model ScheduledNotification {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  body               String
+  target_users       String?
+  target_roles       String?
+  scheduled_for      DateTime
+  recurrence_pattern String?
+  timezone           String?
+  is_active          Boolean   @default(true)
+  last_sent_at       DateTime?
+  next_run_at        DateTime?
+  created_by         Int
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  data               String?
+
+  @@index([scheduled_for])
+  @@index([is_active])
+}
+
+model NotificationHistory {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  type         String
+  title        String
+  body         String
+  status       String
+  sent_at      DateTime  @default(now())
+  delivered_at DateTime?
+  error        String?
+  data         String?
+
+  @@index([user_id])
+  @@index([sent_at])
+  @@index([status])
 }
