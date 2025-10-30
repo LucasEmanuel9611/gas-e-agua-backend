@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `NotificationToken` ADD COLUMN `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    ADD COLUMN `is_valid` BOOLEAN NOT NULL DEFAULT true;

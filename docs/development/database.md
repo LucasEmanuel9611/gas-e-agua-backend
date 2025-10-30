@@ -196,5 +196,5 @@ docker exec gas-e-agua-prd-app npx prisma migrate deploy
 ## 📖 Documentação Relacionada
 
 - [Prisma Migrations (oficial)](https://www.prisma.io/docs/concepts/components/prisma-migrate)
-- [DEPLOY_MONITORING.md](./DEPLOY_MONITORING.md) - Deploy e CI/CD
-- [.github/workflows/README.md](./.github/workflows/README.md) - Workflows disponíveis
+- [docs/deployment/guide.md](../deployment/guide.md) - Deploy e monitoramento
+- [docs/ci-cd/README.md](../ci-cd/README.md) - CI/CD e workflows
