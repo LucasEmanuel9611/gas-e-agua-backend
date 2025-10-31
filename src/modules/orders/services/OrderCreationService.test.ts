@@ -92,6 +92,7 @@ describe(OrderCreationService.name, () => {
       findById: jest.fn(),
       findByUser: jest.fn(),
       findAll: jest.fn(),
+      findAllPaginated: jest.fn(),
       updateById: jest.fn(),
       delete: jest.fn(),
       findByDay: jest.fn(),

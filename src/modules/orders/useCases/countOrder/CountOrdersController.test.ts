@@ -41,7 +41,7 @@ describe("CountOrderController", () => {
         total: 50,
       },
     ];
-    mockListOrdersUseCase.execute.mockResolvedValue(mockOrder);
+    mockListOrdersUseCase.executeAll.mockResolvedValue(mockOrder);
 
     const response = await request(app)
       .get("/orders/count")

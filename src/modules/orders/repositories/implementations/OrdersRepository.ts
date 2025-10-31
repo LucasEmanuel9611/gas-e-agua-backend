@@ -36,6 +36,7 @@ export class OrdersRepository implements IOrdersRepository {
             quantity: item.quantity,
             unitValue: item.unitValue || 0,
             totalValue: item.totalValue || 0,
+            type: item.type,
           })),
         },
         orderAddons: {
@@ -44,6 +45,7 @@ export class OrdersRepository implements IOrdersRepository {
             quantity: addon.quantity,
             unitValue: addon.unitValue || 0,
             totalValue: addon.totalValue || 0,
+            type: addon.type,
           })),
         },
       },
@@ -94,15 +96,20 @@ export class OrdersRepository implements IOrdersRepository {
   }
 
   async addAddonsToOrder(orderId: number, addonIds: number[]) {
+    const addons = await prisma.addons.findMany({
+      where: { id: { in: addonIds } },
+    });
+
     await Promise.all(
-      addonIds.map((addonId) =>
+      addons.map((addon) =>
         prisma.orderAddons.create({
           data: {
             orderId,
-            addonId,
+            addonId: addon.id,
             quantity: 1,
             unitValue: 0,
             totalValue: 0,
+            type: addon.type,
           },
         })
       )
@@ -118,6 +125,14 @@ export class OrdersRepository implements IOrdersRepository {
     });
 
     if (!existingAddon) {
+      const addon = await prisma.addons.findUnique({
+        where: { id: addonId },
+      });
+
+      if (!addon) {
+        throw new Error(`Addon with id ${addonId} not found`);
+      }
+
       await prisma.orderAddons.create({
         data: {
           orderId,
@@ -125,6 +140,7 @@ export class OrdersRepository implements IOrdersRepository {
           quantity: 1,
           unitValue: 0,
           totalValue: 0,
+          type: addon.type,
         },
       });
     }
@@ -301,6 +317,52 @@ export class OrdersRepository implements IOrdersRepository {
     return foundUserOrderPropss as OrderProps[];
   }
 
+  async findAllPaginated(params: {
+    page: number;
+    limit: number;
+    userId?: string;
+    date?: Date;
+  }): Promise<{ items: OrderProps[]; total: number }> {
+    const { page, limit, userId, date } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (userId) {
+      where.user_id = Number(userId);
+    }
+
+    if (date) {
+      where.updated_at = {
+        gte: dayjs(date).startOf("day").toDate(),
+        lt: dayjs(date).endOf("day").toDate(),
+      };
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          updated_at: "desc",
+        },
+        include: {
+          address: true,
+          user: {
+            select: {
+              username: true,
+              telephone: true,
+            },
+          },
+        },
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return { items: items as OrderProps[], total };
+  }
+
   async findByDay(date: Date): Promise<OrderProps[]> {
     const OrderPropss = await prisma.order.findMany({
       where: {
@@ -419,6 +481,7 @@ export class OrdersRepository implements IOrdersRepository {
           quantity: item.quantity,
           unitValue: item.unitValue,
           totalValue: item.totalValue,
+          type: item.type,
         })),
       });
     }
@@ -446,6 +509,7 @@ export class OrdersRepository implements IOrdersRepository {
           quantity: addon.quantity,
           unitValue: addon.unitValue,
           totalValue: addon.totalValue,
+          type: addon.type,
         })),
       });
     }
