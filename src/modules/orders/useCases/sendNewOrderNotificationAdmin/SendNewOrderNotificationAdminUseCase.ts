@@ -2,6 +2,8 @@ import { NotificationTokenProps } from "@modules/accounts/types";
 import Expo, { ExpoPushMessage } from "expo-server-sdk";
 import { injectable } from "tsyringe";
 
+import { withTimeout } from "@shared/utils/timeout";
+
 interface IRequest {
   notificationTokens: NotificationTokenProps[];
   notificationTitle: string;
@@ -49,7 +51,11 @@ export class SendNotificationUseCase {
       try {
         await Promise.all(
           chunks.map(async (chunk) => {
-            await expo.sendPushNotificationsAsync(chunk);
+            await withTimeout(
+              expo.sendPushNotificationsAsync(chunk),
+              10000,
+              "Expo Push Notification"
+            );
           })
         );
       } catch (error) {
@@ -57,6 +63,6 @@ export class SendNotificationUseCase {
       }
     };
 
-    sendChunks(chunkArray);
+    await sendChunks(chunkArray);
   }
 }

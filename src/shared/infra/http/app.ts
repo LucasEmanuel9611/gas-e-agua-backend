@@ -12,13 +12,16 @@ import swaggerFile from "../../../../swagger.json";
 import "../../containers/index";
 import { LoggerService } from "../../services/LoggerService";
 import { metricsService } from "../../services/MetricsService";
+import { sanitizeForLog } from "../../utils/sanitizeLog";
 import { loggingMiddleware } from "./middlewares/loggingMiddleware";
 import { metricsMiddleware } from "./middlewares/metricsMiddleware";
 import rateLimiterMiddleware from "./middlewares/rateLimiter";
+import { timeoutMiddleware } from "./middlewares/timeoutMiddleware";
 import { router } from "./routes";
 
 const app = express();
 
+app.use(timeoutMiddleware);
 app.use(metricsMiddleware);
 app.use(loggingMiddleware);
 
@@ -60,25 +63,27 @@ app.use(router);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof AppError) {
+    const logData = sanitizeForLog({
+      type: "application_error",
+      errorCode: err.code,
+      errorMessage: err.message,
+      statusCode: err.statusCode,
+      context: err.context,
+      method: req.method,
+      url: req.originalUrl,
+      userId: req.user?.id,
+      userAgent: req.get("User-Agent"),
+      ip: req.ip,
+      body: req.body,
+      params: req.params,
+      query: req.query,
+      timestamp: new Date().toISOString(),
+    });
+
     LoggerService.error(
       `AppError [${err.code || "UNKNOWN"}]: ${err.message}`,
       err,
-      {
-        type: "application_error",
-        errorCode: err.code,
-        errorMessage: err.message,
-        statusCode: err.statusCode,
-        context: err.context,
-        method: req.method,
-        url: req.originalUrl,
-        userId: req.user?.id,
-        userAgent: req.get("User-Agent"),
-        ip: req.ip,
-        body: req.body,
-        params: req.params,
-        query: req.query,
-        timestamp: new Date().toISOString(),
-      }
+      logData
     );
 
     // Marcar que AppError foi logado para evitar log duplicado
@@ -93,7 +98,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     });
   }
 
-  LoggerService.error(`Internal Server Error: ${err.message}`, err, {
+  const logData = sanitizeForLog({
     type: "internal_server_error",
     method: req.method,
     url: req.originalUrl,
@@ -105,6 +110,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     query: req.query,
     headers: req.headers,
   });
+
+  LoggerService.error(`Internal Server Error: ${err.message}`, err, logData);
 
   return res.status(500).json({
     status: "error",

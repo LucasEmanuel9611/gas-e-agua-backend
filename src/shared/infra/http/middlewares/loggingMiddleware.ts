@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 import { LoggerService } from "../../../services/LoggerService";
+import { sanitizeForLog } from "../../../utils/sanitizeLog";
 
 export function loggingMiddleware(
   req: Request,
@@ -24,7 +25,7 @@ export function loggingMiddleware(
 
     // Para erros 4xx e 5xx, log apenas se não foi um AppError (que já foi logado)
     if (res.statusCode >= 400 && !res.locals.appErrorLogged) {
-      LoggerService.error(`HTTP Error ${res.statusCode}`, undefined, {
+      const logData = sanitizeForLog({
         type: "http_error",
         method: req.method,
         url: req.originalUrl,
@@ -37,6 +38,8 @@ export function loggingMiddleware(
         params: req.params,
         query: req.query,
       });
+
+      LoggerService.error(`HTTP Error ${res.statusCode}`, undefined, logData);
     }
   });
 
