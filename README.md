@@ -107,8 +107,8 @@ npm install
 cp env.app.dev.example .env.dev
 nano .env.dev  # Editar credenciais
 
-# 4. Subir containers
-docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+# 4. Subir banco de dados e Redis
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis
 
 # 5. Aplicar migrations e seeds
 npx prisma migrate deploy
@@ -236,7 +236,11 @@ npx prisma db seed               # Executar seeds
 
 ### Docker
 ```bash
-# DEV
+# DEV (apenas banco + Redis para desenvolvimento local)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml logs -f mysql
+
+# DEV (tudo em container - para testes)
 docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
 docker compose -p gas-e-agua-dev -f docker-compose.dev.yml logs -f app
 
