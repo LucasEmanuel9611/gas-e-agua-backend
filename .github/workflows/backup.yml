@@ -1,0 +1,42 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: "0 5 * * *" # 5h UTC = 2h BRT (horário de Brasília)
+  workflow_dispatch: # Permite executar manualmente
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Execute Backup
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'EOF'
+          set -e
+          cd /home/deploy/gas-e-agua-backend
+          chmod +x scripts/*.sh
+
+          echo "📦 Iniciando backup de PRD..."
+          ./scripts/backup-db.sh prd
+
+          echo "📦 Iniciando backup de DEV..."
+          ./scripts/backup-db.sh dev
+
+          echo "✅ Backups concluídos!"
+          ls -lt /home/deploy/backups/mysql/ | head -10
+          EOF
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: rm -f ~/.ssh/id_rsa

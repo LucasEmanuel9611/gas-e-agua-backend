@@ -23,7 +23,7 @@ else
 fi
 
 DATABASE=$(grep MYSQL_DATABASE "$ENV_FILE" | cut -d'=' -f2)
-USER=$(grep MYSQL_USER "$ENV_FILE" | cut -d'=' -f2)
+USER="root"
 PASSWORD=$(grep MYSQL_ROOT_PASSWORD "$ENV_FILE" | cut -d'=' -f2)
 
 mkdir -p "$BACKUP_DIR"
