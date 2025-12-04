@@ -68,6 +68,7 @@ export abstract class BasePaymentNotificationUseCase {
   protected abstract getOrders(): Promise<OrderProps[]>;
   protected abstract getCustomData(order: OrderProps): Record<string, unknown>;
   protected abstract getLogPrefix(): string;
+  protected abstract getNotificationType(): NotificationType;
 
   private async processNotifications(
     orders: OrderProps[]
@@ -81,7 +82,7 @@ export abstract class BasePaymentNotificationUseCase {
             await this.sendNotificationUseCase.sendOrderNotification(
               order.id,
               order.user_id,
-              NotificationType.PAYMENT_DUE_SOON,
+              this.getNotificationType(),
               undefined,
               this.getCustomData(order)
             );

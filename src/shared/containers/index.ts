@@ -1,6 +1,8 @@
 import { UserAddressRepository } from "@modules/accounts/repositories/implementations/UserAddressRepository";
+import { UserNotificationTokensRepository } from "@modules/accounts/repositories/implementations/UserNotificationTokensRepository";
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { IUserAddressRepository } from "@modules/accounts/repositories/interfaces/IUserAddressRepository";
+import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
 import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
@@ -19,7 +21,6 @@ import { OrdersRepository } from "@modules/orders/repositories/implementations/O
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { IOrderCreationService } from "@modules/orders/services/IOrderCreationService";
 import { OrderCreationService } from "@modules/orders/services/OrderCreationService";
-import { SendNotificationUseCase as LegacySendNotificationUseCase } from "@modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { TransactionsRepository } from "@modules/transactions/repositories/implementations/TransactionsRepository";
@@ -37,6 +38,11 @@ container.registerSingleton<IUsersRepository>(
 container.registerSingleton<IUserAddressRepository>(
   "UserAddressRepository",
   UserAddressRepository
+);
+
+container.registerSingleton<IUserNotificationTokensRepository>(
+  "UserNotificationTokensRepository",
+  UserNotificationTokensRepository
 );
 
 container.registerSingleton<IDateProvider>(
@@ -92,9 +98,4 @@ container.registerSingleton<SendPaymentDueTomorrowNotificationsUseCase>(
 );
 container.registerSingleton<SendPaymentLateNotificationsUseCase>(
   SendPaymentLateNotificationsUseCase
-);
-
-// === LEGACY (manter compatibilidade) ===
-container.registerSingleton<LegacySendNotificationUseCase>(
-  LegacySendNotificationUseCase
 );

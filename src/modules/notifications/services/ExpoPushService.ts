@@ -248,24 +248,27 @@ export class ExpoPushService {
       payload: Omit<IPushNotificationPayload, "to">;
     }>
   ): Promise<{ success: number; failed: number }> {
-    let success = 0;
-    let failed = 0;
+    const results = await Promise.all(
+      notifications.map((notification) =>
+        this.sendPushNotification({
+          ...notification.payload,
+          to: notification.tokens,
+        })
+      )
+    );
 
-    notifications.forEach(async (notification) => {
-      const result = await this.sendPushNotification({
-        ...notification.payload,
-        to: notification.tokens,
-      });
-
-      if (result.success) {
-        success += result.sent;
-        failed += result.failed;
-      } else {
-        failed += notification.tokens.length;
-      }
-    });
-
-    return { success, failed };
+    return results.reduce(
+      (acc, result, index) => {
+        if (result.success) {
+          acc.success += result.sent;
+          acc.failed += result.failed;
+        } else {
+          acc.failed += notifications[index].tokens.length;
+        }
+        return acc;
+      },
+      { success: 0, failed: 0 }
+    );
   }
 
   private async checkReceipts(

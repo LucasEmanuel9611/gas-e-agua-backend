@@ -2,6 +2,7 @@ import { OrderProps } from "@modules/orders/types";
 import dayjs from "dayjs";
 import { injectable } from "tsyringe";
 
+import { NotificationType } from "../../types/NotificationTypes";
 import { BasePaymentNotificationUseCase } from "../base/BasePaymentNotificationUseCase";
 
 @injectable()
@@ -27,5 +28,9 @@ export class SendPaymentDueIn5DaysNotificationsUseCase extends BasePaymentNotifi
 
   protected getLogPrefix(): string {
     return "📅 PAYMENT_DUE_IN_5_DAYS";
+  }
+
+  protected getNotificationType(): NotificationType {
+    return NotificationType.PAYMENT_DUE_SOON;
   }
 }

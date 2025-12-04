@@ -1,5 +1,6 @@
 export enum NotificationType {
   PAYMENT_DUE_SOON = "payment_due_soon",
+  PAYMENT_DUE_TOMORROW = "payment_due_tomorrow",
   PAYMENT_LATE = "payment_late",
   STATUS_CHANGE = "status_change",
 }

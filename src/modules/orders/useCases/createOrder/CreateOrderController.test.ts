@@ -5,9 +5,9 @@ import { app } from "@shared/infra/http/app";
 
 import {
   mockCreateOrderUseCase,
+  mockExpoPushService,
   mockGetStockUseCase,
   mockListAdminUseCase,
-  mockSendNotificationUseCase,
 } from "../../../../../jest/mocks/useCaseMocks";
 import { CreateOrderController } from "./CreateOrderController";
 
@@ -47,7 +47,13 @@ describe("CreateOrderController", () => {
   });
 
   it("should create an order and notify admins, returning 201", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1", "token2"] };
+    const adminUser = {
+      id: 1,
+      notificationTokens: [
+        { token: "token1", is_valid: true },
+        { token: "token2", is_valid: true },
+      ],
+    };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
     mockGetStockUseCase.execute.mockResolvedValue([
       { name: "Gás", quantity: 10 },
@@ -80,7 +86,6 @@ describe("CreateOrderController", () => {
       orderAddons: [],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -101,7 +106,7 @@ describe("CreateOrderController", () => {
       ],
       addons: [],
     });
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalled();
+    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
@@ -158,7 +163,6 @@ describe("CreateOrderController", () => {
       ],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -235,7 +239,6 @@ describe("CreateOrderController", () => {
       ],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -326,7 +329,6 @@ describe("CreateOrderController", () => {
       ],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -385,7 +387,6 @@ describe("CreateOrderController", () => {
       orderAddons: [],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -427,7 +428,6 @@ describe("CreateOrderController", () => {
       orderAddons: [],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -662,7 +662,6 @@ describe("CreateOrderController - Policy Tests", () => {
       orderAddons: [],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -717,7 +716,6 @@ describe("CreateOrderController - Policy Tests", () => {
     };
 
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/orders/")
@@ -739,7 +737,10 @@ describe("CreateOrderController - Policy Tests", () => {
   });
 
   it("should return failure message when notification fails", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    const adminUser = {
+      id: 1,
+      notificationTokens: [{ token: "token1", is_valid: true }],
+    };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
     mockGetStockUseCase.execute.mockResolvedValue([
       { name: "Gás", quantity: 10 },
@@ -772,7 +773,7 @@ describe("CreateOrderController - Policy Tests", () => {
       orderAddons: [],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockSendNotificationUseCase.execute.mockRejectedValue(
+    mockExpoPushService.sendPushNotification.mockRejectedValueOnce(
       new Error("Falha na notificação")
     );
 

@@ -14,3 +14,20 @@ export const mockListOrdersByDayUseCase = { execute: jest.fn() };
 export const mockListOrdersByUserUseCase = { execute: jest.fn() };
 export const mockUpdateUserNotificationTokensUseCase = jest.fn();
 export const mockListUserNotificationTokensUseCase = jest.fn();
+export const mockExpoPushService = {
+  sendPushNotification: jest.fn().mockResolvedValue({
+    success: true,
+    sent: 1,
+    failed: 0,
+    total: 1,
+    errors: [],
+  }),
+  sendPushToUser: jest.fn().mockResolvedValue({
+    success: true,
+    sent: 1,
+    failed: 0,
+    total: 1,
+    errors: [],
+  }),
+  sendBulkNotifications: jest.fn().mockResolvedValue({ success: 1, failed: 0 }),
+};

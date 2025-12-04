@@ -5,8 +5,8 @@ import { app } from "@shared/infra/http/app";
 
 import {
   mockEditOrderUseCase,
+  mockExpoPushService,
   mockListAdminUseCase as mockListAdminUserUseCase,
-  mockSendNotificationUseCase,
 } from "../../../../../jest/mocks/useCaseMocks";
 import { EditOrderController } from "./EditOrderController";
 
@@ -80,7 +80,6 @@ describe("EditOrderController", () => {
 
     mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
     mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .put("/orders/123/edit")
@@ -104,11 +103,7 @@ describe("EditOrderController", () => {
       addons: [],
     });
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
-      notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
-    });
+    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
   });
 
   it("should edit order with water bottle addon", async () => {
@@ -167,7 +162,6 @@ describe("EditOrderController", () => {
 
     mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
     mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .put("/orders/123/edit")
@@ -180,11 +174,7 @@ describe("EditOrderController", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
     expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
-      notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
-    });
+    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
       items: [{ id: 1, type: "GAS", quantity: 1 }],
@@ -248,7 +238,6 @@ describe("EditOrderController", () => {
 
     mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
     mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-    mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
     const response = await request(app)
       .put("/orders/123/edit")
@@ -266,11 +255,7 @@ describe("EditOrderController", () => {
       items: [{ id: 2, type: "WATER", quantity: 1 }],
       addons: [{ id: 2, type: "GAS_VESSEL", quantity: 1 }],
     });
-    expect(mockSendNotificationUseCase.execute).toHaveBeenCalledWith({
-      notificationTokens: mockAdminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
-    });
+    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
   });
 });
 
@@ -344,7 +329,6 @@ it("should edit order with both bottle addons", async () => {
 
   mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
   mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/123/edit")
@@ -374,7 +358,6 @@ it("should return 500 if EditOrderUseCase throws an error", async () => {
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
   });
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/123/edit")
@@ -429,7 +412,6 @@ it("should edit order removing addons", async () => {
 
   mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
   mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/123/edit")
@@ -479,7 +461,6 @@ it("should update order date successfully and return 200", async () => {
 
   mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
   mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const newDate = new Date().toISOString();
   const response = await request(app)
@@ -496,12 +477,12 @@ it("should update order date successfully and return 200", async () => {
   });
 });
 
-it("should return 500 if ListAdminUserUseCase throws an error", async () => {
-  mockEditOrderUseCase.execute.mockResolvedValue({});
+it("should return 200 even if ListAdminUserUseCase throws an error (notification is non-blocking)", async () => {
+  const mockOrder = { id: 123, user_id: 456 };
+  mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
   mockListAdminUserUseCase.execute.mockRejectedValue(
     new Error("Admin user error")
   );
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/123/edit")
@@ -511,11 +492,10 @@ it("should return 500 if ListAdminUserUseCase throws an error", async () => {
       addons: [],
     });
 
-  expect(response.status).toBe(500);
-  expect(response.body.message).toBe("Erro interno do servidor");
+  expect(response.status).toBe(200);
 });
 
-it("should handle SendNotificationUseCase error gracefully", async () => {
+it("should handle ExpoPushService error gracefully and still return 200", async () => {
   const mockOrder = {
     id: 123,
     user_id: 456,
@@ -541,12 +521,15 @@ it("should handle SendNotificationUseCase error gracefully", async () => {
 
   const mockAdminUser = {
     id: 1,
-    notificationTokens: ["token1", "token2"],
+    notificationTokens: [
+      { token: "token1", is_valid: true },
+      { token: "token2", is_valid: true },
+    ],
   };
 
   mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
   mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-  mockSendNotificationUseCase.execute.mockRejectedValue(
+  mockExpoPushService.sendPushNotification.mockRejectedValueOnce(
     new Error("Notification error")
   );
 
@@ -558,8 +541,8 @@ it("should handle SendNotificationUseCase error gracefully", async () => {
       addons: [],
     });
 
-  expect(response.status).toBe(500);
-  expect(response.body.message).toBe("Erro interno do servidor");
+  expect(response.status).toBe(200);
+  expect(response.body).toEqual(mockOrder);
 });
 
 it("should return 400 if order is null/undefined", async () => {
@@ -569,7 +552,6 @@ it("should return 400 if order is null/undefined", async () => {
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
   });
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/12/edit")
@@ -587,7 +569,6 @@ it("should return 400 if order is not found", async () => {
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
   });
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/999/edit")
@@ -611,7 +592,6 @@ it("should return 400 if order status is not PENDENTE", async () => {
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
   });
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/123/edit")
@@ -646,7 +626,6 @@ it("should return 500 if EditOrderUseCase throws an error", async () => {
   mockListAdminUserUseCase.execute.mockResolvedValue({
     notificationTokens: [],
   });
-  mockSendNotificationUseCase.execute.mockResolvedValue(undefined);
 
   const response = await request(app)
     .put("/orders/123/edit")
