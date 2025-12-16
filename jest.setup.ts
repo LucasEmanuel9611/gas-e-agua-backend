@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import "./jest/mocks/queueMocks";
 
 import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserUseCase";
 import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
@@ -18,6 +19,7 @@ import {
   mockCreateOrderUseCase,
   mockCreateUserUseCase,
   mockEditOrderUseCase,
+  mockExpoPushService,
   mockGetStockUseCase,
   mockListAdminUseCase,
   mockListOrdersByDayUseCase,
@@ -26,16 +28,17 @@ import {
   mockListUserNotificationTokensUseCase,
   mockPaymentUseCase,
   mockProfileUserUseCase,
-  mockSendNotificationUseCase,
   mockSendOrderPaymentNotificationsUseCase,
   mockUpdateStockUseCase,
   mockUpdateUserNotificationTokensUseCase,
 } from "./jest/mocks/useCaseMocks";
 import { ListAdminUserUseCase } from "./src/modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
+import { ExpoPushService } from "./src/modules/notifications/services/ExpoPushService";
+import { SendPaymentDueIn5DaysNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
+import { SendPaymentDueTomorrowNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
+import { SendPaymentLateNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
 import { EditOrderUseCase } from "./src/modules/orders/useCases/editOrderUseCase/EditOrderUseCase";
-import { SendNotificationUseCase } from "./src/modules/orders/useCases/sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
-import { SendOrderPaymentNotificationsUseCase } from "./src/modules/orders/useCases/sendOrderPaymentNotifications/SendOrderPaymentNotificationsUseCase";
 import { GetStockUseCase } from "./src/modules/stock/useCases/getStock/GetStockUseCase";
 
 dotenv.config({ path: ".env.test" });
@@ -68,9 +71,7 @@ jest.mock("tsyringe", () => {
         if (token === CreateOrderUseCase) {
           return mockCreateOrderUseCase;
         }
-        if (token === SendNotificationUseCase) {
-          return mockSendNotificationUseCase;
-        }
+
         if (token === ListAdminUserUseCase) {
           return mockListAdminUseCase;
         }
@@ -104,7 +105,13 @@ jest.mock("tsyringe", () => {
         if (token === EditOrderUseCase) {
           return mockEditOrderUseCase;
         }
-        if (token === SendOrderPaymentNotificationsUseCase) {
+        if (token === SendPaymentDueIn5DaysNotificationsUseCase) {
+          return mockSendOrderPaymentNotificationsUseCase;
+        }
+        if (token === SendPaymentDueTomorrowNotificationsUseCase) {
+          return mockSendOrderPaymentNotificationsUseCase;
+        }
+        if (token === SendPaymentLateNotificationsUseCase) {
           return mockSendOrderPaymentNotificationsUseCase;
         }
         if (token === UpdateUserNotificationTokensUseCase) {
@@ -112,6 +119,9 @@ jest.mock("tsyringe", () => {
         }
         if (token === ListUserNotificationTokensUseCase) {
           return { execute: mockListUserNotificationTokensUseCase };
+        }
+        if (token === ExpoPushService) {
+          return mockExpoPushService;
         }
         return null;
       }),

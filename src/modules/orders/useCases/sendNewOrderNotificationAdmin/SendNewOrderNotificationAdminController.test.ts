@@ -27,14 +27,32 @@ describe("SendNewOrderNotificationAdminController", () => {
   it("should send notification successfully and return 200", async () => {
     const mockUser = {
       notificationTokens: [
-        { token: "ExponentPushToken[test123]", id: 1, user_id: 1 },
-        { token: "ExponentPushToken[test456]", id: 2, user_id: 1 },
+        {
+          token: "ExponentPushToken[test123]",
+          id: 1,
+          user_id: 1,
+          is_valid: true,
+        },
+        {
+          token: "ExponentPushToken[test456]",
+          id: 2,
+          user_id: 1,
+          is_valid: true,
+        },
       ],
     };
 
     jest.spyOn(container, "resolve").mockImplementation((token: any) => {
-      if (token.name === "SendNotificationUseCase") {
-        return { execute: jest.fn().mockResolvedValue(undefined) };
+      if (token.name === "ExpoPushService") {
+        return {
+          sendPushNotification: jest.fn().mockResolvedValue({
+            success: true,
+            sent: 2,
+            failed: 0,
+            total: 2,
+            errors: [],
+          }),
+        };
       }
       if (token.name === "ListAdminUserUseCase") {
         return { execute: jest.fn().mockResolvedValue(mockUser) };
@@ -124,14 +142,19 @@ describe("SendNewOrderNotificationAdminController", () => {
   it("should handle notification error gracefully", async () => {
     const mockUser = {
       notificationTokens: [
-        { token: "ExponentPushToken[test123]", id: 1, user_id: 1 },
+        {
+          token: "ExponentPushToken[test123]",
+          id: 1,
+          user_id: 1,
+          is_valid: true,
+        },
       ],
     };
 
     jest.spyOn(container, "resolve").mockImplementation((token: any) => {
-      if (token.name === "SendNotificationUseCase") {
+      if (token.name === "ExpoPushService") {
         return {
-          execute: jest
+          sendPushNotification: jest
             .fn()
             .mockRejectedValue(new Error("Notification failed")),
         };
@@ -157,14 +180,22 @@ describe("SendNewOrderNotificationAdminController", () => {
     expect(statusMock).toHaveBeenCalledWith(500);
   });
 
-  it("should send notification with empty tokens array", async () => {
+  it("should return 400 with empty tokens array", async () => {
     const mockUser = {
       notificationTokens: [],
     };
 
     jest.spyOn(container, "resolve").mockImplementation((token: any) => {
-      if (token.name === "SendNotificationUseCase") {
-        return { execute: jest.fn().mockResolvedValue(undefined) };
+      if (token.name === "ExpoPushService") {
+        return {
+          sendPushNotification: jest.fn().mockResolvedValue({
+            success: true,
+            sent: 0,
+            failed: 0,
+            total: 0,
+            errors: [],
+          }),
+        };
       }
       if (token.name === "ListAdminUserUseCase") {
         return { execute: jest.fn().mockResolvedValue(mockUser) };
@@ -184,7 +215,7 @@ describe("SendNewOrderNotificationAdminController", () => {
       mockResponse as Response
     );
 
-    expect(statusMock).toHaveBeenCalledWith(200);
-    expect(jsonMock).toHaveBeenCalled();
+    expect(statusMock).toHaveBeenCalledWith(400);
+    expect(jsonMock).toHaveBeenCalledWith({ error: "No valid tokens found" });
   });
 });

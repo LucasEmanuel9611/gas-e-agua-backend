@@ -1,4 +1,5 @@
 import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
+import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { AdminFieldPolicy } from "@modules/orders/policies/AdminFieldPolicy";
 import { IOrderCreationData } from "@modules/orders/services/IOrderCreationService";
 import { Request, Response } from "express";
@@ -7,7 +8,6 @@ import { container } from "tsyringe";
 import { handleControllerError } from "@shared/utils/controller";
 import { validateSchema } from "@shared/utils/schema";
 
-import { SendNotificationUseCase } from "../sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
 import { CreateOrderUseCase } from "./CreateOrderUseCase";
 import { createOrderSchema } from "./schema";
 
@@ -58,17 +58,25 @@ export class CreateOrderController {
 
     if (shouldNotifyAdmins) {
       try {
-        const SendNotification = container.resolve(SendNotificationUseCase);
+        const expoPushService = container.resolve(ExpoPushService);
         const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
         const adminUser = await listAdminUserUseCase.execute();
-        const pushTokens = adminUser.notificationTokens;
+        const tokens = adminUser.notificationTokens
+          .filter((t) => t.is_valid !== false)
+          .map((t) => t.token);
 
-        await SendNotification.execute({
-          notificationTokens: pushTokens,
-          notificationTitle: "Novo pedido",
-          notificationBody: "Novo pedido solicitado no app",
+        if (tokens.length === 0) {
+          return { sent: false };
+        }
+
+        const result = await expoPushService.sendPushNotification({
+          to: tokens,
+          title: "Novo pedido",
+          body: "Novo pedido solicitado no app",
+          data: { notificationType: "new_order", orderId: order.id },
         });
-        return { sent: true };
+
+        return { sent: result.sent > 0 };
       } catch (err) {
         console.error("Notificação não enviada:", err);
         return { sent: false };

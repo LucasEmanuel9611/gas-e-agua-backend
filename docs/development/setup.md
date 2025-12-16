@@ -4,7 +4,7 @@
 
 Backend para sistema de gerenciamento de pedidos de gás e água, construído com Node.js, TypeScript, Express e Prisma.
 
-**Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md).
+**Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`docs/deployment/guide.md`](../deployment/guide.md).
 
 ---
 
@@ -80,7 +80,7 @@ GRAFANA_SECRET_KEY=grafana_secret_key_dev
 - Use senhas simples para desenvolvimento local
 - Nunca commite o `.env.dev` real!
 
-📖 **Ver também:** [`docs/SECRETS_MANAGEMENT.md`](./docs/SECRETS_MANAGEMENT.md) para entender como secrets são gerenciados na VPS.
+📖 **Ver também:** [`docs/security/secrets.md`](../security/secrets.md) para entender como secrets são gerenciados na VPS.
 
 ---
 
