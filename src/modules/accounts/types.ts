@@ -66,7 +66,6 @@ export interface IUpdateUserDTO {
   id: number;
   username?: string;
   telephone?: string;
-  addresses?: Partial<AddressDates>[];
 }
 
 export interface ICreateAddressDTO {
@@ -77,4 +76,15 @@ export interface ICreateAddressDTO {
   number: string;
   user_id: number;
   isDefault?: boolean;
+}
+
+export interface ICreateAddressRequestDTO {
+  userId: number;
+  address: Omit<AddressDates, "id" | "user_id" | "isDefault">;
+}
+
+export interface IUpdateAddressRequestDTO {
+  userId: number;
+  addressId: number;
+  address: Partial<Omit<AddressDates, "id" | "user_id">>;
 }
