@@ -13,7 +13,7 @@ Workflow para criar backups do banco de dados de forma manual ou automática.
 - **Automática**: Diariamente às 2h AM (UTC)
 
 **Secrets necessários:**
-- `VPS_SSH_KEY`: Chave SSH privada
+- `SSH_PRIVATE_KEY`: Chave SSH privada
 - `VPS_HOST`: Hostname/IP do servidor
 - `VPS_USER`: Usuário SSH
 
