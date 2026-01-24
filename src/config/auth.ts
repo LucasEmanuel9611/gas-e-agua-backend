@@ -1,8 +1,10 @@
+import { SignOptions } from "jsonwebtoken";
+
 export interface IAuthConfig {
   secret_token: string;
-  expires_in_token: string;
+  expires_in_token: SignOptions["expiresIn"];
   secret_refresh_token: string;
-  expires_in_refresh_token: string;
+  expires_in_refresh_token: SignOptions["expiresIn"];
 }
 
 function validateRequiredEnvVars(): void {
@@ -24,11 +26,11 @@ if (process.env.NODE_ENV !== "test") {
   validateRequiredEnvVars();
 }
 
-const authConfig: IAuthConfig = {
+const authConfig = {
   secret_token: process.env.JWT_SECRET!,
   expires_in_token: process.env.JWT_EXPIRES_IN || "15m",
   secret_refresh_token: process.env.JWT_REFRESH_SECRET!,
   expires_in_refresh_token: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
-};
+} as IAuthConfig;
 
 export default authConfig;

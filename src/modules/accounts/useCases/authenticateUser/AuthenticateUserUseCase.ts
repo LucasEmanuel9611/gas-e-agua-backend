@@ -3,7 +3,7 @@ import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUse
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
 import { AddressDates, UserRole } from "@modules/accounts/types";
 import { compare } from "bcrypt";
-import { sign } from "jsonwebtoken";
+import { sign, SignOptions } from "jsonwebtoken";
 import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
@@ -57,15 +57,23 @@ export class AuthenticateUserUseCase {
       throw new AppError({ message: "Email ou senha incorretos" });
     }
 
-    const token = sign({ role: user.role }, secret_token, {
+    const tokenOptions: SignOptions = {
       subject: String(user.id),
-      expiresIn: expires_in_token,
-    });
+      expiresIn: expires_in_token as SignOptions["expiresIn"],
+    };
 
-    const refreshToken = sign({ role: user.role }, secret_refresh_token, {
+    const refreshTokenOptions: SignOptions = {
       subject: String(user.id),
-      expiresIn: expires_in_refresh_token,
-    });
+      expiresIn: expires_in_refresh_token as SignOptions["expiresIn"],
+    };
+
+    const token = sign({ role: user.role }, secret_token, tokenOptions);
+
+    const refreshToken = sign(
+      { role: user.role },
+      secret_refresh_token,
+      refreshTokenOptions
+    );
 
     await this.userTokensRepository.create({
       user_id: user.id,

@@ -1,6 +1,11 @@
 import cors from "cors";
 import "dotenv/config";
-import express, { NextFunction, Request, Response } from "express";
+import express, {
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+} from "express";
 import "express-async-errors";
 import morgan from "morgan";
 import "reflect-metadata";
@@ -48,7 +53,15 @@ app.get("/health", async (req: Request, res: Response) => {
   });
 });
 
-app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+const swaggerServeHandlers: RequestHandler[] = swaggerUi.serve.map(
+  (handler) => handler as unknown as RequestHandler
+);
+const swaggerSetupHandler: RequestHandler = swaggerUi.setup(
+  swaggerFile
+) as unknown as RequestHandler;
+
+app.use("/swagger", ...swaggerServeHandlers, swaggerSetupHandler);
+
 const port = process.env.PORT || 3333;
 
 if (process.env.NODE_ENV !== "test") {

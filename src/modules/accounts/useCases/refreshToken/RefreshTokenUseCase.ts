@@ -1,6 +1,6 @@
 import auth from "@config/auth";
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
-import { sign, verify } from "jsonwebtoken";
+import { sign, SignOptions, verify } from "jsonwebtoken";
 import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
@@ -63,7 +63,7 @@ export class RefreshTokenUseCase {
 
     const newToken = sign({ role }, secret_token, {
       subject: user_id,
-      expiresIn: expires_in_token,
+      expiresIn: expires_in_token as SignOptions["expiresIn"],
     });
 
     const newRefreshToken = sign({ role }, secret_refresh_token, {

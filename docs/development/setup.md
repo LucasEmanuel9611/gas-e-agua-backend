@@ -4,7 +4,7 @@
 
 Backend para sistema de gerenciamento de pedidos de gás e água, construído com Node.js, TypeScript, Express e Prisma.
 
-**Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md).
+**Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`docs/deployment/guide.md`](../deployment/guide.md).
 
 ---
 
@@ -30,8 +30,8 @@ npm install
 cp env.app.dev.example .env.dev
 nano .env.dev  # Editar com suas credenciais locais
 
-# 4. Subir containers (MySQL, Redis)
-docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+# 4. Subir apenas banco de dados e Redis (para desenvolvimento local)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis
 
 # 5. Rodar migrations
 npx prisma migrate dev
@@ -80,7 +80,7 @@ GRAFANA_SECRET_KEY=grafana_secret_key_dev
 - Use senhas simples para desenvolvimento local
 - Nunca commite o `.env.dev` real!
 
-📖 **Ver também:** [`docs/SECRETS_MANAGEMENT.md`](./docs/SECRETS_MANAGEMENT.md) para entender como secrets são gerenciados na VPS.
+📖 **Ver também:** [`docs/security/secrets.md`](../security/secrets.md) para entender como secrets são gerenciados na VPS.
 
 ---
 
@@ -325,18 +325,39 @@ npx prisma migrate reset
 
 ### Docker
 
-```bash
-# Subir todos os serviços
-docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+> **💡 Dica:** Para desenvolvimento com hot reload, use a **Opção 1**. Para testar o ambiente completo, use a **Opção 2**.
 
-# Ver logs
-docker compose -p gas-e-agua-dev -f docker-compose.dev.yml logs -f app
+#### Opção 1: Desenvolvimento Local (Recomendado)
+```bash
+# Subir apenas banco de dados e Redis (API roda localmente com npm run dev)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis
+
+# Ver logs do banco
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml logs -f mysql
 
 # Parar serviços
 docker compose -p gas-e-agua-dev -f docker-compose.dev.yml down
+```
 
+#### Opção 2: Tudo em Container (Para testes)
+```bash
+# Subir todos os serviços (API também em container)
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d
+
+# Ver logs da API
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml logs -f app
+
+# Parar todos os serviços
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml down
+```
+
+#### Comandos Úteis
+```bash
 # Remover volumes (CUIDADO - apaga dados!)
 docker compose -p gas-e-agua-dev -f docker-compose.dev.yml down -v
+
+# Rebuild da imagem da API
+docker compose -p gas-e-agua-dev -f docker-compose.dev.yml build app
 ```
 
 ## 📂 Estrutura de Scripts

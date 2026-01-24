@@ -1,6 +1,6 @@
+import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { NotificationTokenProps } from "@modules/accounts/types";
 
-import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { UpdateUserNotificationTokensUseCase } from "./UpdateUserNotificationTokensUseCase";
 
 jest.mock("bcrypt");
@@ -12,6 +12,8 @@ describe("UpdateUserNotificationTokensUseCase", () => {
   const mockNotificationTokenProps: NotificationTokenProps = {
     id: 1,
     token: "token",
+    is_valid: true,
+    created_at: new Date(),
   };
 
   beforeEach(() => {
