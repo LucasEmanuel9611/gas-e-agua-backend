@@ -35,8 +35,10 @@ const authConfig = {
 } as IAuthConfig;
 
 export function getRefreshExpiresInMs(): number {
-  const v = authConfig.expires_in_refresh_token;
-  return typeof v === "string" ? ms(v) : v * 1000;
+  const expiresIn = authConfig.expires_in_refresh_token;
+  return typeof expiresIn === "string"
+    ? ms(expiresIn as ms.StringValue)
+    : expiresIn * 1000;
 }
 
 export default authConfig;
