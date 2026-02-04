@@ -17,6 +17,8 @@ import { SendNotificationUseCase } from "@modules/notifications/useCases/sendNot
 import { SendPaymentDueIn5DaysNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
 import { SendPaymentDueTomorrowNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
 import { SendPaymentLateNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
+import { GetDailyOrdersMetricsUseCase } from "@modules/metrics/useCases/getDailyOrdersMetrics/GetDailyOrdersMetricsUseCase";
+import { GetStockMetricsUseCase } from "@modules/metrics/useCases/getStockMetrics/GetStockMetricsUseCase";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { IOrderCreationService } from "@modules/orders/services/IOrderCreationService";
@@ -99,3 +101,8 @@ container.registerSingleton<SendPaymentDueTomorrowNotificationsUseCase>(
 container.registerSingleton<SendPaymentLateNotificationsUseCase>(
   SendPaymentLateNotificationsUseCase
 );
+
+container.registerSingleton<GetDailyOrdersMetricsUseCase>(
+  GetDailyOrdersMetricsUseCase
+);
+container.registerSingleton<GetStockMetricsUseCase>(GetStockMetricsUseCase);

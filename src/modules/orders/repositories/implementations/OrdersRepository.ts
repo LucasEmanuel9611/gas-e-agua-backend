@@ -1,3 +1,4 @@
+import dayjs from "@config/dayjs.config";
 import {
   ICreateOrderDTO,
   OrderProps,
@@ -6,7 +7,6 @@ import {
 
 import { prisma } from "@shared/infra/database/prisma";
 
-import dayjs from "../../../../config/dayjs.config";
 import { IOrdersRepository } from "../IOrdersRepository";
 
 export class OrdersRepository implements IOrdersRepository {
@@ -318,6 +318,11 @@ export class OrdersRepository implements IOrdersRepository {
           },
         },
         transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
       },
       orderBy: {
         updated_at: "desc",

@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { addonsRoutes } from "./addons.routes";
 import { authenticateRoutes } from "./authenticate.routes";
+import { metricsRoutes } from "./metrics.routes";
 import { notificationsRoutes } from "./notifications.routes";
 import { orderRoutes } from "./orders.routes";
 import { stockRoutes } from "./stock.routes";
@@ -17,5 +18,6 @@ router.use("/stock", stockRoutes);
 router.use("/addons", addonsRoutes);
 router.use("/transactions", transactionsRoutes);
 router.use("/notifications", notificationsRoutes);
+router.use("/metrics", metricsRoutes);
 
 export { router };
