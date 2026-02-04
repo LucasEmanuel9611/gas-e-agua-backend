@@ -22,4 +22,3 @@ metricsRoutes.get(
   ensureAuthenticated,
   getStockMetricsController.handle
 );
-

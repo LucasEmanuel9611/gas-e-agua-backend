@@ -6,6 +6,8 @@ import { IUserNotificationTokensRepository } from "@modules/accounts/repositorie
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
 import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
+import { GetDailyOrdersMetricsUseCase } from "@modules/metrics/useCases/getDailyOrdersMetrics/GetDailyOrdersMetricsUseCase";
+import { GetStockMetricsUseCase } from "@modules/metrics/useCases/getStockMetrics/GetStockMetricsUseCase";
 import { NotificationWorker } from "@modules/notifications/infra/queues/workers/NotificationWorker";
 import { NotificationHistoryRepository } from "@modules/notifications/repositories/implementations/NotificationHistoryRepository";
 import { ScheduledNotificationRepository } from "@modules/notifications/repositories/implementations/ScheduledNotificationRepository";
@@ -17,8 +19,6 @@ import { SendNotificationUseCase } from "@modules/notifications/useCases/sendNot
 import { SendPaymentDueIn5DaysNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
 import { SendPaymentDueTomorrowNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
 import { SendPaymentLateNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
-import { GetDailyOrdersMetricsUseCase } from "@modules/metrics/useCases/getDailyOrdersMetrics/GetDailyOrdersMetricsUseCase";
-import { GetStockMetricsUseCase } from "@modules/metrics/useCases/getStockMetrics/GetStockMetricsUseCase";
 import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { IOrderCreationService } from "@modules/orders/services/IOrderCreationService";
