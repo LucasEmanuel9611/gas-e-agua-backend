@@ -1,4 +1,4 @@
-import auth from "@config/auth";
+import auth, { getRefreshExpiresInMs } from "@config/auth";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
 import { AddressDates, UserRole } from "@modules/accounts/types";
@@ -78,7 +78,7 @@ export class AuthenticateUserUseCase {
     await this.userTokensRepository.create({
       user_id: user.id,
       refresh_token: refreshToken,
-      expires_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expires_date: new Date(Date.now() + getRefreshExpiresInMs()),
     });
 
     const tokenReturn: IResponse = {

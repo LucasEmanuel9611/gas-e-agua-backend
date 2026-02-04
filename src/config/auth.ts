@@ -1,4 +1,5 @@
 import { SignOptions } from "jsonwebtoken";
+import ms from "ms";
 
 export interface IAuthConfig {
   secret_token: string;
@@ -32,5 +33,10 @@ const authConfig = {
   secret_refresh_token: process.env.JWT_REFRESH_SECRET!,
   expires_in_refresh_token: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
 } as IAuthConfig;
+
+export function getRefreshExpiresInMs(): number {
+  const v = authConfig.expires_in_refresh_token;
+  return typeof v === "string" ? ms(v) : v * 1000;
+}
 
 export default authConfig;

@@ -1,4 +1,4 @@
-import auth from "@config/auth";
+import auth, { getRefreshExpiresInMs } from "@config/auth";
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
 import { sign, SignOptions, verify } from "jsonwebtoken";
 import { inject, injectable } from "tsyringe";
@@ -74,7 +74,7 @@ export class RefreshTokenUseCase {
     await this.userTokensRepository.create({
       user_id: Number(user_id),
       refresh_token: newRefreshToken,
-      expires_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expires_date: new Date(Date.now() + getRefreshExpiresInMs()),
     });
 
     return {
