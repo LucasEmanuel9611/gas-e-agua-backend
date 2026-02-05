@@ -37,7 +37,8 @@ export type ICreateUserTokenDTO = {
 
 export class UserTokens {
   id: number;
-  user_id: string;
+  user_id: number;
+  refresh_token: string;
   user: UserDates;
   expires_date: Date;
   created_at: Date;
