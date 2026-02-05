@@ -10,7 +10,7 @@ export class CountOrdersController {
     try {
       const listOrdersUseCase = container.resolve(ListOrdersUseCase);
 
-      const allOrders = await listOrdersUseCase.execute();
+      const allOrders = await listOrdersUseCase.executeAll();
 
       return response.json({
         quantity: allOrders.length,

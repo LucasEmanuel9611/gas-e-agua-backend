@@ -23,10 +23,10 @@ enum TransactionType {
 model User {
   id                 Int                 @id @default(autoincrement())
   username           String
-  email              String
+  email              String              @unique
   password           String
   role               UserRole            @default(USER)
-  telephone          String
+  telephone          String              @unique
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
   addresses          Address[]
@@ -36,13 +36,14 @@ model User {
 
 model NotificationToken {
   id         Int      @id @default(autoincrement())
-  token      String
+  token      String   @unique
   user_id    Int
   is_valid   Boolean  @default(true)
   created_at DateTime @default(now())
   user       User     @relation(fields: [user_id], references: [id])
 
   @@index([user_id], map: "NotificationToken_user_id_fkey")
+  @@index([is_valid])
 }
 
 model Address {
@@ -79,6 +80,10 @@ model Order {
 
   @@index([address_id], map: "Order_address_id_fkey")
   @@index([user_id], map: "Order_user_id_fkey")
+  @@index([payment_state, created_at])
+  @@index([created_at, payment_state])
+  @@index([interest_allowed, user_id])
+  @@index([user_id, created_at])
 }
 
 model Transaction {
@@ -117,17 +122,20 @@ model Addons {
 }
 
 model OrderItems {
-  id         Int   @id @default(autoincrement())
-  order      Order @relation(fields: [orderId], references: [id])
+  id         Int    @id @default(autoincrement())
+  order      Order  @relation(fields: [orderId], references: [id])
   orderId    Int
-  stock      Stock @relation(fields: [stockId], references: [id])
+  stock      Stock  @relation(fields: [stockId], references: [id])
   stockId    Int
   quantity   Int
   unitValue  Float
   totalValue Float
+  type       String
 
   @@index([orderId], map: "OrderItems_orderId_fkey")
   @@index([stockId], map: "OrderItems_stockId_fkey")
+  @@index([orderId, stockId])
+  @@index([stockId, quantity])
 }
 
 model OrderAddons {
@@ -139,9 +147,11 @@ model OrderAddons {
   quantity   Int
   unitValue  Float
   totalValue Float
+  type       String
 
   @@index([orderId], map: "OrderAddons_orderId_fkey")
   @@index([addonId], map: "OrderAddons_addonId_fkey")
+  @@index([orderId, addonId])
 }
 
 model ScheduledNotification {

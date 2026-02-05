@@ -3,7 +3,10 @@ export const mockSendNotificationUseCase = { execute: jest.fn() };
 export const mockSendOrderPaymentNotificationsUseCase = { execute: jest.fn() };
 export const mockListAdminUseCase = { execute: jest.fn() };
 export const mockGetStockUseCase = { execute: jest.fn() };
-export const mockListOrdersUseCase = { execute: jest.fn() };
+export const mockListOrdersUseCase = {
+  execute: jest.fn(),
+  executeAll: jest.fn(),
+};
 export const mockUpdateStockUseCase = { execute: jest.fn() };
 export const mockProfileUserUseCase = { execute: jest.fn() };
 export const mockAuthenticateUserUseCase = { execute: jest.fn() };

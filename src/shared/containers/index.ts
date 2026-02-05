@@ -1,9 +1,11 @@
 import { UserAddressRepository } from "@modules/accounts/repositories/implementations/UserAddressRepository";
 import { UserNotificationTokensRepository } from "@modules/accounts/repositories/implementations/UserNotificationTokensRepository";
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
+import { UsersTokensRepository } from "@modules/accounts/repositories/implementations/UserTokensRepository";
 import { IUserAddressRepository } from "@modules/accounts/repositories/interfaces/IUserAddressRepository";
 import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
 import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
 import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
 import { NotificationWorker } from "@modules/notifications/infra/queues/workers/NotificationWorker";
@@ -43,6 +45,11 @@ container.registerSingleton<IUserAddressRepository>(
 container.registerSingleton<IUserNotificationTokensRepository>(
   "UserNotificationTokensRepository",
   UserNotificationTokensRepository
+);
+
+container.registerSingleton<IUsersTokensRepository>(
+  "UserTokensRepository",
+  UsersTokensRepository
 );
 
 container.registerSingleton<IDateProvider>(

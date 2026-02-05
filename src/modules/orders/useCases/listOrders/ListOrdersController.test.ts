@@ -108,43 +108,79 @@ describe("ListOrdersController", () => {
   ];
 
   it("should return paginated orders (scope=all)", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue(mockOrders);
+    mockListOrdersUseCase.execute.mockResolvedValue({
+      items: [mockOrders[0]],
+      pagination: {
+        page: 1,
+        limit: 1,
+        total: 2,
+        totalPages: 2,
+        hasNext: true,
+        hasPrev: false,
+      },
+    });
 
     const response = await request(app)
       .get("/orders")
-      .query({ scope: "all", page: 0, size: 1 })
+      .query({ scope: "all", page: 0, limit: 1 })
       .set("Authorization", `Bearer token`);
 
-    expect(mockListOrdersUseCase.execute).toHaveBeenCalled();
+    expect(mockListOrdersUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: 1,
+        limit: 1,
+        userId: undefined,
+      })
+    );
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      page_number: 0,
-      total_items_count: 2,
-      items: [mockOrders[0]],
-    });
+    expect(response.body.items).toEqual([mockOrders[0]]);
+    expect(response.body.pagination.page).toBe(0);
+    expect(response.body.pagination.total).toBe(2);
   });
 
   it("should return second page (scope=all)", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue(mockOrders);
+    mockListOrdersUseCase.execute.mockResolvedValue({
+      items: [mockOrders[1]],
+      pagination: {
+        page: 2,
+        limit: 1,
+        total: 2,
+        totalPages: 2,
+        hasNext: false,
+        hasPrev: true,
+      },
+    });
 
     const response = await request(app)
       .get("/orders")
-      .query({ scope: "all", page: 1, size: 1 })
+      .query({ scope: "all", page: 1, limit: 1 })
       .set("Authorization", `Bearer token`);
 
     expect(response.status).toBe(200);
     expect(response.body.items).toEqual([mockOrders[1]]);
+    expect(response.body.pagination.page).toBe(1);
   });
 
   it("should return empty array for out-of-bounds page (scope=all)", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue(mockOrders);
+    mockListOrdersUseCase.execute.mockResolvedValue({
+      items: [],
+      pagination: {
+        page: 6,
+        limit: 1,
+        total: 2,
+        totalPages: 2,
+        hasNext: false,
+        hasPrev: true,
+      },
+    });
 
     const response = await request(app)
       .get("/orders")
-      .query({ scope: "all", page: 5, size: 1 })
+      .query({ scope: "all", page: 5, limit: 1 })
       .set("Authorization", `Bearer token`);
 
     expect(response.status).toBe(200);
     expect(response.body.items).toEqual([]);
+    expect(response.body.pagination.page).toBe(5);
   });
 });

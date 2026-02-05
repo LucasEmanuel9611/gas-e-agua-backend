@@ -2,6 +2,7 @@ interface IJobOptions {
   maxRetries?: number;
   retryDelay?: number;
   notifyOnError?: boolean;
+  timeoutMs?: number;
 }
 
 interface IJobResult<T> {
@@ -30,13 +31,19 @@ export class JobService {
     job: () => Promise<T>,
     options: IJobOptions = {}
   ): Promise<IJobResult<T>> {
-    const { maxRetries = 3, retryDelay = 1000, notifyOnError = true } = options;
+    const {
+      maxRetries = 3,
+      retryDelay = 1000,
+      notifyOnError = true,
+      timeoutMs = 300000,
+    } = options;
     return this.attemptJob(
       jobName,
       job,
       maxRetries,
       retryDelay,
       notifyOnError,
+      timeoutMs,
       0
     );
   }
@@ -47,11 +54,21 @@ export class JobService {
     maxRetries: number,
     retryDelay: number,
     notifyOnError: boolean,
+    timeoutMs: number,
     currentAttempt: number
   ): Promise<IJobResult<T>> {
     try {
       console.log(`[${jobName}] Executando...`);
-      const result = await job();
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(
+            new Error(`Job timeout: ${jobName} demorou mais de ${timeoutMs}ms`)
+          );
+        }, timeoutMs);
+      });
+
+      const result = await Promise.race([job(), timeoutPromise]);
       console.log(`[${jobName}] Sucesso!`);
 
       return {
@@ -72,6 +89,7 @@ export class JobService {
           maxRetries,
           retryDelay,
           notifyOnError,
+          timeoutMs,
           nextAttempt
         );
       }

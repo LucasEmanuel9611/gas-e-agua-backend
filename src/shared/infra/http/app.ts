@@ -1,6 +1,11 @@
 import cors from "cors";
 import "dotenv/config";
-import express, { NextFunction, Request, Response } from "express";
+import express, {
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+} from "express";
 import "express-async-errors";
 import morgan from "morgan";
 import "reflect-metadata";
@@ -12,13 +17,16 @@ import swaggerFile from "../../../../swagger.json";
 import "../../containers/index";
 import { LoggerService } from "../../services/LoggerService";
 import { metricsService } from "../../services/MetricsService";
+import { sanitizeForLog } from "../../utils/sanitizeLog";
 import { loggingMiddleware } from "./middlewares/loggingMiddleware";
 import { metricsMiddleware } from "./middlewares/metricsMiddleware";
-import rateLimiter from "./middlewares/rateLimiter";
+import rateLimiterMiddleware from "./middlewares/rateLimiter";
+import { timeoutMiddleware } from "./middlewares/timeoutMiddleware";
 import { router } from "./routes";
 
 const app = express();
 
+app.use(timeoutMiddleware);
 app.use(metricsMiddleware);
 app.use(loggingMiddleware);
 
@@ -30,19 +38,34 @@ app.get("/metrics", async (req: Request, res: Response) => {
   res.send(metrics);
 });
 
-app.get("/health", (req: Request, res: Response) => {
-  res.json({
-    status: "healthy",
+app.get("/health", async (req: Request, res: Response) => {
+  const { checkDatabaseHealth } = await import("../database/prisma");
+  const dbHealthy = await checkDatabaseHealth();
+
+  const status = dbHealthy ? "healthy" : "degraded";
+  const statusCode = dbHealthy ? 200 : 503;
+
+  res.status(statusCode).json({
+    status,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    database: dbHealthy ? "connected" : "disconnected",
   });
 });
 
-app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+const swaggerServeHandlers: RequestHandler[] = swaggerUi.serve.map(
+  (handler) => handler as unknown as RequestHandler
+);
+const swaggerSetupHandler: RequestHandler = swaggerUi.setup(
+  swaggerFile
+) as unknown as RequestHandler;
+
+app.use("/swagger", ...swaggerServeHandlers, swaggerSetupHandler);
+
 const port = process.env.PORT || 3333;
 
 if (process.env.NODE_ENV !== "test") {
-  app.use(rateLimiter);
+  app.use(rateLimiterMiddleware);
 }
 
 app.use(express.json());
@@ -53,25 +76,27 @@ app.use(router);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof AppError) {
+    const logData = sanitizeForLog({
+      type: "application_error",
+      errorCode: err.code,
+      errorMessage: err.message,
+      statusCode: err.statusCode,
+      context: err.context,
+      method: req.method,
+      url: req.originalUrl,
+      userId: req.user?.id,
+      userAgent: req.get("User-Agent"),
+      ip: req.ip,
+      body: req.body,
+      params: req.params,
+      query: req.query,
+      timestamp: new Date().toISOString(),
+    });
+
     LoggerService.error(
       `AppError [${err.code || "UNKNOWN"}]: ${err.message}`,
       err,
-      {
-        type: "application_error",
-        errorCode: err.code,
-        errorMessage: err.message,
-        statusCode: err.statusCode,
-        context: err.context,
-        method: req.method,
-        url: req.originalUrl,
-        userId: req.user?.id,
-        userAgent: req.get("User-Agent"),
-        ip: req.ip,
-        body: req.body,
-        params: req.params,
-        query: req.query,
-        timestamp: new Date().toISOString(),
-      }
+      logData
     );
 
     // Marcar que AppError foi logado para evitar log duplicado
@@ -86,7 +111,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     });
   }
 
-  LoggerService.error(`Internal Server Error: ${err.message}`, err, {
+  const logData = sanitizeForLog({
     type: "internal_server_error",
     method: req.method,
     url: req.originalUrl,
@@ -98,6 +123,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     query: req.query,
     headers: req.headers,
   });
+
+  LoggerService.error(`Internal Server Error: ${err.message}`, err, logData);
 
   return res.status(500).json({
     status: "error",

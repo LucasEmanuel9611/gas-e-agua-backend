@@ -4,6 +4,7 @@ import { DeleteAddressController } from "@modules/accounts/useCases/deleteAddres
 import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { ListUsersController } from "@modules/accounts/useCases/listUsers/ListUsersController";
 import { ProfileUserController } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserController";
+import { RefreshTokenController } from "@modules/accounts/useCases/refreshToken/RefreshTokenController";
 import { UpdateAddressController } from "@modules/accounts/useCases/updateAddress/updateAddressController";
 import { UpdateUserController } from "@modules/accounts/useCases/updateUser/updateUserController";
 import { UpdateUserNotificationTokensController } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensController";
@@ -22,6 +23,7 @@ const updateUserController = new UpdateUserController();
 const updateAddressController = new UpdateAddressController();
 const deleteAddressController = new DeleteAddressController();
 const listUsersController = new ListUsersController();
+const refreshTokenController = new RefreshTokenController();
 const sendNotificationController =
   new SendNewOrderNotificationAdminController();
 const updateUserNotificationTokensController =
@@ -29,6 +31,8 @@ const updateUserNotificationTokensController =
 const listUserNotificationController = new ListUserNotificationController();
 
 usersRoutes.post("/", createUserController.handle);
+
+usersRoutes.post("/refresh-token", refreshTokenController.handle);
 
 usersRoutes.get("/profile", ensureAuthenticated, profileUserController.handle);
 

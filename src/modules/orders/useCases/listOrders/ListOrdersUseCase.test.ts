@@ -10,12 +10,13 @@ describe(ListOrdersUseCase.name, () => {
   beforeEach(() => {
     ordersRepository = {
       findAll: jest.fn(),
+      findAllPaginated: jest.fn(),
     } as any;
 
     listOrdersUseCase = new ListOrdersUseCase(ordersRepository);
   });
 
-  it("should return a list of orders from the repository", async () => {
+  it("should return paginated orders from the repository", async () => {
     const mockOrders: OrderProps[] = [
       {
         id: 1,
@@ -59,19 +60,42 @@ describe(ListOrdersUseCase.name, () => {
       },
     ];
 
-    (ordersRepository.findAll as jest.Mock).mockResolvedValue(mockOrders);
+    (ordersRepository.findAllPaginated as jest.Mock).mockResolvedValue({
+      items: mockOrders,
+      total: 1,
+    });
 
-    const result = await listOrdersUseCase.execute();
+    const result = await listOrdersUseCase.execute({
+      page: 1,
+      limit: 20,
+    });
 
-    expect(ordersRepository.findAll).toHaveBeenCalled();
-    expect(result).toEqual(mockOrders);
+    expect(ordersRepository.findAllPaginated).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      userId: undefined,
+      date: undefined,
+    });
+    expect(result).toEqual({
+      items: mockOrders,
+      pagination: {
+        page: 1,
+        limit: 20,
+        total: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    });
   });
 
   it("should throw an error if repository fails", async () => {
-    (ordersRepository.findAll as jest.Mock).mockRejectedValue(
+    (ordersRepository.findAllPaginated as jest.Mock).mockRejectedValue(
       new Error("DB Error")
     );
 
-    await expect(listOrdersUseCase.execute()).rejects.toThrow("DB Error");
+    await expect(
+      listOrdersUseCase.execute({ page: 1, limit: 20 })
+    ).rejects.toThrow("DB Error");
   });
 });

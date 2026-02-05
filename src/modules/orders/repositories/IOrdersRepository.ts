@@ -6,6 +6,12 @@ export interface IOrdersRepository {
   findByIdWithPayments(id: number): Promise<OrderProps>;
   findByUser(user_id: string): Promise<OrderProps[]>;
   findAll(): Promise<OrderProps[]>;
+  findAllPaginated(params: {
+    page: number;
+    limit: number;
+    userId?: string;
+    date?: Date;
+  }): Promise<{ items: OrderProps[]; total: number }>;
   findByDay(date: Date): Promise<OrderProps[]>;
   updateById(id: number, data: Partial<OrderProps>): Promise<OrderProps>;
   delete(id: number): Promise<void>;
