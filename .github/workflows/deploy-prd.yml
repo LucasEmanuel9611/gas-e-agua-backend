@@ -107,7 +107,7 @@ jobs:
             DOCKER_IMAGE=ghcr.io/${GITHUB_REPO}
             IMAGE_TAG=master-latest
             ENVFILE
-            
+
             # Executar deploy script (vai ler .env criado acima)
             bash ./scripts/deploy/deploy.sh prd
             
