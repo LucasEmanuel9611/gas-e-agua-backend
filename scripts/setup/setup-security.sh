@@ -34,6 +34,9 @@ if command -v ufw &> /dev/null; then
     # SSH
     sudo ufw allow ssh
     
+    sudo ufw allow 80/tcp comment "HTTP"
+    sudo ufw allow 443/tcp comment "HTTPS"
+
     # Aplicação
     sudo ufw allow 3333/tcp comment "Gas e Agua Backend"
     
@@ -64,22 +67,23 @@ fi
 # 3. Configurar SSL com Let's Encrypt
 print_status "Configurando SSL..."
 if command -v certbot &> /dev/null; then
+    sudo apt install -y python3-certbot-nginx
+
+    read -p "Digite o domínio para a API PRD (ex: api.gas-e-agua.com): " API_PRD_DOMAIN
+    read -p "Digite o domínio para a API DEV (ex: api-dev.gas-e-agua.com): " API_DEV_DOMAIN
     read -p "Digite o domínio para o Grafana (ex: monitoring.gas-e-agua.com): " GRAFANA_DOMAIN
     read -p "Digite o domínio para o Prometheus (ex: prometheus.gas-e-agua.com): " PROMETHEUS_DOMAIN
-    
-    if [ ! -z "$GRAFANA_DOMAIN" ]; then
-        sudo certbot certonly --standalone -d $GRAFANA_DOMAIN
-    fi
-    
-    if [ ! -z "$PROMETHEUS_DOMAIN" ]; then
-        sudo certbot certonly --standalone -d $PROMETHEUS_DOMAIN
-    fi
-    
-    # Configurar renovação automática
-    echo "0 12 * * * /usr/bin/certbot renew --quiet" | sudo crontab -
+
+    for DOMAIN in "$API_PRD_DOMAIN" "$API_DEV_DOMAIN" "$GRAFANA_DOMAIN" "$PROMETHEUS_DOMAIN"; do
+        if [ ! -z "$DOMAIN" ]; then
+            sudo certbot certonly --nginx -d $DOMAIN
+        fi
+    done
+
+    echo "0 3 * * * /usr/bin/certbot renew --quiet --deploy-hook 'systemctl reload nginx'" | sudo crontab -
     print_status "SSL configurado!"
 else
-    print_warning "Certbot não encontrado. Instale: sudo apt install certbot"
+    print_warning "Certbot não encontrado. Instale: sudo apt install certbot python3-certbot-nginx"
 fi
 
 # 4. Configurar backup automático
