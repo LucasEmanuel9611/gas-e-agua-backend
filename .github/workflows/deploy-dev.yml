@@ -1,5 +1,6 @@
 name: Deploy to VPS (DEV)
 
+# Dispara após o build da imagem em develop, ou manualmente (workflow_dispatch)
 on:
   workflow_run:
     workflows: ["🏗️ Build and Push to GHCR"]
@@ -31,6 +32,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      # Copia compose, scripts de deploy e schema Prisma para a VPS (deploy usa esses arquivos lá)
       - name: Sync configuration files to VPS
         run: |
           echo "📦 Syncing docker-compose and scripts to VPS..."
@@ -68,7 +70,7 @@ jobs:
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
 
-      # Etapa 4: Deploy da aplicação (build, migrations, containers)
+      # Etapa 4: Deploy da aplicação (login GHCR, .env temporário, script deploy.sh na VPS)
       - name: Deploy application
         id: deploy
         env:
@@ -81,12 +83,18 @@ jobs:
           GRAFANA_ADMIN_PASSWORD_DEV: ${{ secrets.GRAFANA_ADMIN_PASSWORD_DEV }}
           GRAFANA_SECRET_KEY_DEV: ${{ secrets.GRAFANA_SECRET_KEY_DEV }}
         run: |
+          # Docker/GHCR exigem owner do repositório em minúsculas (github.repository pode vir com maiúsculas)
+          GITHUB_REPOSITORY_LOWER=$(echo "$GITHUB_REPO" | tr '[:upper:]' '[:lower:]')
+
+          # Heredoc (<< EOF): o runner expande variáveis de env e envia o script para a VPS via SSH
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << EOF
             set -e
             cd /home/deploy/gas-e-agua-backend
 
+            # Autentica na VPS para baixar a imagem publicada pelo workflow Build and Push
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
+            # Monta .env.dev na VPS; deploy.sh lê DOCKER_IMAGE + IMAGE_TAG e faz pull/compose/migrations
             printf '%s\n' \
               "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD_DEV" \
               "MYSQL_DATABASE=gas_e_agua_dev" \
@@ -101,12 +109,13 @@ jobs:
               "GRAFANA_ADMIN_USER=admin" \
               "GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD_DEV" \
               "GRAFANA_SECRET_KEY=$GRAFANA_SECRET_KEY_DEV" \
-              "DOCKER_IMAGE=ghcr.io/$GITHUB_REPO" \
+              "DOCKER_IMAGE=ghcr.io/$GITHUB_REPOSITORY_LOWER" \
               "IMAGE_TAG=develop-latest" \
               > .env.dev
 
             bash ./scripts/deploy/deploy.sh dev
 
+            # Remove credenciais do disco após o deploy (segurança)
             rm -f .env.dev
             echo "✅ Deploy completed and .env.dev removed from disk"
           EOF
