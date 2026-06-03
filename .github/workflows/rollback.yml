@@ -142,11 +142,12 @@ jobs:
               docker tag "$LOCAL_IMAGE" "${PROJECT}-app:latest"
               export APP_IMAGE="${PROJECT}-app:latest"
             else
-              # Rollback do GHCR
+              # Rollback do GHCR: baixa uma tag anterior da mesma imagem do deploy
               echo "🔐 Logging into GHCR..."
               echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
               
-              DOCKER_IMAGE="ghcr.io/${{ github.repository }}"
+              # Mesma regra do deploy: nome do repositório em minúsculas para o docker pull
+              DOCKER_IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
               FULL_IMAGE="${DOCKER_IMAGE}:${IMAGE_TAG}"
               
               echo "📥 Pulling image: $FULL_IMAGE"
@@ -293,7 +294,8 @@ jobs:
               echo "🔐 Logging into GHCR..."
               echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
               
-              DOCKER_IMAGE="ghcr.io/${{ github.repository }}"
+              # Mesma regra do deploy: nome do repositório em minúsculas para o docker pull
+              DOCKER_IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
               FULL_IMAGE="${DOCKER_IMAGE}:${IMAGE_TAG}"
               
               echo "📥 Pulling image: $FULL_IMAGE"
