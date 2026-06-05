@@ -80,6 +80,7 @@ jobs:
           MYSQL_ROOT_PASSWORD_DEV: ${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
           MYSQL_PASSWORD_DEV: ${{ secrets.MYSQL_PASSWORD_DEV }}
           JWT_SECRET_DEV: ${{ secrets.JWT_SECRET_DEV }}
+          JWT_REFRESH_SECRET_DEV: ${{ secrets.JWT_REFRESH_SECRET_DEV }}
           GRAFANA_ADMIN_PASSWORD_DEV: ${{ secrets.GRAFANA_ADMIN_PASSWORD_DEV }}
           GRAFANA_SECRET_KEY_DEV: ${{ secrets.GRAFANA_SECRET_KEY_DEV }}
         run: |

@@ -205,20 +205,25 @@ log_group_end
 # 8. Rodar migrations
 log_group_start "🗄️ Running database migrations"
 
-log_info "Step 1/2: Generating Prisma Client..."
-PRISMA_GENERATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate 2>&1)
-PRISMA_GENERATE_EXIT=$?
+if [ "$USE_GHCR" = "true" ]; then
+  log_info "Step 1/2: Prisma Client (pulado — já gerado na imagem do GHCR)"
+  log_success "Prisma Client ready"
+else
+  log_info "Step 1/2: Generating Prisma Client..."
+  PRISMA_GENERATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate 2>&1)
+  PRISMA_GENERATE_EXIT=$?
 
-echo "$PRISMA_GENERATE_OUTPUT"
+  echo "$PRISMA_GENERATE_OUTPUT"
 
-if [ $PRISMA_GENERATE_EXIT -ne 0 ]; then
-  log_error "Prisma generate failed!"
-  echo ""
-  echo "Application logs:"
-  docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
-  exit 1
+  if [ $PRISMA_GENERATE_EXIT -ne 0 ]; then
+    log_error "Prisma generate failed!"
+    echo ""
+    echo "Application logs:"
+    docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
+    exit 1
+  fi
+  log_success "Prisma Client generated successfully"
 fi
-log_success "Prisma Client generated successfully"
 
 log_info "Step 2/2: Applying database migrations..."
 MIGRATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1)
