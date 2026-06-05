@@ -103,6 +103,7 @@ jobs:
               "NODE_ENV=development" \
               "PORT=3333" \
               "JWT_SECRET=$JWT_SECRET_DEV" \
+              "JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET_DEV" \
               "REDIS_URL=redis://redis:6379" \
               "REDIS_HOST=redis" \
               "REDIS_PORT=6379" \

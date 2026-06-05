@@ -81,6 +81,7 @@ jobs:
           MYSQL_ROOT_PASSWORD_PRD: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
           MYSQL_PASSWORD_PRD: ${{ secrets.MYSQL_PASSWORD_PRD }}
           JWT_SECRET_PRD: ${{ secrets.JWT_SECRET_PRD }}
+          JWT_REFRESH_SECRET_PRD: ${{ secrets.JWT_REFRESH_SECRET_PRD }}
           GRAFANA_ADMIN_PASSWORD_PRD: ${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}
           GRAFANA_SECRET_KEY_PRD: ${{ secrets.GRAFANA_SECRET_KEY_PRD }}
         run: |
@@ -104,6 +105,7 @@ jobs:
               "NODE_ENV=production" \
               "PORT=3333" \
               "JWT_SECRET=$JWT_SECRET_PRD" \
+              "JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET_PRD" \
               "REDIS_URL=redis://redis:6379" \
               "REDIS_HOST=redis" \
               "REDIS_PORT=6379" \
