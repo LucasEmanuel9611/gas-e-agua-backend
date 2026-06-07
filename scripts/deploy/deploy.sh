@@ -205,28 +205,29 @@ log_group_end
 # 8. Rodar migrations
 log_group_start "🗄️ Running database migrations"
 
+log_info "Parando app para liberar memória da VPS..."
+docker compose -p "$PROJECT" -f "$COMPOSE_FILE" stop app
+
 if [ "$USE_GHCR" = "true" ]; then
   log_info "Step 1/2: Prisma Client (pulado — já gerado na imagem do GHCR)"
   log_success "Prisma Client ready"
 else
   log_info "Step 1/2: Generating Prisma Client..."
-  PRISMA_GENERATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma generate 2>&1)
+  PRISMA_GENERATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" run --rm --no-deps -T app npx prisma generate 2>&1)
   PRISMA_GENERATE_EXIT=$?
 
   echo "$PRISMA_GENERATE_OUTPUT"
 
   if [ $PRISMA_GENERATE_EXIT -ne 0 ]; then
     log_error "Prisma generate failed!"
-    echo ""
-    echo "Application logs:"
-    docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=50
+    docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d app
     exit 1
   fi
   log_success "Prisma Client generated successfully"
 fi
 
 log_info "Step 2/2: Applying database migrations..."
-MIGRATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" exec -T app npx prisma migrate deploy 2>&1)
+MIGRATE_OUTPUT=$(docker compose -p "$PROJECT" -f "$COMPOSE_FILE" run --rm --no-deps -T app npx prisma migrate deploy 2>&1)
 MIGRATE_EXIT=$?
 
 echo "$MIGRATE_OUTPUT"
@@ -236,7 +237,8 @@ if [ $MIGRATE_EXIT -ne 0 ]; then
   echo ""
   echo "Application logs:"
   docker compose -p "$PROJECT" -f "$COMPOSE_FILE" logs app --tail=100
-  
+  docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d app
+
   if [ "$IS_GITHUB_ACTIONS" != "true" ]; then
     echo "🔄 Do you want to rollback? (yes/no)"
     read -r ROLLBACK
@@ -254,6 +256,11 @@ if [ $MIGRATE_EXIT -ne 0 ]; then
 fi
 
 log_success "Database migrations completed successfully"
+
+log_info "Subindo app novamente..."
+docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d app
+log_info "Aguardando 10 segundos para o app estabilizar..."
+sleep 10
 log_group_end
 
 # 9. Health check
