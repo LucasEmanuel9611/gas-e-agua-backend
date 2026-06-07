@@ -8,6 +8,8 @@ import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUse
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
 import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
 import { AddonsRepository } from "@modules/addons/repositories/implementations/AddonsRepository";
+import { GetDailyOrdersMetricsUseCase } from "@modules/metrics/useCases/getDailyOrdersMetrics/GetDailyOrdersMetricsUseCase";
+import { GetStockMetricsUseCase } from "@modules/metrics/useCases/getStockMetrics/GetStockMetricsUseCase";
 import { NotificationWorker } from "@modules/notifications/infra/queues/workers/NotificationWorker";
 import { NotificationHistoryRepository } from "@modules/notifications/repositories/implementations/NotificationHistoryRepository";
 import { ScheduledNotificationRepository } from "@modules/notifications/repositories/implementations/ScheduledNotificationRepository";
@@ -106,3 +108,8 @@ container.registerSingleton<SendPaymentDueTomorrowNotificationsUseCase>(
 container.registerSingleton<SendPaymentLateNotificationsUseCase>(
   SendPaymentLateNotificationsUseCase
 );
+
+container.registerSingleton<GetDailyOrdersMetricsUseCase>(
+  GetDailyOrdersMetricsUseCase
+);
+container.registerSingleton<GetStockMetricsUseCase>(GetStockMetricsUseCase);

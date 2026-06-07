@@ -774,9 +774,7 @@
             "description": "Não autorizado"
           }
         }
-      }
-    },
-    "/stock": {
+      },
       "post": {
         "summary": "Cria um novo item de estoque",
         "tags": ["Stock"],
@@ -1132,6 +1130,78 @@
           }
         }
       }
+    },
+    "/metrics/orders/daily": {
+      "get": {
+        "summary": "Obtém métricas diárias de pedidos",
+        "tags": ["Metrics"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2024-01-15"
+            },
+            "description": "Data no formato YYYY-MM-DD (padrão: hoje)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas diárias de pedidos retornadas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyOrdersMetrics"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          },
+          "403": {
+            "description": "Requer admin"
+          }
+        }
+      }
+    },
+    "/metrics/stock": {
+      "get": {
+        "summary": "Obtém métricas de estoque",
+        "tags": ["Metrics"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "WATER"
+            },
+            "description": "Tipo de estoque (WATER, GAS, etc). Se não fornecido, retorna todos os tipos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas de estoque retornadas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockMetrics"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1209,6 +1279,54 @@
           "id": { "type": "integer" },
           "name": { "type": "string" },
           "value": { "type": "number" }
+        }
+      },
+      "DailyOrdersMetrics": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2024-01-15"
+          },
+          "ordersCount": {
+            "type": "integer",
+            "example": 10
+          },
+          "totalRevenue": {
+            "type": "number",
+            "example": 1500.50
+          },
+          "itemsByType": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "WATER": 20,
+              "GAS": 15
+            }
+          }
+        }
+      },
+      "StockMetrics": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "totalQuantity": {
+              "type": "integer",
+              "example": 100
+            }
+          }
+        },
+        "example": {
+          "WATER": {
+            "totalQuantity": 100
+          },
+          "GAS": {
+            "totalQuantity": 50
+          }
         }
       }
     }
