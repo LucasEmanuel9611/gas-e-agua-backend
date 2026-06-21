@@ -380,6 +380,11 @@ export class OrdersRepository implements IOrdersRepository {
           },
         },
         transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
       },
       orderBy: {
         updated_at: "desc",
