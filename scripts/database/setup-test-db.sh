@@ -18,8 +18,13 @@ echo "Creating test database ${TEST_DATABASE_NAME} if needed..."
 
 mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u root -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
   CREATE DATABASE IF NOT EXISTS \`${TEST_DATABASE_NAME}\`;
-  GRANT ALL PRIVILEGES ON \`${TEST_DATABASE_NAME}\`.* TO '${MYSQL_USER}'@'%';
-  FLUSH PRIVILEGES;
 EOSQL
+
+if [ "${MYSQL_USER}" != "root" ]; then
+  mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u root -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
+    GRANT ALL PRIVILEGES ON \`${TEST_DATABASE_NAME}\`.* TO '${MYSQL_USER}'@'%';
+    FLUSH PRIVILEGES;
+EOSQL
+fi
 
 echo "Test database ${TEST_DATABASE_NAME} is ready"
