@@ -93,6 +93,7 @@ describe(OrderCreationService.name, () => {
     mockOrdersRepository = {
       create: jest.fn(),
       findById: jest.fn(),
+      findByIdWithDetails: jest.fn(),
       findByUser: jest.fn(),
       findAll: jest.fn(),
       findAllPaginated: jest.fn(),

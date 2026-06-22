@@ -6,7 +6,12 @@ export const concludeOrderSchema = z.object({
     required_error: "O ID do pedido é obrigatório",
   }),
   status: z.union(
-    [z.literal("FINALIZADO"), z.literal("CANCELADO"), z.literal("PENDENTE")],
+    [
+      z.literal("INICIADO"),
+      z.literal("FINALIZADO"),
+      z.literal("CANCELADO"),
+      z.literal("PENDENTE"),
+    ],
     {
       errorMap: (issue) => {
         if (issue.code === "invalid_type") {

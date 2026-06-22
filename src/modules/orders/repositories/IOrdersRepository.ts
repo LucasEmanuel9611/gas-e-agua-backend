@@ -3,6 +3,7 @@ import { ICreateOrderDTO, OrderProps } from "@modules/orders/types";
 export interface IOrdersRepository {
   create(data: ICreateOrderDTO): Promise<OrderProps>;
   findById(id: number): Promise<OrderProps>;
+  findByIdWithDetails(id: number): Promise<OrderProps | null>;
   findByIdWithPayments(id: number): Promise<OrderProps>;
   findByUser(user_id: string): Promise<OrderProps[]>;
   findAll(): Promise<OrderProps[]>;
