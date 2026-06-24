@@ -251,6 +251,38 @@ export class OrdersRepository implements IOrdersRepository {
     return foundOrderProps as OrderProps;
   }
 
+  async findByIdWithDetails(id: number): Promise<OrderProps | null> {
+    const foundOrder = await prisma.order.findFirst({
+      where: { id },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+          },
+        },
+        transactions: {
+          orderBy: {
+            created_at: "asc",
+          },
+        },
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
+        orderAddons: {
+          include: {
+            addon: true,
+          },
+        },
+      },
+    });
+
+    return foundOrder as OrderProps | null;
+  }
+
   async findByIdWithPayments(id: number): Promise<OrderProps> {
     const foundOrderProps = await prisma.order.findFirst({
       where: { id },

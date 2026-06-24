@@ -21,6 +21,7 @@ import {
   mockEditOrderUseCase,
   mockExpoPushService,
   mockGetStockUseCase,
+  mockGetAdminHomeDashboardUseCase,
   mockListAdminUseCase,
   mockListOrdersByDayUseCase,
   mockListOrdersByUserUseCase,
@@ -39,6 +40,7 @@ import { SendPaymentDueTomorrowNotificationsUseCase } from "./src/modules/notifi
 import { SendPaymentLateNotificationsUseCase } from "./src/modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
 import { EditOrderUseCase } from "./src/modules/orders/useCases/editOrderUseCase/EditOrderUseCase";
+import { GetAdminHomeDashboardUseCase } from "./src/modules/orders/useCases/getAdminHomeDashboard/GetAdminHomeDashboardUseCase";
 import { GetStockUseCase } from "./src/modules/stock/useCases/getStock/GetStockUseCase";
 
 process.env.NODE_ENV = "test";
@@ -47,6 +49,17 @@ process.env.JWT_REFRESH_SECRET =
   "test-jwt-refresh-secret-minimum-32-characters-long";
 
 dotenv.config({ path: ".env.test" });
+
+const TEST_DATABASE_IDENTIFIER = "gas_e_agua_test";
+
+if (
+  !process.env.DATABASE_URL ||
+  !process.env.DATABASE_URL.includes(TEST_DATABASE_IDENTIFIER)
+) {
+  throw new Error(
+    `Tests must use DATABASE_URL with ${TEST_DATABASE_IDENTIFIER}. Check your .env.test file.`
+  );
+}
 
 const prisma = new PrismaClient();
 
@@ -109,6 +122,9 @@ jest.mock("tsyringe", () => {
         }
         if (token === EditOrderUseCase) {
           return mockEditOrderUseCase;
+        }
+        if (token === GetAdminHomeDashboardUseCase) {
+          return mockGetAdminHomeDashboardUseCase;
         }
         if (token === SendPaymentDueIn5DaysNotificationsUseCase) {
           return mockSendOrderPaymentNotificationsUseCase;

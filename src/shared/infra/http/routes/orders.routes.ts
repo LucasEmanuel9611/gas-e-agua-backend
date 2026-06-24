@@ -3,6 +3,8 @@ import { CountOrdersController } from "@modules/orders/useCases/countOrder/Count
 import { CreateOrderController } from "@modules/orders/useCases/createOrder/CreateOrderController";
 import { DeleteOrderController } from "@modules/orders/useCases/deleteOrder/DeleteOrderController";
 import { EditOrderController } from "@modules/orders/useCases/editOrderUseCase/EditOrderController";
+import { GetAdminHomeDashboardController } from "@modules/orders/useCases/getAdminHomeDashboard/GetAdminHomeDashboardController";
+import { GetOrderByIdController } from "@modules/orders/useCases/getOrderById/GetOrderByIdController";
 import { ListOrdersController } from "@modules/orders/useCases/listOrders/listOrdersController";
 import { Router } from "express";
 
@@ -18,6 +20,8 @@ const deleteOrderController = new DeleteOrderController();
 const editOrderController = new EditOrderController();
 const listOrdersController = new ListOrdersController();
 const countOrderController = new CountOrdersController();
+const getAdminHomeDashboardController = new GetAdminHomeDashboardController();
+const getOrderByIdController = new GetOrderByIdController();
 const concludeOrderController = new ConcludeOrderController();
 
 orderRoutes.post("/", ensureAuthenticated, createOrderController.handle);
@@ -41,6 +45,14 @@ orderRoutes.get(
   listOrdersController.handle
 );
 orderRoutes.get("/count", ensureAdmin, countOrderController.handle);
+orderRoutes.get(
+  "/dashboard",
+  ensureAuthenticated,
+  ensureAdmin,
+  getAdminHomeDashboardController.handle
+);
+orderRoutes.get("/:id", ensureAuthenticated, getOrderByIdController.handle);
+
 orderRoutes.put(
   "/:id/conclude",
   ensureAuthenticated,
