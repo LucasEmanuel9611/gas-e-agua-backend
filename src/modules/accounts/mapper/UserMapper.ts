@@ -1,6 +1,11 @@
 import { instanceToInstance } from "class-transformer";
 
-import { IUserResponseDTO, UserDates } from "../types";
+import {
+  IUserResponseDTO,
+  UserDates,
+  AdminUserListItem,
+  UserWithAccountSummary,
+} from "../types";
 
 export class UserMap {
   static toDTO({
@@ -20,5 +25,27 @@ export class UserMap {
       telephone,
     });
     return user;
+  }
+
+  static toAdminListItem({
+    id,
+    username,
+    email,
+    role,
+    telephone,
+    created_at,
+    addresses,
+    accountSummary,
+  }: UserWithAccountSummary): AdminUserListItem {
+    return {
+      id,
+      username,
+      email,
+      role,
+      telephone,
+      created_at,
+      addresses,
+      accountSummary,
+    };
   }
 }

@@ -7,9 +7,35 @@ import {
   IUpdateAddressRequestDTO,
   IUpdateUserDTO,
   UserDates,
+  UserListSortOption,
   UserRole,
+  UserWithAccountSummary,
 } from "../../types";
+import { buildAccountSummary } from "../../utils/buildAccountSummary";
 import { IUsersRepository } from "../interfaces/IUserRepository";
+
+function sortUsersByOption(
+  users: UserWithAccountSummary[],
+  sort: UserListSortOption
+): UserWithAccountSummary[] {
+  if (sort === "name_asc") {
+    return [...users].sort((firstUser, secondUser) =>
+      firstUser.username.localeCompare(secondUser.username)
+    );
+  }
+
+  return [...users].sort((firstUser, secondUser) => {
+    const openBalanceDifference =
+      secondUser.accountSummary.openBalance -
+      firstUser.accountSummary.openBalance;
+
+    if (openBalanceDifference !== 0) {
+      return openBalanceDifference;
+    }
+
+    return firstUser.username.localeCompare(secondUser.username);
+  });
+}
 
 export class UsersRepository implements IUsersRepository {
   async create({
@@ -65,6 +91,37 @@ export class UsersRepository implements IUsersRepository {
     });
 
     return foundUser;
+  }
+
+  async findByIdWithAccountSummary(
+    id: number
+  ): Promise<UserWithAccountSummary | null> {
+    const foundUser = await prisma.user.findFirst({
+      where: {
+        id: Number(id),
+        role: "USER",
+      },
+      include: {
+        addresses: true,
+        orders: {
+          select: {
+            total: true,
+            payment_state: true,
+          },
+        },
+      },
+    });
+
+    if (!foundUser) {
+      return null;
+    }
+
+    const { orders, ...user } = foundUser;
+
+    return {
+      ...(user as UserDates),
+      accountSummary: buildAccountSummary(orders),
+    };
   }
 
   async findAdmin() {
@@ -129,36 +186,54 @@ export class UsersRepository implements IUsersRepository {
     limit,
     offset,
     search,
+    sort = "open_first",
   }: {
     limit: number;
     offset: number;
     search?: string;
-  }): Promise<{ users: UserDates[]; total: number }> {
-    const where = search
+    sort?: UserListSortOption;
+  }): Promise<{ users: UserWithAccountSummary[]; total: number }> {
+    const searchFilter = search
       ? {
           OR: [
-            { username: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-            { telephone: { contains: search, mode: "insensitive" } },
+            { username: { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+            { telephone: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : {};
 
-    const [users, total] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        include: {
-          addresses: true,
-        },
-        skip: offset,
-        take: limit,
-        orderBy: {
-          created_at: "desc",
-        },
-      }),
-      prisma.user.count({ where }),
-    ]);
+    const where = {
+      role: "USER" as UserRole,
+      ...searchFilter,
+    };
 
-    return { users, total };
+    const allUsers = await prisma.user.findMany({
+      where,
+      include: {
+        addresses: true,
+        orders: {
+          select: {
+            total: true,
+            payment_state: true,
+          },
+        },
+      },
+    });
+
+    const usersWithAccountSummary: UserWithAccountSummary[] = allUsers.map(
+      ({ orders, ...user }) => ({
+        ...(user as UserDates),
+        accountSummary: buildAccountSummary(orders),
+      })
+    );
+
+    const sortedUsers = sortUsersByOption(usersWithAccountSummary, sort);
+    const paginatedUsers = sortedUsers.slice(offset, offset + limit);
+
+    return {
+      users: paginatedUsers,
+      total: allUsers.length,
+    };
   }
 }

@@ -52,6 +52,29 @@ export interface IUserResponseDTO {
   role: UserRole;
 }
 
+export type AccountSummary = {
+  openBalance: number;
+  openAccountsCount: number;
+  overdueAccountsCount: number;
+};
+
+export type UserListSortOption = "open_first" | "name_asc";
+
+export type UserWithAccountSummary = UserDates & {
+  accountSummary: AccountSummary;
+};
+
+export type AdminUserListItem = {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+  telephone: string;
+  created_at: Date;
+  addresses: AddressDates[];
+  accountSummary: AccountSummary;
+};
+
 export type OrderStatusTextProps = "APROVADO" | "REPROVADO" | "AGUARDANDO";
 
 export interface ICreateUserDTO {

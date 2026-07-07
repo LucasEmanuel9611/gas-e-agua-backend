@@ -5,12 +5,17 @@ import {
   IUpdateAddressRequestDTO,
   IUpdateUserDTO,
   UserDates,
+  UserListSortOption,
+  UserWithAccountSummary,
 } from "../../types";
 
 export interface IUsersRepository {
   create(data: ICreateUserDTO): Promise<UserDates>;
   findByEmail(email: string): Promise<UserDates>;
   findById(id: number): Promise<UserDates>;
+  findByIdWithAccountSummary(
+    id: number
+  ): Promise<UserWithAccountSummary | null>;
   findAdmin(): Promise<UserDates>;
   update(data: IUpdateUserDTO): Promise<UserDates>;
   deleteAddress(userId: number, addressId: number): Promise<void>;
@@ -21,5 +26,6 @@ export interface IUsersRepository {
     limit: number;
     offset: number;
     search?: string;
-  }): Promise<{ users: UserDates[]; total: number }>;
+    sort?: UserListSortOption;
+  }): Promise<{ users: UserWithAccountSummary[]; total: number }>;
 }

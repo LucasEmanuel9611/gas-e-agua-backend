@@ -1,8 +1,21 @@
 import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { UserDates } from "@modules/accounts/types";
+import { UserDates, UserWithAccountSummary } from "@modules/accounts/types";
 
 import { CleanInvalidTokensUseCase } from "./cleanInvalidTokensUseCase";
+
+const emptyAccountSummary = {
+  openBalance: 0,
+  openAccountsCount: 0,
+  overdueAccountsCount: 0,
+};
+
+function toUserWithAccountSummary(user: UserDates): UserWithAccountSummary {
+  return {
+    ...user,
+    accountSummary: emptyAccountSummary,
+  };
+}
 
 describe(CleanInvalidTokensUseCase.name, () => {
   let usersRepository: jest.Mocked<IUsersRepository>;
@@ -85,7 +98,7 @@ describe(CleanInvalidTokensUseCase.name, () => {
 
   it("should remove invalid tokens (wrong format, marked invalid, empty)", async () => {
     usersRepository.findAll.mockResolvedValue({
-      users: [mockUserWithInvalidTokens],
+      users: [toUserWithAccountSummary(mockUserWithInvalidTokens)],
       total: 1,
     });
     tokenRepository.delete.mockResolvedValue(undefined);
@@ -103,7 +116,7 @@ describe(CleanInvalidTokensUseCase.name, () => {
 
   it("should not remove valid tokens", async () => {
     usersRepository.findAll.mockResolvedValue({
-      users: [mockUserWithValidTokens],
+      users: [toUserWithAccountSummary(mockUserWithValidTokens)],
       total: 1,
     });
 
@@ -116,7 +129,7 @@ describe(CleanInvalidTokensUseCase.name, () => {
 
   it("should skip users without tokens", async () => {
     usersRepository.findAll.mockResolvedValue({
-      users: [mockUserWithNoTokens],
+      users: [toUserWithAccountSummary(mockUserWithNoTokens)],
       total: 1,
     });
 
@@ -130,9 +143,9 @@ describe(CleanInvalidTokensUseCase.name, () => {
   it("should handle multiple users correctly", async () => {
     usersRepository.findAll.mockResolvedValue({
       users: [
-        mockUserWithValidTokens,
-        mockUserWithInvalidTokens,
-        mockUserWithNoTokens,
+        toUserWithAccountSummary(mockUserWithValidTokens),
+        toUserWithAccountSummary(mockUserWithInvalidTokens),
+        toUserWithAccountSummary(mockUserWithNoTokens),
       ],
       total: 3,
     });
@@ -156,7 +169,7 @@ describe(CleanInvalidTokensUseCase.name, () => {
 
   it("should handle token deletion errors", async () => {
     usersRepository.findAll.mockResolvedValue({
-      users: [mockUserWithInvalidTokens],
+      users: [toUserWithAccountSummary(mockUserWithInvalidTokens)],
       total: 1,
     });
     tokenRepository.delete.mockRejectedValue(new Error("Delete failed"));
@@ -181,7 +194,7 @@ describe(CleanInvalidTokensUseCase.name, () => {
     };
 
     usersRepository.findAll.mockResolvedValue({
-      users: [userWithOldToken],
+      users: [toUserWithAccountSummary(userWithOldToken)],
       total: 1,
     });
     tokenRepository.delete.mockResolvedValue(undefined);

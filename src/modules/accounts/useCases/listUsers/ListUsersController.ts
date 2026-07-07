@@ -8,7 +8,12 @@ import { ListUsersUseCase } from "./ListUsersUseCase";
 export class ListUsersController {
   handle = async (request: Request, response: Response) => {
     try {
-      const { page = 1, limit = 10, search } = request.query;
+      const {
+        page = 1,
+        limit = 10,
+        search,
+        sort = "open_first",
+      } = request.query;
 
       const listUsersUseCase = container.resolve(ListUsersUseCase);
 
@@ -16,6 +21,7 @@ export class ListUsersController {
         page: Number(page),
         limit: Number(limit),
         search: search as string,
+        sort: sort as "open_first" | "name_asc",
       });
 
       return response.json(result);

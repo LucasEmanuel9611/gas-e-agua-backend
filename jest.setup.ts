@@ -4,10 +4,14 @@ import "./jest/mocks/queueMocks";
 import { AuthenticateUserUseCase } from "@modules/accounts/useCases/authenticateUser/AuthenticateUserUseCase";
 import { CreateUserUseCase } from "@modules/accounts/useCases/createUser/CreateUserUseCase";
 import { ListUserNotificationTokensUseCase } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensUseCase";
+import { ListUsersUseCase } from "@modules/accounts/useCases/listUsers/ListUsersUseCase";
+import { GetUserByIdAdminUseCase } from "@modules/accounts/useCases/getUserByIdAdmin/GetUserByIdAdminUseCase";
 import { ProfileUserUseCase } from "@modules/accounts/useCases/profileUserUseCase/ProfileUserUsecase";
 import { UpdateUserNotificationTokensUseCase } from "@modules/accounts/useCases/updateUserNotificationTokens/UpdateUserNotificationTokensUseCase";
 import { ListOrdersUseCase } from "@modules/orders/useCases/listOrders/ListOrdersUseCase";
 import { ListOrdersByDayUseCase } from "@modules/orders/useCases/listOrdersByDay/ListOrdersByDayUseCase";
+import { ListUserTransactionsUseCase } from "@modules/orders/useCases/listUserTransactions/ListUserTransactionsUseCase";
+import { ListUserOrdersUseCase } from "@modules/orders/useCases/listUserOrders/ListUserOrdersUseCase";
 import { ListOrdersByUserUseCase } from "@modules/orders/useCases/listOrdersByUser/ListOrdersByUserUseCase";
 import { UpdateStockUseCase } from "@modules/stock/useCases/updateStock/UpdateStockUseCase";
 import { PaymentUseCase } from "@modules/transactions/useCases/payment/PaymentUseCase";
@@ -27,6 +31,10 @@ import {
   mockListOrdersByUserUseCase,
   mockListOrdersUseCase,
   mockListUserNotificationTokensUseCase,
+  mockListUsersUseCase,
+  mockListUserTransactionsUseCase,
+  mockListUserOrdersUseCase,
+  mockGetUserByIdAdminUseCase,
   mockPaymentUseCase,
   mockProfileUserUseCase,
   mockSendOrderPaymentNotificationsUseCase,
@@ -105,6 +113,12 @@ jest.mock("tsyringe", () => {
         if (token === ListOrdersByUserUseCase) {
           return mockListOrdersByUserUseCase;
         }
+        if (token === ListUserOrdersUseCase) {
+          return mockListUserOrdersUseCase;
+        }
+        if (token === ListUserTransactionsUseCase) {
+          return mockListUserTransactionsUseCase;
+        }
         if (token === UpdateStockUseCase) {
           return mockUpdateStockUseCase;
         }
@@ -140,6 +154,12 @@ jest.mock("tsyringe", () => {
         }
         if (token === ListUserNotificationTokensUseCase) {
           return { execute: mockListUserNotificationTokensUseCase };
+        }
+        if (token === ListUsersUseCase) {
+          return mockListUsersUseCase;
+        }
+        if (token === GetUserByIdAdminUseCase) {
+          return mockGetUserByIdAdminUseCase;
         }
         if (token === ExpoPushService) {
           return mockExpoPushService;

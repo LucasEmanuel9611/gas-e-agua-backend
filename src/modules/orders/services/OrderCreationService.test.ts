@@ -84,6 +84,7 @@ describe(OrderCreationService.name, () => {
       findByEmail: jest.fn(),
       update: jest.fn(),
       findAll: jest.fn(),
+      findByIdWithAccountSummary: jest.fn(),
       findAdmin: jest.fn(),
       deleteAddress: jest.fn(),
       createAddress: jest.fn(),
@@ -126,6 +127,7 @@ describe(OrderCreationService.name, () => {
       create: jest.fn(),
       findById: jest.fn(),
       findByOrderId: jest.fn(),
+      findByUserIdPaginated: jest.fn(),
     };
 
     mockUserAddressRepository = {
