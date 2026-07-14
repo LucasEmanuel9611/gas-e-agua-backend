@@ -1,5 +1,7 @@
 import { prisma } from "@shared/infra/database/prisma";
 
+import { AddressMap } from "../../mapper/AddressMapper";
+import { UserMap } from "../../mapper/UserMapper";
 import {
   AddressDates,
   ICreateAddressRequestDTO,
@@ -12,30 +14,8 @@ import {
   UserWithAccountSummary,
 } from "../../types";
 import { buildAccountSummary } from "../../utils/buildAccountSummary";
+import { sortUsersByOption } from "../../utils/sortUsersByOption";
 import { IUsersRepository } from "../interfaces/IUserRepository";
-
-function sortUsersByOption(
-  users: UserWithAccountSummary[],
-  sort: UserListSortOption
-): UserWithAccountSummary[] {
-  if (sort === "name_asc") {
-    return [...users].sort((firstUser, secondUser) =>
-      firstUser.username.localeCompare(secondUser.username)
-    );
-  }
-
-  return [...users].sort((firstUser, secondUser) => {
-    const openBalanceDifference =
-      secondUser.accountSummary.openBalance -
-      firstUser.accountSummary.openBalance;
-
-    if (openBalanceDifference !== 0) {
-      return openBalanceDifference;
-    }
-
-    return firstUser.username.localeCompare(secondUser.username);
-  });
-}
 
 export class UsersRepository implements IUsersRepository {
   async create({
@@ -45,22 +25,21 @@ export class UsersRepository implements IUsersRepository {
     telephone,
     address,
   }: ICreateUserDTO): Promise<UserDates> {
-    const user = {
-      username,
-      email,
-      role: "USER" as UserRole,
-      password,
-      telephone,
-    };
-
     const createdUser = await prisma.user.create({
       data: {
-        ...user,
+        username,
+        email,
+        role: "USER",
+        password,
+        telephone,
         addresses: {
           create: {
-            ...address,
+            street: address.street,
+            reference: address.reference,
+            local: address.local,
+            number: address.number,
             isDefault: true,
-          } as AddressDates,
+          },
         },
       },
       include: {
@@ -68,10 +47,10 @@ export class UsersRepository implements IUsersRepository {
       },
     });
 
-    return createdUser;
+    return UserMap.toDomain(createdUser);
   }
 
-  async findByEmail(email: string): Promise<UserDates> {
+  async findByEmail(email: string): Promise<UserDates | null> {
     const foundUser = await prisma.user.findFirst({
       where: { email },
       include: {
@@ -79,10 +58,14 @@ export class UsersRepository implements IUsersRepository {
       },
     });
 
-    return foundUser;
+    if (!foundUser) {
+      return null;
+    }
+
+    return UserMap.toDomain(foundUser);
   }
 
-  async findById(id: number): Promise<UserDates> {
+  async findById(id: number): Promise<UserDates | null> {
     const foundUser = await prisma.user.findFirst({
       where: { id: Number(id) },
       include: {
@@ -90,7 +73,11 @@ export class UsersRepository implements IUsersRepository {
       },
     });
 
-    return foundUser;
+    if (!foundUser) {
+      return null;
+    }
+
+    return UserMap.toDomain(foundUser);
   }
 
   async findByIdWithAccountSummary(
@@ -119,12 +106,12 @@ export class UsersRepository implements IUsersRepository {
     const { orders, ...user } = foundUser;
 
     return {
-      ...(user as UserDates),
+      ...UserMap.toDomain(user),
       accountSummary: buildAccountSummary(orders),
     };
   }
 
-  async findAdmin() {
+  async findAdmin(): Promise<UserDates | null> {
     const foundUser = await prisma.user.findFirst({
       where: {
         role: "ADMIN",
@@ -135,15 +122,25 @@ export class UsersRepository implements IUsersRepository {
       },
     });
 
-    return foundUser;
+    if (!foundUser) {
+      return null;
+    }
+
+    return UserMap.toDomain(foundUser);
   }
 
-  async update({ id, username, telephone }: IUpdateUserDTO) {
-    return prisma.user.update({
+  async update({
+    id,
+    username,
+    telephone,
+  }: IUpdateUserDTO): Promise<UserDates> {
+    const updatedUser = await prisma.user.update({
       data: { username, telephone },
       include: { addresses: true },
       where: { id },
     });
+
+    return UserMap.toDomain(updatedUser);
   }
 
   async deleteAddress(userId: number, addressId: number): Promise<void> {
@@ -160,12 +157,15 @@ export class UsersRepository implements IUsersRepository {
 
     const createdAddress = await prisma.address.create({
       data: {
-        ...address,
+        street: address.street,
+        reference: address.reference,
+        local: address.local,
+        number: address.number,
         user_id: userId,
       },
     });
 
-    return createdAddress;
+    return AddressMap.toDomain(createdAddress);
   }
 
   async updateAddress(data: IUpdateAddressRequestDTO): Promise<AddressDates> {
@@ -176,17 +176,23 @@ export class UsersRepository implements IUsersRepository {
         id: addressId,
         user_id: userId,
       },
-      data: address,
+      data: {
+        street: address.street,
+        reference: address.reference,
+        local: address.local,
+        number: address.number,
+        isDefault: address.isDefault,
+      },
     });
 
-    return updatedAddress;
+    return AddressMap.toDomain(updatedAddress);
   }
 
   async findAll({
     limit,
     offset,
     search,
-    sort = "open_first",
+    sort = "highest_debt_first",
   }: {
     limit: number;
     offset: number;
@@ -223,7 +229,7 @@ export class UsersRepository implements IUsersRepository {
 
     const usersWithAccountSummary: UserWithAccountSummary[] = allUsers.map(
       ({ orders, ...user }) => ({
-        ...(user as UserDates),
+        ...UserMap.toDomain(user),
         accountSummary: buildAccountSummary(orders),
       })
     );

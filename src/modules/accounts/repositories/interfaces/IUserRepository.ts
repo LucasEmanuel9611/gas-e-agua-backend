@@ -11,12 +11,12 @@ import {
 
 export interface IUsersRepository {
   create(data: ICreateUserDTO): Promise<UserDates>;
-  findByEmail(email: string): Promise<UserDates>;
-  findById(id: number): Promise<UserDates>;
+  findByEmail(email: string): Promise<UserDates | null>;
+  findById(id: number): Promise<UserDates | null>;
   findByIdWithAccountSummary(
     id: number
   ): Promise<UserWithAccountSummary | null>;
-  findAdmin(): Promise<UserDates>;
+  findAdmin(): Promise<UserDates | null>;
   update(data: IUpdateUserDTO): Promise<UserDates>;
   deleteAddress(userId: number, addressId: number): Promise<void>;
   createAddress(data: ICreateAddressRequestDTO): Promise<AddressDates>;

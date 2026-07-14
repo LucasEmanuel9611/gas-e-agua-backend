@@ -2,25 +2,30 @@ import { AddressDates, ICreateAddressDTO } from "@modules/accounts/types";
 
 import { prisma } from "@shared/infra/database/prisma";
 
+import { AddressMap } from "../../mapper/AddressMapper";
 import { IUserAddressRepository } from "../interfaces/IUserAddressRepository";
 
 export class UserAddressRepository implements IUserAddressRepository {
-  async findById(id: number): Promise<AddressDates> {
-    const foundUser = await prisma.address.findFirst({
+  async findById(id: number): Promise<AddressDates | null> {
+    const foundAddress = await prisma.address.findFirst({
       where: { id: Number(id) },
     });
 
-    return foundUser;
+    if (!foundAddress) {
+      return null;
+    }
+
+    return AddressMap.toDomain(foundAddress);
   }
 
   async create(address: ICreateAddressDTO): Promise<AddressDates> {
-    const createdUserNotificationToken = await prisma.address.create({
+    const createdAddress = await prisma.address.create({
       data: {
         ...address,
       },
     });
 
-    return createdUserNotificationToken;
+    return AddressMap.toDomain(createdAddress);
   }
 
   async update(address: ICreateAddressDTO): Promise<AddressDates> {
@@ -34,6 +39,6 @@ export class UserAddressRepository implements IUserAddressRepository {
       },
     });
 
-    return updatedAddress;
+    return AddressMap.toDomain(updatedAddress);
   }
 }
