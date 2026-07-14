@@ -65,7 +65,7 @@ describe("ListUsersController", () => {
       page: 1,
       limit: 10,
       search: "João",
-      sort: "open_first",
+      sort: "highest_debt_first",
     });
   });
 

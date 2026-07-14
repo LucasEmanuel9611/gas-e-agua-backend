@@ -29,7 +29,7 @@ export class ListUsersUseCase {
     page = 1,
     limit = 10,
     search,
-    sort = "open_first",
+    sort = "highest_debt_first",
   }: IRequest): Promise<IResponse> {
     const offset = (page - 1) * limit;
 

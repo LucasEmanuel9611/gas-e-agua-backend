@@ -67,13 +67,13 @@ describe(ListUsersUseCase.name, () => {
     );
   });
 
-  it("should pass sort open_first as default to repository", async () => {
+  it("should pass sort highest_debt_first as default to repository", async () => {
     usersRepository.findAll.mockResolvedValue({ users: [], total: 0 });
 
     await listUsersUseCase.execute({ page: 1, limit: 10 });
 
     expect(usersRepository.findAll).toHaveBeenCalledWith(
-      expect.objectContaining({ sort: "open_first" })
+      expect.objectContaining({ sort: "highest_debt_first" })
     );
   });
 

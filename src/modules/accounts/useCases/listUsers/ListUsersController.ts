@@ -12,7 +12,7 @@ export class ListUsersController {
         page = 1,
         limit = 10,
         search,
-        sort = "open_first",
+        sort = "highest_debt_first",
       } = request.query;
 
       const listUsersUseCase = container.resolve(ListUsersUseCase);
@@ -21,7 +21,7 @@ export class ListUsersController {
         page: Number(page),
         limit: Number(limit),
         search: search as string,
-        sort: sort as "open_first" | "name_asc",
+        sort: sort as "highest_debt_first" | "name_asc",
       });
 
       return response.json(result);

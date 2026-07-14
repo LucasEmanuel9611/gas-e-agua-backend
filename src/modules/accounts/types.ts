@@ -58,7 +58,7 @@ export type AccountSummary = {
   overdueAccountsCount: number;
 };
 
-export type UserListSortOption = "open_first" | "name_asc";
+export type UserListSortOption = "highest_debt_first" | "name_asc";
 
 export type UserWithAccountSummary = UserDates & {
   accountSummary: AccountSummary;
