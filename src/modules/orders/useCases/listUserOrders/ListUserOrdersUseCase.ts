@@ -21,7 +21,7 @@ export class ListUserOrdersUseCase {
 
   async execute({
     userId,
-    sort = "open_first",
+    sort = "unpaid_first",
   }: IRequest): Promise<OrderProps[]> {
     const userAccounts = await this.ordersRepository.findByUser(userId);
 

@@ -47,14 +47,14 @@ describe("ListUserOrdersController", () => {
 
     const response = await request(app)
       .get("/users/1/orders")
-      .query({ sort: "open_first" })
+      .query({ sort: "unpaid_first" })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockAccounts);
     expect(mockListUserOrdersUseCase.execute).toHaveBeenCalledWith({
       userId: "1",
-      sort: "open_first",
+      sort: "unpaid_first",
     });
   });
 });

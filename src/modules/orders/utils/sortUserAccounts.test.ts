@@ -28,18 +28,18 @@ describe(sortUserAccounts.name, () => {
       buildAccount(4, "PARCIALMENTE_PAGO", 80, "2024-01-15T00:00:00.000Z"),
     ];
 
-    const sortedAccounts = sortUserAccounts(accounts, "open_first");
+    const sortedAccounts = sortUserAccounts(accounts, "unpaid_first");
 
     expect(sortedAccounts.map((account) => account.id)).toEqual([2, 4, 3, 1]);
   });
 
-  it("should sort by updated_at desc within same payment state on open_first", () => {
+  it("should sort by updated_at desc within same payment state on unpaid_first", () => {
     const accounts = [
       buildAccount(1, "PENDENTE", 50, "2024-01-01T00:00:00.000Z"),
       buildAccount(2, "PENDENTE", 60, "2024-03-01T00:00:00.000Z"),
     ];
 
-    const sortedAccounts = sortUserAccounts(accounts, "open_first");
+    const sortedAccounts = sortUserAccounts(accounts, "unpaid_first");
 
     expect(sortedAccounts.map((account) => account.id)).toEqual([2, 1]);
   });

@@ -33,7 +33,7 @@ describe(ListUserOrdersUseCase.name, () => {
     listUserOrdersUseCase = new ListUserOrdersUseCase(ordersRepository);
   });
 
-  it("should return sorted accounts with open_first as default", async () => {
+  it("should return sorted accounts with unpaid_first as default", async () => {
     const accounts = [
       buildAccount(1, "PAGO", 0, "2024-03-01T00:00:00.000Z"),
       buildAccount(2, "VENCIDO", 100, "2024-01-01T00:00:00.000Z"),

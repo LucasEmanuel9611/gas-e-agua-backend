@@ -8,14 +8,14 @@ export class ListUserOrdersController {
   handle = async (request: Request, response: Response) => {
     try {
       const { userId } = request.params;
-      const { sort = "open_first" } = request.query;
+      const { sort = "unpaid_first" } = request.query;
 
       const listUserOrdersUseCase = container.resolve(ListUserOrdersUseCase);
 
       const accounts = await listUserOrdersUseCase.execute({
         userId,
         sort: sort as
-          | "open_first"
+          | "unpaid_first"
           | "date_desc"
           | "date_asc"
           | "balance_desc"

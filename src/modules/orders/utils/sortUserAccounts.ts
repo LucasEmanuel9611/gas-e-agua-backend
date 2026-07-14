@@ -1,7 +1,7 @@
 import { OrderPaymentStatus, OrderProps } from "@modules/orders/types";
 
 export type AccountSortOption =
-  | "open_first"
+  | "unpaid_first"
   | "date_desc"
   | "date_asc"
   | "balance_desc"
@@ -20,7 +20,7 @@ function getUpdatedAtTimestamp(order: OrderProps): number {
 
 export function sortUserAccounts(
   accounts: OrderProps[],
-  sort: AccountSortOption = "open_first"
+  sort: AccountSortOption = "unpaid_first"
 ): OrderProps[] {
   const sortedAccounts = [...accounts];
 
