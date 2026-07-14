@@ -31,3 +31,13 @@ export interface ITransaction {
   created_at: Date;
   updated_at: Date;
 }
+
+export type TransactionSortOption =
+  | "date_desc"
+  | "date_asc"
+  | "amount_desc"
+  | "amount_asc";
+
+export type UserAccountTransaction = ITransaction & {
+  accountPaymentState: string;
+};
