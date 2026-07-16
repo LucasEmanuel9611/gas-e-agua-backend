@@ -1,6 +1,7 @@
+import { OrderAccessPolicy } from "@modules/orders/policies/OrderAccessPolicy";
 import { NextFunction, Request, Response } from "express";
 
-import { ensureAdmin } from "./ensureAdmin";
+import { AppError } from "@shared/errors/AppError";
 
 export async function ensureAdminForAllScope(
   req: Request,
@@ -9,8 +10,17 @@ export async function ensureAdminForAllScope(
 ) {
   const scope =
     typeof req.query.scope === "string" ? req.query.scope : undefined;
+
   if (scope && scope.toLowerCase() === "all") {
-    return ensureAdmin(req, res, next);
+    const { user } = req;
+
+    if (!user || !OrderAccessPolicy.canListAllOrders(user.role)) {
+      throw new AppError({
+        message: "Acesso negado. Permissão insuficiente.",
+        statusCode: 403,
+      });
+    }
   }
+
   return next();
 }

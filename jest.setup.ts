@@ -26,6 +26,7 @@ import {
   mockExpoPushService,
   mockGetStockUseCase,
   mockGetAdminHomeDashboardUseCase,
+  mockGetDeliveryDaySummaryUseCase,
   mockListAdminUseCase,
   mockListOrdersByDayUseCase,
   mockListOrdersByUserUseCase,
@@ -49,6 +50,7 @@ import { SendPaymentLateNotificationsUseCase } from "./src/modules/notifications
 import { CreateOrderUseCase } from "./src/modules/orders/useCases/createOrder/CreateOrderUseCase";
 import { EditOrderUseCase } from "./src/modules/orders/useCases/editOrderUseCase/EditOrderUseCase";
 import { GetAdminHomeDashboardUseCase } from "./src/modules/orders/useCases/getAdminHomeDashboard/GetAdminHomeDashboardUseCase";
+import { GetDeliveryDaySummaryUseCase } from "./src/modules/orders/useCases/getDeliveryDaySummary/GetDeliveryDaySummaryUseCase";
 import { GetStockUseCase } from "./src/modules/stock/useCases/getStock/GetStockUseCase";
 
 process.env.NODE_ENV = "test";
@@ -139,6 +141,9 @@ jest.mock("tsyringe", () => {
         }
         if (token === GetAdminHomeDashboardUseCase) {
           return mockGetAdminHomeDashboardUseCase;
+        }
+        if (token === GetDeliveryDaySummaryUseCase) {
+          return mockGetDeliveryDaySummaryUseCase;
         }
         if (token === SendPaymentDueIn5DaysNotificationsUseCase) {
           return mockSendOrderPaymentNotificationsUseCase;
