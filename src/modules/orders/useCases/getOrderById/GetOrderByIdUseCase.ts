@@ -1,3 +1,4 @@
+import { OrderAccessPolicy } from "@modules/orders/policies/OrderAccessPolicy";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
 import { inject, injectable } from "tsyringe";
@@ -31,9 +32,12 @@ export class GetOrderByIdUseCase {
       });
     }
 
-    const isAdmin = requestUserRole === "ADMIN";
+    const canViewOrder = OrderAccessPolicy.canViewOrder(
+      { userId: requestUserId, role: requestUserRole },
+      { ownerUserId: order.user_id }
+    );
 
-    if (!isAdmin && order.user_id !== requestUserId) {
+    if (!canViewOrder) {
       throw new AppError({
         message: "Acesso negado. Permissão insuficiente.",
         statusCode: 403,

@@ -15,6 +15,7 @@ export const mockPaymentUseCase = { execute: jest.fn() };
 export const mockEditOrderUseCase = { execute: jest.fn() };
 export const mockListOrdersByDayUseCase = { execute: jest.fn() };
 export const mockGetAdminHomeDashboardUseCase = { execute: jest.fn() };
+export const mockGetDeliveryDaySummaryUseCase = { execute: jest.fn() };
 export const mockListOrdersByUserUseCase = { execute: jest.fn() };
 export const mockListUsersUseCase = { execute: jest.fn() };
 export const mockListUserTransactionsUseCase = { execute: jest.fn() };

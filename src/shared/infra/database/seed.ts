@@ -56,6 +56,18 @@ const SEED_USERS: SeedUser[] = [
       local: "Centro",
     },
   },
+  {
+    email: "entregador@teste.com",
+    username: "Eduardo Entregador",
+    telephone: "81977777",
+    role: "DELIVERY_MAN",
+    address: {
+      street: "Rua das Entregas",
+      reference: "Base de distribuição",
+      number: "50",
+      local: "Centro",
+    },
+  },
 ];
 
 const SEED_STOCK_ITEMS: SeedStockItem[] = [
