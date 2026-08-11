@@ -34,20 +34,25 @@ else
   exit 1
 fi
 
-if [ ! -f "$ENV_FILE" ]; then
+if [ -n "${MYSQL_ROOT_PASSWORD:-}" ] && [ -n "${MYSQL_DATABASE:-}" ]; then
+  echo "📄 Credenciais carregadas das variáveis de ambiente"
+elif [ -f "$ENV_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  echo "📄 Credenciais carregadas de: $ENV_FILE"
+else
   echo "❌ Arquivo de ambiente não encontrado: $ENV_FILE"
+  echo "   E MYSQL_ROOT_PASSWORD/MYSQL_DATABASE também não estão definidos no ambiente"
   exit 1
 fi
 
-source "$ENV_FILE"
-
-if [ -z "$MYSQL_DATABASE" ]; then
-  echo "❌ MYSQL_DATABASE não encontrado no arquivo $ENV_FILE"
+if [ -z "${MYSQL_DATABASE:-}" ]; then
+  echo "❌ MYSQL_DATABASE não encontrado"
   exit 1
 fi
 
-if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
-  echo "❌ MYSQL_ROOT_PASSWORD não encontrado no arquivo $ENV_FILE"
+if [ -z "${MYSQL_ROOT_PASSWORD:-}" ]; then
+  echo "❌ MYSQL_ROOT_PASSWORD não encontrado"
   exit 1
 fi
 

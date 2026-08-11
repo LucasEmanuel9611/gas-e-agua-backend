@@ -46,6 +46,7 @@ jobs:
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             scripts/deploy/deploy.sh \
             scripts/deploy/backup-db.sh \
+            scripts/deploy/sync-mysql-credentials.sh \
             scripts/deploy/rollback.sh \
             scripts/deploy/cleanup-old-versions.sh \
             ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/scripts/deploy/
@@ -69,6 +70,8 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
+          mysql-root-password: ${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
+          mysql-database: gas_e_agua_dev
 
       # Etapa 4: Deploy da aplicação (login GHCR, .env temporário, script deploy.sh na VPS)
       - name: Deploy application

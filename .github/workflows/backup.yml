@@ -35,14 +35,29 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+          MYSQL_ROOT_PASSWORD_DEV: ${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
+          MYSQL_ROOT_PASSWORD_PRD: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
         run: |
           echo "📦 Iniciando backup no ambiente: ${ENVIRONMENT}"
           echo "🔗 Conectando em ${VPS_USER}@${VPS_HOST}..."
           echo ""
 
+          if [ "$ENVIRONMENT" = "prd" ]; then
+            MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD_PRD"
+            MYSQL_DATABASE="gas_e_agua"
+          else
+            MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD_DEV"
+            MYSQL_DATABASE="gas_e_agua_dev"
+          fi
+
           # Executa o backup e mostra output em tempo real
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${VPS_USER}@${VPS_HOST} \
-            "cd /home/deploy/gas-e-agua-backend && bash ./scripts/deploy/backup-db.sh ${ENVIRONMENT}" | tee /tmp/backup_output.txt
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${VPS_USER}@${VPS_HOST} bash <<EOF | tee /tmp/backup_output.txt
+          set -e
+          cd /home/deploy/gas-e-agua-backend
+          export MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
+          export MYSQL_DATABASE="$MYSQL_DATABASE"
+          bash ./scripts/deploy/backup-db.sh ${ENVIRONMENT}
+          EOF
 
           SSH_EXIT_CODE=${PIPESTATUS[0]}
 
