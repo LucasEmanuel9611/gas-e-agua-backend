@@ -230,6 +230,39 @@ export class ExpoPushService {
     }
   }
 
+  async sendPushToAdmins(
+    payload: Omit<IPushNotificationPayload, "to">
+  ): Promise<{
+    success: boolean;
+    sent: number;
+    failed: number;
+    total: number;
+    errors: string[];
+  }> {
+    const admins = await this.usersRepository.findAdmins();
+    const tokens = admins.flatMap((admin) => {
+      const adminTokens = admin.notificationTokens ?? [];
+      return adminTokens
+        .filter((tokenRecord) => tokenRecord.is_valid !== false)
+        .map((tokenRecord) => tokenRecord.token);
+    });
+
+    if (tokens.length === 0) {
+      return {
+        success: false,
+        sent: 0,
+        failed: 0,
+        total: 0,
+        errors: ["No valid tokens"],
+      };
+    }
+
+    return this.sendPushNotification({
+      ...payload,
+      to: tokens,
+    });
+  }
+
   private async markTokenAsInvalid(tokenId: number): Promise<void> {
     try {
       await this.tokenRepository.markAsInvalid(tokenId);

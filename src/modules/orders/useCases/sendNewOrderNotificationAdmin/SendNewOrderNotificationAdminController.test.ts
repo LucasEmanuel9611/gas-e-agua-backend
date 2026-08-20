@@ -25,27 +25,10 @@ describe("SendNewOrderNotificationAdminController", () => {
   });
 
   it("should send notification successfully and return 200", async () => {
-    const mockUser = {
-      notificationTokens: [
-        {
-          token: "ExponentPushToken[test123]",
-          id: 1,
-          user_id: 1,
-          is_valid: true,
-        },
-        {
-          token: "ExponentPushToken[test456]",
-          id: 2,
-          user_id: 1,
-          is_valid: true,
-        },
-      ],
-    };
-
     jest.spyOn(container, "resolve").mockImplementation((token: any) => {
       if (token.name === "ExpoPushService") {
         return {
-          sendPushNotification: jest.fn().mockResolvedValue({
+          sendPushToAdmins: jest.fn().mockResolvedValue({
             success: true,
             sent: 2,
             failed: 0,
@@ -53,9 +36,6 @@ describe("SendNewOrderNotificationAdminController", () => {
             errors: [],
           }),
         };
-      }
-      if (token.name === "ListAdminUserUseCase") {
-        return { execute: jest.fn().mockResolvedValue(mockUser) };
       }
       return null;
     });
@@ -140,27 +120,13 @@ describe("SendNewOrderNotificationAdminController", () => {
   });
 
   it("should handle notification error gracefully", async () => {
-    const mockUser = {
-      notificationTokens: [
-        {
-          token: "ExponentPushToken[test123]",
-          id: 1,
-          user_id: 1,
-          is_valid: true,
-        },
-      ],
-    };
-
     jest.spyOn(container, "resolve").mockImplementation((token: any) => {
       if (token.name === "ExpoPushService") {
         return {
-          sendPushNotification: jest
+          sendPushToAdmins: jest
             .fn()
             .mockRejectedValue(new Error("Notification failed")),
         };
-      }
-      if (token.name === "ListAdminUserUseCase") {
-        return { execute: jest.fn().mockResolvedValue(mockUser) };
       }
       return null;
     });
@@ -181,24 +147,17 @@ describe("SendNewOrderNotificationAdminController", () => {
   });
 
   it("should return 400 with empty tokens array", async () => {
-    const mockUser = {
-      notificationTokens: [],
-    };
-
     jest.spyOn(container, "resolve").mockImplementation((token: any) => {
       if (token.name === "ExpoPushService") {
         return {
-          sendPushNotification: jest.fn().mockResolvedValue({
-            success: true,
+          sendPushToAdmins: jest.fn().mockResolvedValue({
+            success: false,
             sent: 0,
             failed: 0,
             total: 0,
-            errors: [],
+            errors: ["No valid tokens"],
           }),
         };
-      }
-      if (token.name === "ListAdminUserUseCase") {
-        return { execute: jest.fn().mockResolvedValue(mockUser) };
       }
       return null;
     });

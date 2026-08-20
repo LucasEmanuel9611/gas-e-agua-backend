@@ -75,6 +75,7 @@ describe(ListOrdersUseCase.name, () => {
       limit: 20,
       userId: undefined,
       date: undefined,
+      openAccounts: undefined,
     });
     expect(result).toEqual({
       items: mockOrders,
@@ -86,6 +87,27 @@ describe(ListOrdersUseCase.name, () => {
         hasNext: false,
         hasPrev: false,
       },
+    });
+  });
+
+  it("should forward openAccounts to the repository", async () => {
+    (ordersRepository.findAllPaginated as jest.Mock).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+
+    await listOrdersUseCase.execute({
+      page: 1,
+      limit: 100,
+      openAccounts: true,
+    });
+
+    expect(ordersRepository.findAllPaginated).toHaveBeenCalledWith({
+      page: 1,
+      limit: 100,
+      userId: undefined,
+      date: undefined,
+      openAccounts: true,
     });
   });
 

@@ -106,7 +106,7 @@ describe("CreateOrderController", () => {
       ],
       addons: [],
     });
-    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalled();
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
@@ -681,6 +681,46 @@ describe("CreateOrderController - Policy Tests", () => {
     });
   });
 
+  it("should allow regular user to send intended_payment_method", async () => {
+    mockUserRole = "USER";
+
+    const adminUser = { id: 1, notificationTokens: ["token1"] };
+    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+    mockGetStockUseCase.execute.mockResolvedValue([
+      { name: "Gás", quantity: 10 },
+      { name: "Água", quantity: 20 },
+    ]);
+    const mockOrder = {
+      id: 1,
+      user_id: 5,
+      total: 30,
+      intended_payment_method: "PIX",
+      orderItems: [],
+      orderAddons: [],
+    };
+    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+
+    const response = await request(app)
+      .post("/orders/")
+      .send({
+        items: [
+          { id: 1, type: "GAS", quantity: 1 },
+          { id: 2, type: "WATER", quantity: 1 },
+        ],
+        addons: [],
+        intended_payment_method: "PIX",
+      })
+      .set("Authorization", "Bearer token");
+
+    expect(response.status).toBe(201);
+    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 5,
+        intended_payment_method: "PIX",
+      })
+    );
+  });
+
   it("should return success message when notification succeeds", async () => {
     const adminUser = { id: 1, notificationTokens: ["token1"] };
     mockListAdminUseCase.execute.mockResolvedValue(adminUser);
@@ -773,7 +813,7 @@ describe("CreateOrderController - Policy Tests", () => {
       orderAddons: [],
     };
     mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockExpoPushService.sendPushNotification.mockRejectedValueOnce(
+    mockExpoPushService.sendPushToAdmins.mockRejectedValueOnce(
       new Error("Falha na notificação")
     );
 

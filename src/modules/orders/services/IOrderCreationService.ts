@@ -14,6 +14,7 @@ export interface IOrderCreationData {
   }>;
   status?: "INICIADO" | "PENDENTE" | "FINALIZADO";
   payment_state?: "PENDENTE" | "PAGO" | "VENCIDO" | "PARCIALMENTE_PAGO";
+  intended_payment_method?: "DINHEIRO" | "PIX" | "CARTAO" | "TRANSFERENCIA";
   total?: number;
   interest_allowed?: boolean;
   overdue_amount?: number;

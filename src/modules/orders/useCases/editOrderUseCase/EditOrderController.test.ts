@@ -102,8 +102,7 @@ describe("EditOrderController", () => {
       ],
       addons: [],
     });
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalled();
   });
 
   it("should edit order with water bottle addon", async () => {
@@ -173,8 +172,7 @@ describe("EditOrderController", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
-    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalled();
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
       items: [{ id: 1, type: "GAS", quantity: 1 }],
@@ -249,13 +247,12 @@ describe("EditOrderController", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockOrder);
-    expect(mockListAdminUserUseCase.execute).toHaveBeenCalled();
     expect(mockEditOrderUseCase.execute).toHaveBeenCalledWith({
       order_id: "123",
       items: [{ id: 2, type: "WATER", quantity: 1 }],
       addons: [{ id: 2, type: "GAS_VESSEL", quantity: 1 }],
     });
-    expect(mockExpoPushService.sendPushNotification).toHaveBeenCalled();
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalled();
   });
 });
 
@@ -477,10 +474,10 @@ it("should update order date successfully and return 200", async () => {
   });
 });
 
-it("should return 200 even if ListAdminUserUseCase throws an error (notification is non-blocking)", async () => {
+it("should return 200 even if sendPushToAdmins throws an error (notification is non-blocking)", async () => {
   const mockOrder = { id: 123, user_id: 456 };
   mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
-  mockListAdminUserUseCase.execute.mockRejectedValue(
+  mockExpoPushService.sendPushToAdmins.mockRejectedValueOnce(
     new Error("Admin user error")
   );
 
@@ -529,7 +526,7 @@ it("should handle ExpoPushService error gracefully and still return 200", async 
 
   mockEditOrderUseCase.execute.mockResolvedValue(mockOrder);
   mockListAdminUserUseCase.execute.mockResolvedValue(mockAdminUser);
-  mockExpoPushService.sendPushNotification.mockRejectedValueOnce(
+  mockExpoPushService.sendPushToAdmins.mockRejectedValueOnce(
     new Error("Notification error")
   );
 

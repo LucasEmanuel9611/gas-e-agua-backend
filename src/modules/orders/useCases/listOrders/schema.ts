@@ -15,4 +15,11 @@ export const listOrdersSchema = z.object({
     })
   ),
   date: z.string().optional(),
+  openAccounts: z.preprocess((value) => {
+    if (value === "true" || value === true) {
+      return true;
+    }
+
+    return false;
+  }, z.boolean()),
 });

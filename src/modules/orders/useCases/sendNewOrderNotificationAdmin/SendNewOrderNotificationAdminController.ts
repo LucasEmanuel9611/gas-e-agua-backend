@@ -1,4 +1,3 @@
-import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
@@ -17,23 +16,15 @@ export class SendNewOrderNotificationAdminController {
       );
 
       const expoPushService = container.resolve(ExpoPushService);
-      const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
-      const adminUser = await listAdminUserUseCase.execute();
-
-      const tokens = adminUser.notificationTokens
-        .filter((t) => t.is_valid !== false)
-        .map((t) => t.token);
-
-      if (tokens.length === 0) {
-        return response.status(400).json({ error: "No valid tokens found" });
-      }
-
-      const result = await expoPushService.sendPushNotification({
-        to: tokens,
+      const result = await expoPushService.sendPushToAdmins({
         title,
         body: message,
         data: { notificationType: "admin_notification" },
       });
+
+      if (result.sent === 0) {
+        return response.status(400).json({ error: "No valid tokens found" });
+      }
 
       return response.status(200).json({
         sent: result.sent,

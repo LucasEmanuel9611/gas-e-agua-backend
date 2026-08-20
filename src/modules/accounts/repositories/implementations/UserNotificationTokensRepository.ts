@@ -22,14 +22,19 @@ export class UserNotificationTokensRepository
     userId: number,
     newToken: string
   ): Promise<NotificationTokenProps> {
-    const createdUserNotificationToken = await prisma.notificationToken.create({
-      data: {
+    const upsertedToken = await prisma.notificationToken.upsert({
+      where: { token: newToken },
+      update: {
+        user_id: userId,
+        is_valid: true,
+      },
+      create: {
         token: newToken,
         user_id: userId,
       },
     });
 
-    return createdUserNotificationToken;
+    return upsertedToken;
   }
 
   async delete(tokenId: number): Promise<void> {

@@ -31,6 +31,13 @@ export const mockExpoPushService = {
     total: 1,
     errors: [],
   }),
+  sendPushToAdmins: jest.fn().mockResolvedValue({
+    success: true,
+    sent: 1,
+    failed: 0,
+    total: 1,
+    errors: [],
+  }),
   sendPushToUser: jest.fn().mockResolvedValue({
     success: true,
     sent: 1,

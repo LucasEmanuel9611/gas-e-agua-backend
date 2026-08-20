@@ -1,4 +1,3 @@
-import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { AdminFieldPolicy } from "@modules/orders/policies/AdminFieldPolicy";
 import { IOrderCreationData } from "@modules/orders/services/IOrderCreationService";
@@ -59,18 +58,7 @@ export class CreateOrderController {
     if (shouldNotifyAdmins) {
       try {
         const expoPushService = container.resolve(ExpoPushService);
-        const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
-        const adminUser = await listAdminUserUseCase.execute();
-        const tokens = adminUser.notificationTokens
-          .filter((t) => t.is_valid !== false)
-          .map((t) => t.token);
-
-        if (tokens.length === 0) {
-          return { sent: false };
-        }
-
-        const result = await expoPushService.sendPushNotification({
-          to: tokens,
+        const result = await expoPushService.sendPushToAdmins({
           title: "Novo pedido",
           body: "Novo pedido solicitado no app",
           data: { notificationType: "new_order", orderId: order.id },

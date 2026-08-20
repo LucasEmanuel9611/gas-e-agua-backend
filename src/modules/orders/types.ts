@@ -9,12 +9,19 @@ export type OrderPaymentStatus =
   | "VENCIDO"
   | "PARCIALMENTE_PAGO";
 
+export type IntendedPaymentMethod =
+  | "DINHEIRO"
+  | "PIX"
+  | "CARTAO"
+  | "TRANSFERENCIA";
+
 export interface ICreateOrderDTO {
   username?: string;
   user_id: number;
   address_id: number;
   status: OrderStatusProps;
   payment_state?: OrderPaymentStatus;
+  intended_payment_method?: IntendedPaymentMethod;
   total: number;
   items: Array<{
     id: number;
@@ -69,6 +76,7 @@ export class Order {
   user_id: number;
   status: OrderStatusProps;
   payment_state: OrderPaymentStatus;
+  intended_payment_method?: IntendedPaymentMethod | null;
   updated_at: Date | string;
   created_at: Date | string;
   total: number;

@@ -17,6 +17,7 @@ export interface IUsersRepository {
     id: number
   ): Promise<UserWithAccountSummary | null>;
   findAdmin(): Promise<UserDates | null>;
+  findAdmins(): Promise<UserDates[]>;
   update(data: IUpdateUserDTO): Promise<UserDates>;
   deleteAddress(userId: number, addressId: number): Promise<void>;
   createAddress(data: ICreateAddressRequestDTO): Promise<AddressDates>;

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Transaction` MODIFY `type` ENUM('PAYMENT', 'INTEREST', 'ADJUSTMENT') NOT NULL;

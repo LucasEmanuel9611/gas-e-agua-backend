@@ -37,6 +37,7 @@ export class OrderCreationService implements IOrderCreationService {
         addons = [],
         status = "PENDENTE",
         payment_state = "PENDENTE",
+        intended_payment_method,
         total,
         interest_allowed = true,
         overdue_amount = 0,
@@ -87,6 +88,7 @@ export class OrderCreationService implements IOrderCreationService {
         addons: await this.enrichAddonsWithValues(addons),
         total: finalTotal,
         payment_state: finalPaymentState,
+        intended_payment_method,
         interest_allowed,
       });
 

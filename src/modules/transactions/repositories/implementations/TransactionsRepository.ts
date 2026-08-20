@@ -51,6 +51,12 @@ export class TransactionsRepository implements ITransactionsRepository {
     return transaction as ITransaction;
   }
 
+  async deleteById(id: number): Promise<void> {
+    await prisma.transaction.delete({
+      where: { id },
+    });
+  }
+
   async findByUserIdPaginated({
     userId,
     page,
@@ -98,5 +104,24 @@ export class TransactionsRepository implements ITransactionsRepository {
     );
 
     return { items, total };
+  }
+
+  async sumPaymentsByDateRange(
+    startDate: Date,
+    endDate: Date
+  ): Promise<number> {
+    const result = await prisma.transaction.aggregate({
+      _sum: { amount: true },
+      where: {
+        type: "PAYMENT",
+        created_at: {
+          gte: startDate,
+          lt: endDate,
+        },
+      },
+    });
+
+    const paidAmountSum = result._sum; // eslint-disable-line no-underscore-dangle
+    return paidAmountSum.amount ?? 0;
   }
 }

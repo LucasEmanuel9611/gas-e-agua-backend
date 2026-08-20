@@ -25,6 +25,8 @@ import { OrdersRepository } from "@modules/orders/repositories/implementations/O
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { IOrderCreationService } from "@modules/orders/services/IOrderCreationService";
 import { OrderCreationService } from "@modules/orders/services/OrderCreationService";
+import { PaymentSettingsRepository } from "@modules/paymentSettings/repositories/implementations/PaymentSettingsRepository";
+import { IPaymentSettingsRepository } from "@modules/paymentSettings/repositories/IPaymentSettingsRepository";
 import { StockRepository } from "@modules/stock/repositories/implementations/StockRepository";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { TransactionsRepository } from "@modules/transactions/repositories/implementations/TransactionsRepository";
@@ -72,6 +74,11 @@ container.registerSingleton<IStockRepository>(
 container.registerSingleton<IAddonsRepository>(
   "AddonsRepository",
   AddonsRepository
+);
+
+container.registerSingleton<IPaymentSettingsRepository>(
+  "PaymentSettingsRepository",
+  PaymentSettingsRepository
 );
 
 container.registerSingleton<ITransactionsRepository>(

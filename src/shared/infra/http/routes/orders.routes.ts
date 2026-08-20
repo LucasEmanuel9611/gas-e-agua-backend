@@ -8,6 +8,7 @@ import { GetAdminHomeDashboardController } from "@modules/orders/useCases/getAdm
 import { GetDeliveryDaySummaryController } from "@modules/orders/useCases/getDeliveryDaySummary/GetDeliveryDaySummaryController";
 import { GetOrderByIdController } from "@modules/orders/useCases/getOrderById/GetOrderByIdController";
 import { ListOrdersController } from "@modules/orders/useCases/listOrders/listOrdersController";
+import { UpdatePaymentStateController } from "@modules/orders/useCases/updatePaymentState/UpdatePaymentStateController";
 import { Router } from "express";
 
 import { checkRole } from "../middlewares/checkRole";
@@ -26,6 +27,7 @@ const getAdminHomeDashboardController = new GetAdminHomeDashboardController();
 const getDeliveryDaySummaryController = new GetDeliveryDaySummaryController();
 const getOrderByIdController = new GetOrderByIdController();
 const concludeOrderController = new ConcludeOrderController();
+const updatePaymentStateController = new UpdatePaymentStateController();
 
 orderRoutes.post("/", ensureAuthenticated, createOrderController.handle);
 
@@ -67,4 +69,11 @@ orderRoutes.put(
   ensureAuthenticated,
   checkRole(OrderAccessPolicy.getRolesThatCanUpdateOrderStatus()),
   concludeOrderController.handle
+);
+
+orderRoutes.put(
+  "/:id/payment-state",
+  ensureAuthenticated,
+  ensureAdmin,
+  updatePaymentStateController.handle
 );

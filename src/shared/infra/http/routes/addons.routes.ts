@@ -3,6 +3,7 @@ import { FindAddonsController } from "@modules/addons/useCases/findAddons/FindAd
 import { UpdateAddonController } from "@modules/addons/useCases/updateAddon/UpdateAddonController";
 import { Router } from "express";
 
+import { ensureAdmin } from "../middlewares/ensureAdmin";
 import { ensureAuthenticated } from "../middlewares/ensureAuthenticated";
 
 export const addonsRoutes = Router();
@@ -11,6 +12,16 @@ const createAddonController = new CreateAddonController();
 const updateAddonController = new UpdateAddonController();
 const findAddonsController = new FindAddonsController();
 
-addonsRoutes.post("/", ensureAuthenticated, createAddonController.handle);
-addonsRoutes.put("/:id", ensureAuthenticated, updateAddonController.handle);
+addonsRoutes.post(
+  "/",
+  ensureAuthenticated,
+  ensureAdmin,
+  createAddonController.handle
+);
+addonsRoutes.put(
+  "/:id",
+  ensureAuthenticated,
+  ensureAdmin,
+  updateAddonController.handle
+);
 addonsRoutes.get("/", ensureAuthenticated, findAddonsController.handle);

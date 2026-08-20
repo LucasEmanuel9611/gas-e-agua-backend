@@ -12,6 +12,7 @@ export interface IOrdersRepository {
     limit: number;
     userId?: string;
     date?: Date;
+    openAccounts?: boolean;
   }): Promise<{ items: OrderProps[]; total: number }>;
   findByDay(date: Date): Promise<OrderProps[]>;
   updateById(id: number, data: Partial<OrderProps>): Promise<OrderProps>;
@@ -32,6 +33,10 @@ export interface IOrdersRepository {
     startDate: Date;
     endDate: Date;
     paymentState: string;
+  }): Promise<OrderProps[]>;
+  findAllOrdersByDateRange(params: {
+    startDate: Date;
+    endDate: Date;
   }): Promise<OrderProps[]>;
   findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]>;
 
