@@ -1,5 +1,6 @@
 import dayjs from "@config/dayjs.config";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
+import { OrderProps } from "@modules/orders/types";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { inject, injectable } from "tsyringe";
 
@@ -73,29 +74,27 @@ export class GetRevenueMetricsUseCase {
     };
   }
 
-  private calculatePendingRevenue(orders: any[]): number {
-    const pendingStates = ["PENDENTE", "VENCIDO", "PARCIALMENTE_PAGO"];
-
+  private calculatePendingRevenue(orders: OrderProps[]): number {
     return orders
-      .filter((order) => pendingStates.includes(order.payment_state))
+      .filter((order) => order.payment_state !== "PAGO")
       .reduce((sum, order) => sum + (order.total || 0), 0);
   }
 
-  private countItemsByType(orders: any[]): Record<string, number> {
-    const itemsByType: Record<string, number> = {};
+  private countItemsByType(orders: OrderProps[]): Record<string, number> {
+    return orders
+      .flatMap((order) => order.orderItems ?? [])
+      .reduce((itemsByType, item) => {
+        const itemType = item.stock?.type;
+        if (!itemType) {
+          return itemsByType;
+        }
 
-    orders.forEach((order) => {
-      if (order.orderItems) {
-        order.orderItems.forEach((item: any) => {
-          const itemType = item.type || item.stock?.type;
-          if (itemType) {
-            itemsByType[itemType] =
-              (itemsByType[itemType] || 0) + item.quantity;
-          }
-        });
-      }
-    });
+        const nextQuantity = (itemsByType[itemType] ?? 0) + item.quantity;
 
-    return itemsByType;
+        return {
+          ...itemsByType,
+          [itemType]: nextQuantity,
+        };
+      }, {} as Record<string, number>);
   }
 }
