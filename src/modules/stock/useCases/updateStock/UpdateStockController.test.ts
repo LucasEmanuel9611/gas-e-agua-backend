@@ -27,6 +27,10 @@ jest.mock(
   }
 );
 
+jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
+  ensureAdmin: (req: any, res: any, next: any) => next(),
+}));
+
 describe("UpdateStockController", () => {
   beforeEach(() => {
     jest.clearAllMocks();

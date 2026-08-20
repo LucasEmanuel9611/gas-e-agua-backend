@@ -20,6 +20,7 @@ export class CreateOrderUseCase {
       addons: request.addons || [],
       status: request.status,
       payment_state: request.payment_state,
+      intended_payment_method: request.intended_payment_method,
       total: request.total,
       interest_allowed: request.interest_allowed,
       overdue_amount: request.overdue_amount,

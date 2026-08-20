@@ -183,4 +183,31 @@ describe("ListOrdersController", () => {
     expect(response.body.items).toEqual([]);
     expect(response.body.pagination.page).toBe(5);
   });
+
+  it("should forward openAccounts=true to the use case", async () => {
+    mockListOrdersUseCase.execute.mockResolvedValue({
+      items: [],
+      pagination: {
+        page: 1,
+        limit: 100,
+        total: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false,
+      },
+    });
+
+    const response = await request(app)
+      .get("/orders")
+      .query({ scope: "me", page: 0, limit: 100, openAccounts: true })
+      .set("Authorization", `Bearer token`);
+
+    expect(response.status).toBe(200);
+    expect(mockListOrdersUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        openAccounts: true,
+        userId: "1",
+      })
+    );
+  });
 });

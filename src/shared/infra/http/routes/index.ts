@@ -5,6 +5,7 @@ import { authenticateRoutes } from "./authenticate.routes";
 import { metricsRoutes } from "./metrics.routes";
 import { notificationsRoutes } from "./notifications.routes";
 import { orderRoutes } from "./orders.routes";
+import { settingsRoutes } from "./settings.routes";
 import { stockRoutes } from "./stock.routes";
 import { transactionsRoutes } from "./transactions.routes";
 import { usersRoutes } from "./users.routes";
@@ -19,5 +20,6 @@ router.use("/addons", addonsRoutes);
 router.use("/transactions", transactionsRoutes);
 router.use("/notifications", notificationsRoutes);
 router.use("/metrics", metricsRoutes);
+router.use("/settings", settingsRoutes);
 
 export { router };

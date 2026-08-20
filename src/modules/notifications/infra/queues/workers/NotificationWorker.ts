@@ -22,11 +22,11 @@ export class NotificationWorker extends BaseWorker<
   | IBirthdayNotificationJobData
 > {
   constructor(
-    @inject("ExpoPushService")
+    @inject(ExpoPushService)
     private expoPushService: ExpoPushService,
     @inject("UsersRepository")
     private usersRepository: IUsersRepository,
-    @inject("NotificationTemplateService")
+    @inject(NotificationTemplateService)
     private templateService: NotificationTemplateService
   ) {
     super(
@@ -102,6 +102,9 @@ export class NotificationWorker extends BaseWorker<
       case "payment_due_soon":
         templateId = "payment_due_soon";
         break;
+      case "payment_due_tomorrow":
+        templateId = "payment_due_tomorrow";
+        break;
       case "payment_late":
         templateId = "payment_late";
         break;
@@ -169,6 +172,15 @@ export class NotificationWorker extends BaseWorker<
       );
     }
 
+    const customTitle = customData?.title;
+    const customBody = customData?.body;
+    const hasCustomTitle =
+      typeof customTitle === "string" && customTitle.length > 0;
+    const hasCustomBody =
+      typeof customBody === "string" && customBody.length > 0;
+    const notificationTitle = hasCustomTitle ? customTitle : template.title;
+    const notificationBody = hasCustomBody ? customBody : template.body;
+
     const notifications = targetUsersList
       .filter(
         (user) => user.notificationTokens && user.notificationTokens.length > 0
@@ -176,8 +188,8 @@ export class NotificationWorker extends BaseWorker<
       .map((user) => ({
         tokens: user.notificationTokens?.map((token) => token.token) || [],
         payload: {
-          title: template.title,
-          body: template.body,
+          title: notificationTitle,
+          body: notificationBody,
           data: { ...template.data, ...customData },
           sound: template.sound,
           badge: template.badge,

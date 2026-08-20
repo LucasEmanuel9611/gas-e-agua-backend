@@ -70,6 +70,7 @@ export class UsersRepository implements IUsersRepository {
       where: { id: Number(id) },
       include: {
         addresses: true,
+        notificationTokens: true,
       },
     });
 
@@ -127,6 +128,20 @@ export class UsersRepository implements IUsersRepository {
     }
 
     return UserMap.toDomain(foundUser);
+  }
+
+  async findAdmins(): Promise<UserDates[]> {
+    const foundUsers = await prisma.user.findMany({
+      where: {
+        role: "ADMIN",
+      },
+      include: {
+        notificationTokens: true,
+        addresses: true,
+      },
+    });
+
+    return foundUsers.map(UserMap.toDomain);
   }
 
   async update({
@@ -218,6 +233,7 @@ export class UsersRepository implements IUsersRepository {
       where,
       include: {
         addresses: true,
+        notificationTokens: true,
         orders: {
           select: {
             total: true,

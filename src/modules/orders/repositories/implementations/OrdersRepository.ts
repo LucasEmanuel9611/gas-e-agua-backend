@@ -21,6 +21,7 @@ export class OrdersRepository implements IOrdersRepository {
     status,
     created_at,
     payment_state,
+    intended_payment_method,
   }: ICreateOrderDTO): Promise<OrderProps> {
     const createdOrderProps = await prisma.order.create({
       data: {
@@ -30,6 +31,7 @@ export class OrdersRepository implements IOrdersRepository {
         status,
         created_at,
         payment_state,
+        intended_payment_method,
         orderItems: {
           create: items.map((item) => ({
             stockId: item.id,
@@ -203,6 +205,37 @@ export class OrdersRepository implements IOrdersRepository {
     return orders as OrderProps[];
   }
 
+  async findAllOrdersByDateRange(params: {
+    startDate: Date;
+    endDate: Date;
+  }): Promise<OrderProps[]> {
+    const orders = await prisma.order.findMany({
+      where: {
+        created_at: {
+          gte: params.startDate,
+          lt: params.endDate,
+        },
+      },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+          },
+        },
+        transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
+      },
+    });
+
+    return orders as OrderProps[];
+  }
+
   async findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]> {
     const orders = await prisma.order.findMany({
       where: {
@@ -354,8 +387,9 @@ export class OrdersRepository implements IOrdersRepository {
     limit: number;
     userId?: string;
     date?: Date;
+    openAccounts?: boolean;
   }): Promise<{ items: OrderProps[]; total: number }> {
-    const { page, limit, userId, date } = params;
+    const { page, limit, userId, date, openAccounts } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -369,6 +403,10 @@ export class OrdersRepository implements IOrdersRepository {
         gte: dayjs(date).startOf("day").toDate(),
         lt: dayjs(date).endOf("day").toDate(),
       };
+    }
+
+    if (openAccounts) {
+      where.payment_state = { not: "PAGO" };
     }
 
     const [items, total] = await Promise.all([

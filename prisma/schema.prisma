@@ -18,6 +18,7 @@ enum UserRole {
 enum TransactionType {
   PAYMENT
   INTEREST
+  ADJUSTMENT
 }
 
 model User {
@@ -69,6 +70,7 @@ model Order {
   total            Float
   status           String
   payment_state    String        @default("PENDENTE")
+  intended_payment_method String?
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
   address          Address       @relation(fields: [address_id], references: [id])
@@ -173,6 +175,13 @@ model ScheduledNotification {
 
   @@index([scheduled_for])
   @@index([is_active])
+}
+
+model PaymentSettings {
+  id             Int      @id @default(1)
+  pix_key        String   @default("")
+  recipient_name String   @default("")
+  updated_at     DateTime @updatedAt
 }
 
 model NotificationHistory {

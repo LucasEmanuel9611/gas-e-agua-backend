@@ -9,6 +9,7 @@ interface IRequest {
   limit: number;
   userId?: string;
   date?: Date;
+  openAccounts?: boolean;
 }
 
 @injectable()
@@ -18,12 +19,13 @@ export class ListOrdersUseCase {
     private ordersRepository: IOrdersRepository
   ) {}
 
-  async execute({ page, limit, userId, date }: IRequest) {
+  async execute({ page, limit, userId, date, openAccounts }: IRequest) {
     const { items, total } = await this.ordersRepository.findAllPaginated({
       page,
       limit,
       userId,
       date,
+      openAccounts,
     });
 
     return buildPaginatedResponse(items, total, page, limit);

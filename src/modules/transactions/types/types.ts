@@ -1,4 +1,9 @@
-export type PaymentMethod = "DINHEIRO" | "PIX" | "CARTAO" | "TRANSFERENCIA";
+export type PaymentMethod =
+  | "DINHEIRO"
+  | "PIX"
+  | "CARTAO"
+  | "TRANSFERENCIA"
+  | "MANUAL";
 
 export type TransactionType = "PAYMENT" | "INTEREST" | "ADJUSTMENT";
 

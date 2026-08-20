@@ -11,7 +11,7 @@ export class ListOrdersController {
   handle = async (request: Request, response: Response): Promise<Response> => {
     try {
       const { id: userId } = request.user;
-      const { scope, page, limit, date } = validateSchema(
+      const { scope, page, limit, date, openAccounts } = validateSchema(
         listOrdersSchema,
         request.query
       );
@@ -25,6 +25,7 @@ export class ListOrdersController {
         limit,
         userId: scope === "me" ? userId : undefined,
         date: parsedDate,
+        openAccounts,
       });
 
       return response.json({

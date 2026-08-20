@@ -1,4 +1,3 @@
-import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
 import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
@@ -51,17 +50,8 @@ export class EditOrderController {
 
   private async notifyAdmins(orderId: number) {
     try {
-      const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
       const expoPushService = container.resolve(ExpoPushService);
-      const adminUser = await listAdminUserUseCase.execute();
-      const tokens = adminUser.notificationTokens
-        .filter((t) => t.is_valid !== false)
-        .map((t) => t.token);
-
-      if (tokens.length === 0) return;
-
-      await expoPushService.sendPushNotification({
-        to: tokens,
+      await expoPushService.sendPushToAdmins({
         title: "Pedido editado",
         body: "Um pedido foi editado no app",
         data: { notificationType: "order_edited", orderId },
