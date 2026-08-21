@@ -1,7 +1,11 @@
+import dayjs from "@config/dayjs.config";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
+import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { inject, injectable } from "tsyringe";
+
+const BUSINESS_TIMEZONE = "America/Recife";
 
 export type AdminHomeDashboardData = {
   totalOrdersToday: number;
@@ -18,12 +22,31 @@ export class GetAdminHomeDashboardUseCase {
     @inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
     @inject("StockRepository")
-    private stockRepository: IStockRepository
+    private stockRepository: IStockRepository,
+    @inject("TransactionsRepository")
+    private transactionsRepository: ITransactionsRepository
   ) {}
 
   async execute(): Promise<AdminHomeDashboardData> {
-    const todayOrders = await this.ordersRepository.findByDay(new Date());
-    const stockItems = await this.stockRepository.findAll();
+    const todayInBusinessTimezone = dayjs().tz(BUSINESS_TIMEZONE);
+    const startOfToday = todayInBusinessTimezone
+      .clone()
+      .startOf("day")
+      .toDate();
+    const endOfTodayExclusive = todayInBusinessTimezone
+      .clone()
+      .endOf("day")
+      .add(1, "millisecond")
+      .toDate();
+
+    const [todayOrders, stockItems, totalRevenueToday] = await Promise.all([
+      this.ordersRepository.findByDay(new Date()),
+      this.stockRepository.findAll(),
+      this.transactionsRepository.sumPaymentsByDateRange(
+        startOfToday,
+        endOfTodayExclusive
+      ),
+    ]);
 
     const waterStockItem = stockItems.find((item) => item.type === "WATER");
     const gasStockItem = stockItems.find((item) => item.type === "GAS");
@@ -34,17 +57,8 @@ export class GetAdminHomeDashboardUseCase {
       gasOrdersToday: this.countOrdersByProductType(todayOrders, "GAS"),
       waterStockQuantity: waterStockItem?.quantity ?? 0,
       gasStockQuantity: gasStockItem?.quantity ?? 0,
-      totalRevenueToday: this.calculatePaidRevenueToday(todayOrders),
+      totalRevenueToday,
     };
-  }
-
-  private calculatePaidRevenueToday(orders: OrderProps[]): number {
-    return orders
-      .filter((order) => order.payment_state === "PAGO")
-      .reduce(
-        (accumulatedTotal, order) => accumulatedTotal + Number(order.total),
-        0
-      );
   }
 
   private countOrdersByProductType(
