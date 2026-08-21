@@ -11,6 +11,9 @@ describe("GetAdminHomeDashboardUseCase", () => {
   let stockRepository: {
     findAll: jest.Mock;
   };
+  let transactionsRepository: {
+    sumPaymentsByDateRange: jest.Mock;
+  };
 
   beforeEach(() => {
     ordersRepository = {
@@ -21,9 +24,14 @@ describe("GetAdminHomeDashboardUseCase", () => {
       findAll: jest.fn(),
     };
 
+    transactionsRepository = {
+      sumPaymentsByDateRange: jest.fn(),
+    };
+
     getAdminHomeDashboardUseCase = new GetAdminHomeDashboardUseCase(
       ordersRepository as any,
-      stockRepository as any
+      stockRepository as any,
+      transactionsRepository as any
     );
   });
 
@@ -36,7 +44,7 @@ describe("GetAdminHomeDashboardUseCase", () => {
         payment_state: "PAGO",
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        total: 100,
+        total: 0,
         interest_allowed: true,
         orderItems: [
           {
@@ -74,7 +82,7 @@ describe("GetAdminHomeDashboardUseCase", () => {
         payment_state: "PAGO",
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        total: 50,
+        total: 0,
         interest_allowed: true,
         orderItems: [
           {
@@ -121,11 +129,16 @@ describe("GetAdminHomeDashboardUseCase", () => {
 
     ordersRepository.findByDay.mockResolvedValue(todayOrders);
     stockRepository.findAll.mockResolvedValue(stockItems);
+    transactionsRepository.sumPaymentsByDateRange.mockResolvedValue(150);
 
     const result = await getAdminHomeDashboardUseCase.execute();
 
     expect(ordersRepository.findByDay).toHaveBeenCalledWith(expect.any(Date));
     expect(stockRepository.findAll).toHaveBeenCalled();
+    expect(transactionsRepository.sumPaymentsByDateRange).toHaveBeenCalledWith(
+      expect.any(Date),
+      expect.any(Date)
+    );
     expect(result).toEqual({
       totalOrdersToday: 2,
       waterOrdersToday: 2,
@@ -139,6 +152,7 @@ describe("GetAdminHomeDashboardUseCase", () => {
   it("should return zero values when there are no orders or stock items", async () => {
     ordersRepository.findByDay.mockResolvedValue([]);
     stockRepository.findAll.mockResolvedValue([]);
+    transactionsRepository.sumPaymentsByDateRange.mockResolvedValue(0);
 
     const result = await getAdminHomeDashboardUseCase.execute();
 
@@ -152,7 +166,7 @@ describe("GetAdminHomeDashboardUseCase", () => {
     });
   });
 
-  it("should include only paid orders in totalRevenueToday", async () => {
+  it("should use payment transactions for totalRevenueToday instead of order.total", async () => {
     const todayOrders: OrderProps[] = [
       {
         id: 1,
@@ -161,7 +175,7 @@ describe("GetAdminHomeDashboardUseCase", () => {
         payment_state: "PAGO",
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        total: 100,
+        total: 0,
         interest_allowed: true,
         address: {
           id: 1,
@@ -194,10 +208,12 @@ describe("GetAdminHomeDashboardUseCase", () => {
 
     ordersRepository.findByDay.mockResolvedValue(todayOrders);
     stockRepository.findAll.mockResolvedValue([]);
+    transactionsRepository.sumPaymentsByDateRange.mockResolvedValue(100);
 
     const result = await getAdminHomeDashboardUseCase.execute();
 
     expect(result.totalOrdersToday).toBe(2);
     expect(result.totalRevenueToday).toBe(100);
+    expect(transactionsRepository.sumPaymentsByDateRange).toHaveBeenCalled();
   });
 });

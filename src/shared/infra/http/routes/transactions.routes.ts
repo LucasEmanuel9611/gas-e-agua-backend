@@ -14,7 +14,12 @@ const findTransactionByIdController = new FindTransactionByIdController();
 const findTransactionsByOrderIdController =
   new FindTransactionsByOrderIdController();
 
-transactionsRoutes.post("/", ensureAdmin, paymentController.handle);
+transactionsRoutes.post(
+  "/",
+  ensureAuthenticated,
+  ensureAdmin,
+  paymentController.handle
+);
 
 transactionsRoutes.get(
   "/:id",

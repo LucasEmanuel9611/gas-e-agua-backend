@@ -131,4 +131,17 @@ describe(GetRevenueMetricsUseCase.name, () => {
     ).not.toHaveBeenCalled();
     expect(ordersRepository.findAllOrdersByDateRange).not.toHaveBeenCalled();
   });
+
+  it("should use America/Recife day boundaries for payment range", async () => {
+    transactionsRepository.sumPaymentsByDateRange.mockResolvedValue(80);
+    ordersRepository.findAllOrdersByDateRange.mockResolvedValue([]);
+
+    await getRevenueMetricsUseCase.execute("2026-08-20", "2026-08-20");
+
+    const [rangeStart, rangeEndExclusive] =
+      transactionsRepository.sumPaymentsByDateRange.mock.calls[0];
+
+    expect(rangeStart.toISOString()).toBe("2026-08-20T03:00:00.000Z");
+    expect(rangeEndExclusive.toISOString()).toBe("2026-08-21T03:00:00.000Z");
+  });
 });
