@@ -44,6 +44,11 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     volumes:
       - ./logs-dev:/app/logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - app-network-dev
     depends_on:

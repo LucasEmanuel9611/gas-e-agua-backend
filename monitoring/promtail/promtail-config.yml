@@ -34,9 +34,7 @@ scrape_configs:
           expressions:
             level: level
             type: type
+      # container_name, stream e job já viram labels via relabel_configs
       - labels:
-          container_name:
-          stream:
-          job:
           level:
           type:
