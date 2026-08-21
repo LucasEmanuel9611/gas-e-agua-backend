@@ -64,16 +64,21 @@ const logger = winston.createLogger({
   ],
 });
 
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    })
-  );
+// Sem format próprio, o Console reaproveita o JSON do logger (formato lido pelo Promtail)
+function createConsoleTransport() {
+  if (process.env.LOG_FORMAT === "json") {
+    return new winston.transports.Console();
+  }
+
+  return new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    ),
+  });
 }
+
+logger.add(createConsoleTransport());
 
 export class LoggerService {
   static info(message: string, meta?: Record<string, unknown>): void {
