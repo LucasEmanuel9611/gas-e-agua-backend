@@ -64,6 +64,11 @@ NODE_ENV=development
 PORT=3333
 JWT_SECRET=jwt_secret_dev
 
+# Logs (opcional)
+# Deixe em branco para log colorido no terminal.
+# LOG_FORMAT=json emite JSON no console — é o que a VPS usa para o Promtail coletar.
+LOG_FORMAT=
+
 # Redis (rate limiting)
 REDIS_HOST=redis
 REDIS_PORT=6379

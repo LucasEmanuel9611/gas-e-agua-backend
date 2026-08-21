@@ -293,6 +293,10 @@ log_group_end
 log_group_start "📊 Starting monitoring stack"
 log_info "Compose file: $MONITORING_FILE"
 docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d
+
+# Promtail lê a config por bind mount: sem recriar, mudanças no YAML não são aplicadas
+log_info "Recreating promtail to apply config changes..."
+docker compose -p "$PROJECT" -f "$MONITORING_FILE" up -d --force-recreate promtail
 log_success "Monitoring stack started"
 log_group_end
 
