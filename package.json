@@ -7,13 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node dist/shared/infra/http/server.js",
+    "start": "node dist/main.js",
     "build": "babel src --extensions \".js,.ts\" --out-dir dist --copy-files",
     "docker:infra": "docker compose -p gas-e-agua-dev -f docker-compose.dev.yml up -d mysql redis --wait",
     "db:setup": "prisma generate && prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:test:setup": "bash scripts/database/setup-test-db.sh",
-    "dev": "npm run docker:infra && npm run db:setup && ts-node-dev -r tsconfig-paths/register --inspect --transpile-only --ignore-watch node_modules --respawn src/shared/infra/http/server.ts",
+    "dev": "npm run docker:infra && npm run db:setup && ts-node-dev -r tsconfig-paths/register --inspect --transpile-only --ignore-watch node_modules --respawn src/main.ts",
     "test": "npm run db:test:setup && cross-env NODE_ENV=test jest --runInBand --detectOpenHandles",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
