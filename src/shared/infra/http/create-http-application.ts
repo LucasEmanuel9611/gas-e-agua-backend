@@ -7,6 +7,7 @@ import {
 
 import { AppModule } from "../../../app.module";
 import { AppErrorFilter } from "../../filters/app-error.filter";
+import { UnhandledErrorFilter } from "../../filters/unhandled-error.filter";
 import { validationExceptionFactory } from "../../filters/validation.exception-factory";
 import { app } from "./app";
 
@@ -23,7 +24,10 @@ export async function createHttpApplication(): Promise<NestExpressApplication> {
       exceptionFactory: validationExceptionFactory,
     })
   );
-  nestApplication.useGlobalFilters(new AppErrorFilter());
+  nestApplication.useGlobalFilters(
+    new AppErrorFilter(),
+    new UnhandledErrorFilter()
+  );
   nestApplication.enableShutdownHooks();
 
   return nestApplication;
