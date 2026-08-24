@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-import { addonsRoutes } from "./addons.routes";
 import { authenticateRoutes } from "./authenticate.routes";
 import { metricsRoutes } from "./metrics.routes";
 import { notificationsRoutes } from "./notifications.routes";
@@ -14,7 +13,6 @@ const router = Router();
 router.use(authenticateRoutes);
 router.use("/users", usersRoutes);
 router.use("/orders", orderRoutes);
-router.use("/addons", addonsRoutes);
 router.use("/transactions", transactionsRoutes);
 router.use("/notifications", notificationsRoutes);
 router.use("/metrics", metricsRoutes);

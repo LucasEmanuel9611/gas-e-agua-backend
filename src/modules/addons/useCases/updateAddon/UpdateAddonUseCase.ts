@@ -1,11 +1,11 @@
 import { IAddonsRepository } from "@modules/addons/repositories/IAddonsRepository";
 import { AddonItem, IUpdateAddonItemDTO } from "@modules/addons/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class UpdateAddonUseCase {
   constructor(
-    @inject("AddonsRepository")
+    @Inject("AddonsRepository")
     private addonsRepository: IAddonsRepository
   ) {}
 
