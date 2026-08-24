@@ -1,5 +1,5 @@
 # Multi-stage build para otimizar tamanho da imagem
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Instalar dependências do sistema necessárias para compilação
 RUN apk add --no-cache python3 make g++
@@ -30,7 +30,7 @@ RUN npm run build
 RUN cp swagger.json dist/
 
 # Stage de produção - imagem final menor
-FROM node:18-alpine AS production
+FROM node:22-alpine AS production
 
 # Instalar dependências de runtime
 RUN apk add --no-cache dumb-init openssl

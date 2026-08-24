@@ -21,8 +21,10 @@
 |-----------|--------------------------|
 | **[setup.md](./development/setup.md)** | Setup completo do ambiente local, variáveis de ambiente, estrutura do projeto |
 | **[database.md](./development/database.md)** | Fluxo de migrations com Prisma, comandos úteis, boas práticas |
+| **[nest-migration-playbook.md](./development/nest-migration-playbook.md)** | Lei da migração Express → NestJS: como o agente trabalha, fila de fatias |
+| **[nest-migration-slices/](./development/nest-migration-slices/PROGRESS.md)** | Fatias executáveis (S0.1–S9). O agente só abre a primeira caixa de `PROGRESS.md` |
 
-**Quando usar**: Desenvolvimento local, alterações no banco de dados
+**Quando usar**: Desenvolvimento local, alterações no banco de dados, migração para NestJS
 
 ---
 
@@ -132,7 +134,9 @@ docs/
 │
 ├── development/          👨‍💻 Desenvolvimento
 │   ├── setup.md         Setup local
-│   └── database.md      Prisma & Migrations
+│   ├── database.md      Prisma & Migrations
+│   ├── nest-migration-playbook.md
+│   └── nest-migration-slices/   Fatias S0.1–S9 + PROGRESS.md
 │
 ├── deployment/          🚀 Deploy & Produção
 │   ├── guide.md        Deploy completo

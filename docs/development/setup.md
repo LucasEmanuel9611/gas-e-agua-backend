@@ -12,7 +12,7 @@ Backend para sistema de gerenciamento de pedidos de gás e água, construído co
 
 ### Pré-requisitos
 
-- Node.js 18+
+- Node.js 22+
 - Docker e Docker Compose
 - Git
 
