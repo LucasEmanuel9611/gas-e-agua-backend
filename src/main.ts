@@ -1,20 +1,13 @@
 import "reflect-metadata";
-import { NestFactory } from "@nestjs/core";
-import { ExpressAdapter } from "@nestjs/platform-express";
 
-import { AppModule } from "./app.module";
-import { app, port } from "./shared/infra/http/app";
+import { port } from "./shared/infra/http/app";
+import { createHttpApplication } from "./shared/infra/http/create-http-application";
 import { queueManager } from "./shared/infra/queues/QueueManager";
 import { runScheduledTasks } from "./shared/infra/tasks";
 import { LoggerService } from "./shared/services/LoggerService";
 
 async function bootstrap() {
-  const nestApplication = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(app)
-  );
-
-  nestApplication.enableShutdownHooks();
+  const nestApplication = await createHttpApplication();
 
   await nestApplication.listen(port);
 
