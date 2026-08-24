@@ -8,7 +8,7 @@ O agente executa **somente** a primeira linha `- [ ]`. Depois marca `- [x]` e pa
 - [x] S0.4 — [`S0.4-kernel-http.md`](./S0.4-kernel-http.md)
 - [x] S1 — [`S1-stock.md`](./S1-stock.md)
 - [x] S2 — [`S2-addons.md`](./S2-addons.md)
-- [ ] S3 — [`S3-payment-settings.md`](./S3-payment-settings.md)
+- [x] S3 — [`S3-payment-settings.md`](./S3-payment-settings.md)
 - [ ] S4 — [`S4-accounts.md`](./S4-accounts.md)
 - [ ] S5 — [`S5-metrics.md`](./S5-metrics.md)
 - [ ] S6 — [`S6-transactions.md`](./S6-transactions.md)

@@ -3,12 +3,12 @@ import {
   PaymentSettings,
   UpdatePaymentSettingsDTO,
 } from "@modules/paymentSettings/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class UpdatePaymentSettingsUseCase {
   constructor(
-    @inject("PaymentSettingsRepository")
+    @Inject("PaymentSettingsRepository")
     private paymentSettingsRepository: IPaymentSettingsRepository
   ) {}
 
