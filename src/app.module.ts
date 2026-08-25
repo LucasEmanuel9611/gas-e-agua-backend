@@ -5,6 +5,7 @@ import { AddonsModule } from "./modules/addons/addons.module";
 import { MetricsModule } from "./modules/metrics/metrics.module";
 import { PaymentSettingsModule } from "./modules/paymentSettings/payment-settings.module";
 import { StockModule } from "./modules/stock/stock.module";
+import { TransactionsModule } from "./modules/transactions/transactions.module";
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { StockModule } from "./modules/stock/stock.module";
     PaymentSettingsModule,
     AccountsModule,
     MetricsModule,
+    TransactionsModule,
   ],
   controllers: [],
   providers: [],

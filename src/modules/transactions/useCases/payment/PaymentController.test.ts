@@ -1,40 +1,63 @@
+import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
+import { AppErrorFilter } from "@shared/filters/app-error.filter";
+import { UnhandledErrorFilter } from "@shared/filters/unhandled-error.filter";
+import { validationExceptionFactory } from "@shared/filters/validation.exception-factory";
+import { JwtAuthGuard } from "@shared/guards/jwt-auth.guard";
+import { RolesGuard } from "@shared/guards/roles.guard";
 
-import { mockPaymentUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 5 };
-        next();
-      },
-    };
-  }
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => {
-  return {
-    ensureAdmin: (req: any, res: any, next: any) => {
-      next();
-    },
-  };
-});
+import { TransactionsController } from "../../transactions.controller";
+import { FindTransactionByIdUseCase } from "../findTransactionById/FindTransactionByIdUseCase";
+import { FindTransactionsByOrderIdUseCase } from "../findTransactionsByOrderId/FindTransactionsByOrderIdUseCase";
+import { PaymentUseCase } from "./PaymentUseCase";
 
 describe("PaymentController", () => {
+  let nestApplication: INestApplication;
+  const mockExecute = jest.fn();
+  const mockPaymentUseCase = { execute: mockExecute };
+
+  beforeAll(async () => {
+    const testingModule = await Test.createTestingModule({
+      controllers: [TransactionsController],
+      providers: [
+        { provide: PaymentUseCase, useValue: mockPaymentUseCase },
+        {
+          provide: FindTransactionByIdUseCase,
+          useValue: { execute: jest.fn() },
+        },
+        {
+          provide: FindTransactionsByOrderIdUseCase,
+          useValue: { execute: jest.fn() },
+        },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    nestApplication = testingModule.createNestApplication();
+    nestApplication.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        exceptionFactory: validationExceptionFactory,
+      })
+    );
+    nestApplication.useGlobalFilters(
+      new AppErrorFilter(),
+      new UnhandledErrorFilter()
+    );
+    await nestApplication.init();
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -64,9 +87,9 @@ describe("PaymentController", () => {
       },
     };
 
-    mockPaymentUseCase.execute.mockResolvedValue(mockOrder);
+    mockExecute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/transactions")
       .send({
         order_id: 1,
@@ -81,7 +104,7 @@ describe("PaymentController", () => {
   });
 
   it("should return 400 for invalid data", async () => {
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/transactions")
       .send({ amount_paid: -10 })
       .set("Authorization", "Bearer token");
@@ -90,11 +113,11 @@ describe("PaymentController", () => {
   });
 
   it("should return 500 when PaymentUseCase throws an error", async () => {
-    mockPaymentUseCase.execute.mockImplementation(() => {
+    mockExecute.mockImplementation(() => {
       throw new Error("Database error");
     });
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/transactions")
       .send({
         order_id: 1,
