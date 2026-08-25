@@ -1,5 +1,5 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 import { LoggerService } from "@shared/services/LoggerService";
@@ -11,12 +11,12 @@ import {
   IUpdateScheduledNotificationDTO,
 } from "../../types/scheduledNotification";
 
-@injectable()
+@Injectable()
 export class ManageScheduledNotificationsUseCase {
   constructor(
-    @inject("ScheduledNotificationRepository")
+    @Inject("ScheduledNotificationRepository")
     private scheduledNotificationRepository: IScheduledNotificationRepository,
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

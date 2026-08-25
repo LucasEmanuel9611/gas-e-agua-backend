@@ -3,7 +3,8 @@ import { notificationQueue } from "@modules/notifications/infra/queues/Notificat
 import { IScheduledNotificationRepository } from "@modules/notifications/repositories/IScheduledNotificationRepository";
 import { NotificationPriority } from "@modules/notifications/types/NotificationTypes";
 import { RecurrencePattern } from "@modules/notifications/types/scheduledNotification";
-import cron from "node-cron";
+import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { container } from "tsyringe";
 
 function calculateNextRun(currentDate: Date, pattern: RecurrencePattern): Date {
@@ -30,8 +31,10 @@ function calculateNextRun(currentDate: Date, pattern: RecurrencePattern): Date {
   return next;
 }
 
-export function scheduleProcessScheduledNotifications() {
-  cron.schedule("*/5 * * * *", async () => {
+@Injectable()
+export class ProcessScheduledNotificationsTask {
+  @Cron("*/5 * * * *")
+  async handle() {
     console.log("[CRON] Verificando notificações agendadas...");
 
     const scheduledNotificationRepository =
@@ -144,5 +147,5 @@ export function scheduleProcessScheduledNotifications() {
     } catch (error) {
       console.error("[CRON - Notificações Agendadas] - Erro geral:", error);
     }
-  });
+  }
 }

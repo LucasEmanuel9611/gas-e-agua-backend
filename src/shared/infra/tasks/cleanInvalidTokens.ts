@@ -1,9 +1,12 @@
 import { CleanInvalidTokensUseCase } from "@modules/notifications/useCases/cleanInvalidTokens/cleanInvalidTokensUseCase";
-import cron from "node-cron";
+import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { container } from "tsyringe";
 
-export function scheduleCleanInvalidTokens() {
-  cron.schedule("0 3 * * *", async () => {
+@Injectable()
+export class CleanInvalidTokensTask {
+  @Cron("0 3 * * *")
+  async handle() {
     console.log("[CRON] Iniciando limpeza de tokens inválidos...");
 
     const cleanInvalidTokensUseCase = container.resolve(
@@ -32,5 +35,5 @@ export function scheduleCleanInvalidTokens() {
     } catch (error) {
       console.error("[CRON - Limpeza de Tokens] - Erro geral:", error);
     }
-  });
+  }
 }

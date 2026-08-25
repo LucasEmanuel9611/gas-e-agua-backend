@@ -1,5 +1,5 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -9,12 +9,12 @@ import {
   INotificationHistoryProps,
 } from "../../types/notificationHistory";
 
-@injectable()
+@Injectable()
 export class GetUserNotificationHistoryUseCase {
   constructor(
-    @inject("NotificationHistoryRepository")
+    @Inject("NotificationHistoryRepository")
     private notificationHistoryRepository: INotificationHistoryRepository,
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

@@ -1,11 +1,14 @@
 import { SendPaymentDueIn5DaysNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
 import { SendPaymentDueTomorrowNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
 import { SendPaymentLateNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
-import cron from "node-cron";
+import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 import { container } from "tsyringe";
 
-export function scheduleSendOrderPaymentNotifications() {
-  cron.schedule("0 12 * * *", async () => {
+@Injectable()
+export class SendOrderPaymentNotificationsTask {
+  @Cron("0 12 * * *")
+  async handle() {
     console.log("[CRON] Iniciando verificação de notificações de pagamento...");
     console.log("[CRON] Tipos de notificações que serão verificadas:");
     console.log("  📅 PAYMENT_DUE_IN_5_DAYS: Pedidos que vencem em 5 dias");
@@ -70,5 +73,5 @@ export function scheduleSendOrderPaymentNotifications() {
     } catch (error) {
       console.error("[CRON - Notificações de pagamento] - Erro geral:", error);
     }
-  });
+  }
 }

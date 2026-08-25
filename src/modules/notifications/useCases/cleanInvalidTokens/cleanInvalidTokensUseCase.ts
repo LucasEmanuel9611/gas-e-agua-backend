@@ -1,5 +1,6 @@
 import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { Inject, Injectable } from "@nestjs/common";
 import { Expo } from "expo-server-sdk";
 import { inject, injectable } from "tsyringe";
 
@@ -11,11 +12,14 @@ export interface ICleanInvalidTokensResult {
   errors: string[];
 }
 
+@Injectable()
 @injectable()
 export class CleanInvalidTokensUseCase {
   constructor(
+    @Inject("UsersRepository")
     @inject("UsersRepository")
     private usersRepository: IUsersRepository,
+    @Inject("UserNotificationTokensRepository")
     @inject("UserNotificationTokensRepository")
     private tokenRepository: IUserNotificationTokensRepository
   ) {}

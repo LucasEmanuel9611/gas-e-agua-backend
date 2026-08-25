@@ -12,36 +12,50 @@ O agente executa **somente** a primeira linha `- [ ]`. Depois marca `- [x]` e pa
 - [x] S4 — [`S4-accounts.md`](./S4-accounts.md)
 - [x] S5 — [`S5-metrics.md`](./S5-metrics.md)
 - [x] S6 — [`S6-transactions.md`](./S6-transactions.md)
-- [ ] S7 — [`S7-orders.md`](./S7-orders.md)
-- [ ] S8 — [`S8-notifications.md`](./S8-notifications.md)
+- [x] S7 — [`S7-orders.md`](./S7-orders.md)
+- [x] S8 — [`S8-notifications.md`](./S8-notifications.md)
 - [ ] S9 — [`S9-cutover.md`](./S9-cutover.md)
 
 ---
 
-## Handoff (24/08/2026)
+## Handoff (25/08/2026)
 
-Próxima fatia: **S7 — orders**. Prompt do playbook. Não pular. Não juntar fatias. S7 é grande.
+Cole no chat novo:
 
-**S6 commitada neste commit.** Executar **somente S7** (`docs/development/nest-migration-slices/S7-orders.md`). Não abrir S8.
+```text
+Você é o executor da migração NestJS do gas-e-agua-backend.
+Playbook: docs/development/nest-migration-playbook.md
+PROGRESS: docs/development/nest-migration-slices/PROGRESS.md (Handoff)
 
-S7: fatia grande, mas **uma só**. Migrar `orders.routes.ts` **e** o resto que a S4 deixou no Express:
+S7 e S8 já estão feitas e marcadas. NÃO execute S9.
 
-- `GET /users/:userId/orders`
-- `GET /users/:userId/transactions`
+Única tarefa: commitar S7 e S8 em DOIS commits separados na branch feat/migrate-to-nestjs, no estilo das fatias anteriores (`feat: migra rotas de X para Nest`). HEAD atual = S6 (`8994f0e`). Working tree mistura S7+S8.
 
-Paths congelados. Não virar `/orders/by-user/:userId`. Preferir `UsersOrdersController` no `OrdersModule` (`@Controller("users")`), **não** o `UsersController` da S4 (ciclo). `AppModule` importa `OrdersModule`. **Não** faça `AccountsModule` importar `OrdersModule` e vice-versa. Se o Nest exigir ciclo, **pare e pergunte**.
+Commit 1 (S7 — orders):
+- src/modules/orders/** (incluindo dto/, guards/, orders.controller.ts, orders.module.ts, users-orders.controller.ts, helpers de teste)
+- src/modules/orders/services/OrderCreationService.ts
+- deletes de controllers Express / schemas Zod de orders
+- D src/shared/infra/http/routes/orders.routes.ts
+- D src/shared/infra/http/routes/users.routes.ts
+Mensagem: feat: migra rotas de orders para Nest
 
-Estáticas **antes** de `/:id`. `DELETE /orders/:id` hoje devolve **201** — não “corrigir” para 204. `GET /orders/count` no Express é só `ensureAdmin` (sem `ensureAuthenticated` no `*.routes.ts`) — copie exatamente; conferir o middleware. `GET /orders` usa `ensureAdminForAllScope`: se não couber em `@Roles`, extraia `AdminForAllScopeGuard` **copiando** o middleware, sem melhorar. Roles de edit/delete/conclude: `@Roles(...OrderAccessPolicy.getRolesThatCanX())` — chamar o método, não copiar a lista. `OrderAccessPolicy` permanece static.
+Commit 2 (S8 — notifications, filas, cron):
+- package.json, package-lock.json, yarn.lock
+- src/app.module.ts, src/main.ts
+- src/shared/infra/http/routes/index.ts
+- D src/shared/infra/http/routes/notifications.routes.ts
+- src/modules/notifications/** (module, controller, worker, use cases, template service)
+- deletes dos controllers Express de notifications
+- src/shared/infra/tasks/**
+- docs/development/nest-migration-slices/PROGRESS.md
+Mensagem: feat: migra notifications, filas e cron para Nest
 
-Gates: `npm run typecheck` && `npm test`. Marcar S7. Parar. Não começar filas/cron (S8).
+Não commitar .env. Não push. Não abrir S9. Depois dos dois commits: git status limpo e pare.
+```
 
-Contexto extra: [migração NestJS S5–S6](este chat).
+Branch: `feat/migrate-to-nestjs` (sem tracking remoto). App `GasEAgua` intocado. Sem `.env`, Prisma, Passport, `@nestjs/swagger`. Lei 13. Contrato HTTP congelado. S7 e S8 **feitas, não commitadas**. Gates S8 já passaram (`npm run typecheck` + `npm test`: 75 suites / 300 testes).
 
----
-
-**Estado:** S0.1–S6 no disco. S7 ainda não começou.
-
-### Commits nesta branch
+### Commits
 
 | Hash | Fatia | Mensagem |
 |------|-------|----------|
@@ -54,55 +68,21 @@ Contexto extra: [migração NestJS S5–S6](este chat).
 | `17c399a` | S3 | feat: migra rotas de payment settings para Nest |
 | `c0b9610` | S4 | feat: migra login e rotas de users para Nest |
 | `ee32a2c` | S5 | feat: migra rotas de metrics de negócio para Nest |
-| (este commit) | S6 | feat: migra rotas de transactions para Nest |
+| `8994f0e` | S6 | feat: migra rotas de transactions para Nest |
 
-### O que o código faz hoje (S6 no working tree, não commitada)
+### Estado (após S8, working tree sujo)
 
-- Processo: `src/main.ts` → `createHttpApplication()` → Nest + `ExpressAdapter` no `app` Express. `start` = `node dist/main.js`. Babel continua. Sem `APP_GUARD`.
-- Kernel: `AppErrorFilter`, `validationExceptionFactory` (400 `{ message: string }`), `JwtAuthGuard` / `RolesGuard` (lançam `AppError`), `UnhandledErrorFilter` (500 `{ message: "Erro interno do servidor" }`).
-- Domínio no Nest: **stock, addons, payment settings, accounts, metrics, transactions**. GET `/stock` ainda **201** + `{ items }`.
-- `GET /metrics` Prometheus permanece em `app.ts` (lei 17). Nest: `/metrics/orders/daily`, `/metrics/revenue`, `/metrics/stock`.
-- `TransactionsModule` + `TransactionsController` (`@Controller("transactions")`): `POST /` (JWT + ADMIN, **200** `{ message: "Pagamento registrado com sucesso", order }`) **antes** de `GET order/:order_id` **antes** de `GET :id` (404 `{ message: "Transaction not found" }` via `AppError`). DTO só `CreatePaymentDto` (havia Zod). `"TransactionsRepository"` e `"OrdersRepository"` com `useClass` local — **não** importou `OrdersModule`.
-- Express de users **só** deixa `GET /users/:userId/orders` e `GET /users/:userId/transactions` (JWT + ADMIN). S7 move as duas.
-- Express de orders **inteiro** ainda em `orders.routes.ts` (S7).
-- `createUser/schemas.ts` **permanece** — `orders` importa `addressSchema`. Não apagar.
-- Repositórios e `containers/index.ts` intocados (lei 13). `jest.setup.ts` ainda tem mock tsyringe de `PaymentUseCase` — só remover se quebrar teste depois da S6 commitada.
+Domínio HTTP no Nest: stock, addons, payment settings, accounts, metrics, transactions, orders, notifications. Worker `notifications` via `@Processor` / `WorkerHost`. Cron via `ScheduleModule` + `@Cron` (strings iguais às do `node-cron`). Express router vazio. GET `/stock` ainda **201**. Prometheus `GET /metrics` em `app.ts`. Sem `APP_GUARD`. Repos e `containers/index.ts` intocados. Babel continua (cutover é S9). `@nestjs/schedule` é **6.x** (não existe `^11` no npm; peer Nest 11). `app.module.ts` e `routes/index.ts` foram tocados pelas duas fatias — vão no commit da S8.
 
-### Arquivos da S6 (para o commit)
+### Depois do commit (não agora)
 
-Criados: `src/modules/transactions/transactions.module.ts`, `transactions.controller.ts`, `dto/create-payment.dto.ts`.
+S9 é a próxima fatia. Só abrir quando o humano pedir, **depois** dos dois commits.
 
-Alterados: `PaymentUseCase.ts`, `FindTransactionByIdUseCase.ts`, `FindTransactionsByOrderIdUseCase.ts`, `PaymentController.test.ts`, `src/app.module.ts`, `src/shared/infra/http/routes/index.ts`, `PROGRESS.md`.
+### Não fazer
 
-Apagados: `transactions.routes.ts`, `PaymentController.ts`, `schema.ts` (payment), `FindTransactionByIdController.ts`, `FindTransactionsByOrderIdController.ts`.
-
-### S7 — o que conferir no Express (não inventar)
-
-`src/shared/infra/http/routes/orders.routes.ts` e `users.routes.ts`.
-
-| Método | Path | Auth no Express |
-|--------|------|-----------------|
-| POST | `/orders` | JWT |
-| GET | `/orders/count` | **só** `ensureAdmin` (sem `ensureAuthenticated` no arquivo) |
-| GET | `/orders/dashboard` | JWT + ADMIN |
-| GET | `/orders/delivery/summary` | JWT + `checkRole(["DELIVERY_MAN"])` |
-| GET | `/orders` | JWT + `ensureAdminForAllScope` (query `scope=all` → `OrderAccessPolicy.canListAllOrders`; senão 403 `"Acesso negado. Permissão insuficiente."`) |
-| PUT | `/orders/:id` | JWT + `OrderAccessPolicy.getRolesThatCanEditOrderItems()` |
-| DELETE | `/orders/:id` | JWT + `OrderAccessPolicy.getRolesThatCanDeleteOrder()` — status **201** |
-| GET | `/orders/:id` | JWT |
-| PUT | `/orders/:id/conclude` | JWT + `OrderAccessPolicy.getRolesThatCanUpdateOrderStatus()` |
-| PUT | `/orders/:id/payment-state` | JWT + ADMIN |
-| GET | `/users/:userId/orders` | JWT + ADMIN |
-| GET | `/users/:userId/transactions` | JWT + ADMIN |
-
-DTOs só onde houver schema (lista na fatia). `sendNewOrderNotificationAdmin` já migrou na S4 (users) — não remigrar.
-
-### Não fazer no próximo chat
-
-- Não “corrigir” GET `/stock` 201 → 200 nem DELETE order 201 → 204.
-- Não exportar `StockRepository` do `StockModule`.
-- Não importar `OrdersModule` no `AccountsModule` (nem o contrário).
-- Não mexer em `prisma/schema.prisma`.
-- Não instalar `@nestjs/swagger` / Passport.
-- Não engolir `GET /metrics` Prometheus.
-- Não começar S8 (filas/cron) nesta sessão.
+- Não executar S9 neste chat.
+- Não corrigir GET `/stock` 201 nem DELETE order 201.
+- Não mexer em Prisma / Passport / swagger.
+- Não engolir Prometheus.
+- Não push.
+- Não juntar S7 e S8 num commit só.
