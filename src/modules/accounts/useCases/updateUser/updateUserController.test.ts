@@ -1,36 +1,24 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { container } from "tsyringe";
 
-import { app } from "@shared/infra/http/app";
-
-import { UpdateUserController } from "./updateUserController";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: "123" };
-        next();
-      },
-    };
-  }
-);
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("UpdateUserController", () => {
-  beforeAll(() => {
-    const controller = new UpdateUserController();
-    app.put("/users/profile", controller.handle.bind(controller));
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp({ userId: "123" });
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.updateUserUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it("should return 200 and updated user data when update is successful", async () => {
@@ -45,16 +33,14 @@ describe("UpdateUserController", () => {
       },
     };
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue({
-        id: 123,
-        username: "updatedUser",
-        role: "USER",
-        notificationTokens: [],
-      }),
-    }));
+    mockExecute.mockResolvedValue({
+      id: 123,
+      username: "updatedUser",
+      role: "USER",
+      notificationTokens: [],
+    });
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
       .send(mockUserData);
@@ -69,23 +55,17 @@ describe("UpdateUserController", () => {
   });
 
   it("should return 200 when updating only username", async () => {
-    const mockUserData = {
+    mockExecute.mockResolvedValue({
+      id: 123,
       username: "newUsername",
-    };
+      role: "USER",
+      notificationTokens: [],
+    });
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue({
-        id: 123,
-        username: "newUsername",
-        role: "USER",
-        notificationTokens: [],
-      }),
-    }));
-
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
-      .send(mockUserData);
+      .send({ username: "newUsername" });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -97,36 +77,26 @@ describe("UpdateUserController", () => {
   });
 
   it("should return 200 when updating only telephone", async () => {
-    const mockUserData = {
-      telephone: "11987654321",
-    };
+    mockExecute.mockResolvedValue({
+      id: 123,
+      username: "existingUser",
+      role: "USER",
+      notificationTokens: [],
+    });
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue({
-        id: 123,
-        username: "existingUser",
-        role: "USER",
-        notificationTokens: [],
-      }),
-    }));
-
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
-      .send(mockUserData);
+      .send({ telephone: "11987654321" });
 
     expect(response.status).toBe(200);
   });
 
   it("should return 400 when username is too short", async () => {
-    const mockUserData = {
-      username: "ab",
-    };
-
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
-      .send(mockUserData);
+      .send({ username: "ab" });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toContain(
@@ -135,14 +105,10 @@ describe("UpdateUserController", () => {
   });
 
   it("should return 400 when telephone has invalid length", async () => {
-    const mockUserData = {
-      telephone: "123456789",
-    };
-
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
-      .send(mockUserData);
+      .send({ telephone: "123456789" });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toContain(
@@ -151,17 +117,15 @@ describe("UpdateUserController", () => {
   });
 
   it("should return 400 when address fields are invalid", async () => {
-    const mockUserData = {
-      address: {
-        street: "",
-        number: "12345678901",
-      },
-    };
-
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
-      .send(mockUserData);
+      .send({
+        address: {
+          street: "",
+          number: "12345678901",
+        },
+      });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toContain("A rua não pode ser vazia");
@@ -209,7 +173,7 @@ describe("UpdateUserController", () => {
   ])(
     "should return 400 when trying to update forbidden or extra fields: %s",
     async (mockUserData, _) => {
-      const response = await request(app)
+      const response = await request(nestApplication.getHttpServer())
         .put("/users/profile")
         .set("Authorization", "Bearer token")
         .send(mockUserData);
@@ -222,18 +186,12 @@ describe("UpdateUserController", () => {
   );
 
   it("should return 500 if useCase throws an error", async () => {
-    const mockUserData = {
-      username: "updatedUser",
-    };
+    mockExecute.mockRejectedValue(new Error("Internal server error"));
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockRejectedValue(new Error("Internal server error")),
-    }));
-
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/users/profile")
       .set("Authorization", "Bearer token")
-      .send(mockUserData);
+      .send({ username: "updatedUser" });
 
     expect(response.status).toBe(500);
     expect(response.body.message).toBe("Erro interno do servidor");

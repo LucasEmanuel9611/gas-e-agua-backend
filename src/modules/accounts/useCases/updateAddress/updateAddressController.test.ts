@@ -1,28 +1,25 @@
-import { Request, Response } from "express";
-import { container } from "tsyringe";
+import { INestApplication } from "@nestjs/common";
+import request from "supertest";
 
 import { AppError } from "@shared/errors/AppError";
 
-import { UpdateAddressController } from "./updateAddressController";
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("UpdateAddressController", () => {
-  let updateAddressController: UpdateAddressController;
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-  let statusMock: jest.Mock;
-  let jsonMock: jest.Mock;
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp({ userId: "123" });
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.updateAddressUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
 
   beforeEach(() => {
-    updateAddressController = new UpdateAddressController();
-
-    statusMock = jest.fn().mockReturnThis();
-    jsonMock = jest.fn().mockReturnValue({} as Response);
-
-    mockResponse = {
-      status: statusMock,
-      json: jsonMock,
-    };
-
     jest.clearAllMocks();
   });
 
@@ -36,54 +33,38 @@ describe("UpdateAddressController", () => {
       user_id: 123,
     };
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(mockUpdatedAddress),
-    }));
+    mockExecute.mockResolvedValue(mockUpdatedAddress);
 
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-      params: { addressId: "456" },
-      body: {
+    const response = await request(nestApplication.getHttpServer())
+      .put("/users/addresses/456")
+      .set("Authorization", "Bearer token")
+      .send({
         street: "Rua Atualizada",
         number: "456",
-      },
-    };
+      });
 
-    await updateAddressController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(statusMock).toHaveBeenCalledWith(200);
-    expect(jsonMock).toHaveBeenCalledWith(mockUpdatedAddress);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockUpdatedAddress);
   });
 
   it("should return 404 if address not found", async () => {
-    const mockError = new AppError({
-      message: "Endereço não encontrado",
-      statusCode: 404,
-    });
-
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockRejectedValue(mockError),
-    }));
-
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-      params: { addressId: "999" },
-      body: {
-        street: "Rua Atualizada",
-        number: "456",
-      },
-    };
-
-    await updateAddressController.handle(
-      mockRequest as Request,
-      mockResponse as Response
+    mockExecute.mockRejectedValue(
+      new AppError({
+        message: "Endereço não encontrado",
+        statusCode: 404,
+      })
     );
 
-    expect(statusMock).toHaveBeenCalledWith(404);
-    expect(jsonMock).toHaveBeenCalledWith({
+    const response = await request(nestApplication.getHttpServer())
+      .put("/users/addresses/999")
+      .set("Authorization", "Bearer token")
+      .send({
+        street: "Rua Atualizada",
+        number: "456",
+      });
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({
       message: "Endereço não encontrado",
     });
   });

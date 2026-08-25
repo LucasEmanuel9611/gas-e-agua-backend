@@ -1,70 +1,44 @@
-import { Request, Response } from "express";
-import { container } from "tsyringe";
+import { INestApplication } from "@nestjs/common";
+import request from "supertest";
 
-import { DeleteAddressController } from "./deleteAddressController";
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("DeleteAddressController", () => {
-  let deleteAddressController: DeleteAddressController;
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-  let statusMock: jest.Mock;
-  let sendMock: jest.Mock;
-  let jsonMock: jest.Mock;
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp({ userId: "123" });
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.deleteAddressUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
 
   beforeEach(() => {
-    deleteAddressController = new DeleteAddressController();
-
-    statusMock = jest.fn().mockReturnThis();
-    sendMock = jest.fn().mockReturnValue({} as Response);
-    jsonMock = jest.fn().mockReturnValue({} as Response);
-
-    mockResponse = {
-      status: statusMock,
-      send: sendMock,
-      json: jsonMock,
-    };
-
     jest.clearAllMocks();
   });
 
   it("should delete address successfully and return 204", async () => {
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(undefined),
-    }));
+    mockExecute.mockResolvedValue(undefined);
 
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-      params: { addressId: "456" },
-    };
+    const response = await request(nestApplication.getHttpServer())
+      .delete("/users/addresses/456")
+      .set("Authorization", "Bearer token");
 
-    await deleteAddressController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(statusMock).toHaveBeenCalledWith(204);
-    expect(sendMock).toHaveBeenCalledWith();
+    expect(response.status).toBe(204);
   });
 
   it("should return 500 if useCase throws an error", async () => {
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockRejectedValue(new Error("Internal server error")),
-    }));
+    mockExecute.mockRejectedValue(new Error("Internal server error"));
 
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-      params: { addressId: "456" },
-    };
+    const response = await request(nestApplication.getHttpServer())
+      .delete("/users/addresses/456")
+      .set("Authorization", "Bearer token");
 
-    await deleteAddressController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(statusMock).toHaveBeenCalledWith(500);
-    expect(jsonMock).toHaveBeenCalledWith({
-      message: "Erro interno do servidor",
-      unexpectedErrorMsg: "Internal server error",
-    });
+    expect(response.status).toBe(500);
+    expect(response.body.message).toBe("Erro interno do servidor");
   });
 });

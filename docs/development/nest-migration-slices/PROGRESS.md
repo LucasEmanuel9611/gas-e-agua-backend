@@ -9,7 +9,7 @@ O agente executa **somente** a primeira linha `- [ ]`. Depois marca `- [x]` e pa
 - [x] S1 — [`S1-stock.md`](./S1-stock.md)
 - [x] S2 — [`S2-addons.md`](./S2-addons.md)
 - [x] S3 — [`S3-payment-settings.md`](./S3-payment-settings.md)
-- [ ] S4 — [`S4-accounts.md`](./S4-accounts.md)
+- [x] S4 — [`S4-accounts.md`](./S4-accounts.md)
 - [ ] S5 — [`S5-metrics.md`](./S5-metrics.md)
 - [ ] S6 — [`S6-transactions.md`](./S6-transactions.md)
 - [ ] S7 — [`S7-orders.md`](./S7-orders.md)

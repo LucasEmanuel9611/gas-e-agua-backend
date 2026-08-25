@@ -1,15 +1,15 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { AdminUserListItem } from "@modules/accounts/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 
 import { UserMap } from "../../mapper/UserMapper";
 
-@injectable()
+@Injectable()
 export class GetUserByIdAdminUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

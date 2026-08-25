@@ -1,26 +1,23 @@
-import { Request, Response } from "express";
-import { container } from "tsyringe";
+import { INestApplication } from "@nestjs/common";
+import request from "supertest";
 
-import { ListUserNotificationController } from "./ListUserNotificationTokensController";
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("ListUserNotificationController", () => {
-  let listUserNotificationController: ListUserNotificationController;
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-  let statusMock: jest.Mock;
-  let jsonMock: jest.Mock;
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp({ userId: "1" });
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.listUserNotificationTokensUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
 
   beforeEach(() => {
-    listUserNotificationController = new ListUserNotificationController();
-
-    statusMock = jest.fn().mockReturnThis();
-    jsonMock = jest.fn().mockReturnValue({} as Response);
-
-    mockResponse = {
-      status: statusMock,
-      json: jsonMock,
-    };
-
     jest.clearAllMocks();
   });
 
@@ -30,94 +27,74 @@ describe("ListUserNotificationController", () => {
       { id: 2, token: "ExponentPushToken[test456]", user_id: 1 },
     ];
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(mockTokens),
-    }));
+    mockExecute.mockResolvedValue(mockTokens);
 
-    mockRequest = {
-      user: { id: "1", role: "USER" },
-    };
+    const response = await request(nestApplication.getHttpServer())
+      .get("/users/notifications/token/list")
+      .set("Authorization", "Bearer token");
 
-    await listUserNotificationController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(jsonMock).toHaveBeenCalledWith(mockTokens);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(mockTokens);
   });
 
   it("should handle empty token list", async () => {
-    const mockTokens = [];
+    const mockTokens: unknown[] = [];
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(mockTokens),
-    }));
+    mockExecute.mockResolvedValue(mockTokens);
 
-    mockRequest = {
-      user: { id: "1", role: "USER" },
-    };
+    const response = await request(nestApplication.getHttpServer())
+      .get("/users/notifications/token/list")
+      .set("Authorization", "Bearer token");
 
-    await listUserNotificationController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(jsonMock).toHaveBeenCalledWith(mockTokens);
+    expect(response.body).toEqual(mockTokens);
   });
 
   it("should call use case with proper user id conversion", async () => {
-    const mockExecute = jest.fn().mockResolvedValue([]);
-
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: mockExecute,
-    }));
-
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-    };
-
-    await listUserNotificationController.handle(
-      mockRequest as Request,
-      mockResponse as Response
+    const testingApp = await createUsersControllerTestingApp({
+      userId: "123",
+    });
+    testingApp.mocks.listUserNotificationTokensUseCase.execute.mockResolvedValue(
+      []
     );
 
-    expect(mockExecute).toHaveBeenCalledWith(123);
+    await request(testingApp.nestApplication.getHttpServer())
+      .get("/users/notifications/token/list")
+      .set("Authorization", "Bearer token");
+
+    expect(
+      testingApp.mocks.listUserNotificationTokensUseCase.execute
+    ).toHaveBeenCalledWith(123);
+
+    await testingApp.nestApplication.close();
   });
 
   it("should handle different user id formats", async () => {
-    const mockExecute = jest.fn().mockResolvedValue([]);
-
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: mockExecute,
-    }));
-
-    mockRequest = {
-      user: { id: "456", role: "USER" },
-    };
-
-    await listUserNotificationController.handle(
-      mockRequest as Request,
-      mockResponse as Response
+    const testingApp = await createUsersControllerTestingApp({
+      userId: "456",
+    });
+    testingApp.mocks.listUserNotificationTokensUseCase.execute.mockResolvedValue(
+      []
     );
 
-    expect(mockExecute).toHaveBeenCalledWith(456);
-    expect(jsonMock).toHaveBeenCalled();
+    const response = await request(testingApp.nestApplication.getHttpServer())
+      .get("/users/notifications/token/list")
+      .set("Authorization", "Bearer token");
+
+    expect(
+      testingApp.mocks.listUserNotificationTokensUseCase.execute
+    ).toHaveBeenCalledWith(456);
+    expect(response.body).toEqual([]);
+
+    await testingApp.nestApplication.close();
   });
 
   it("should handle use case errors properly", async () => {
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockRejectedValue(new Error("Database error")),
-    }));
+    mockExecute.mockRejectedValue(new Error("Database error"));
 
-    mockRequest = {
-      user: { id: "1", role: "USER" },
-    };
+    const response = await request(nestApplication.getHttpServer())
+      .get("/users/notifications/token/list")
+      .set("Authorization", "Bearer token");
 
-    await listUserNotificationController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(statusMock).toHaveBeenCalledWith(500);
+    expect(response.status).toBe(500);
   });
 });

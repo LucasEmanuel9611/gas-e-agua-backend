@@ -1,33 +1,24 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
 import { AppError } from "@shared/errors/AppError";
-import { app } from "@shared/infra/http/app";
 
-import { mockProfileUserUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 5 };
-        next();
-      },
-    };
-  }
-);
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("ProfileUserController", () => {
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp({ userId: "5" });
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.profileUserUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -46,9 +37,9 @@ describe("ProfileUserController", () => {
       },
     };
 
-    mockProfileUserUseCase.execute.mockResolvedValue(mockUser);
+    mockExecute.mockResolvedValue(mockUser);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/profile")
       .set("Authorization", "Bearer token");
 
@@ -57,11 +48,11 @@ describe("ProfileUserController", () => {
   });
 
   it("should return 400 when user is not found", async () => {
-    mockProfileUserUseCase.execute.mockRejectedValue(
+    mockExecute.mockRejectedValue(
       new AppError({ message: "Usuário não encontrado", statusCode: 400 })
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/profile")
       .set("Authorization", "Bearer token");
 
@@ -70,11 +61,9 @@ describe("ProfileUserController", () => {
   });
 
   it("should return 500 when UseCase throws unexpected error", async () => {
-    mockProfileUserUseCase.execute.mockRejectedValue(
-      new Error("Database error")
-    );
+    mockExecute.mockRejectedValue(new Error("Database error"));
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/profile")
       .set("Authorization", "Bearer token");
 

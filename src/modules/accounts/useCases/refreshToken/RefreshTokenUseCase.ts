@@ -1,7 +1,7 @@
 import auth, { getRefreshExpiresInMs } from "@config/auth";
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
+import { Inject, Injectable } from "@nestjs/common";
 import { sign, SignOptions, verify } from "jsonwebtoken";
-import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -19,10 +19,10 @@ interface IPayload {
   role: string;
 }
 
-@injectable()
+@Injectable()
 export class RefreshTokenUseCase {
   constructor(
-    @inject("UserTokensRepository")
+    @Inject("UserTokensRepository")
     private userTokensRepository: IUsersTokensRepository
   ) {}
 

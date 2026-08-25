@@ -1,30 +1,29 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
-
-import { mockListUsersUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => ({
-    ensureAuthenticated: (req: any, res: any, next: any) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ message: "Token de acesso requerido" });
-      }
-
-      req.user = { id: 1 };
-      return next();
-    },
-  })
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
-  ensureAdmin: (req: any, res: any, next: any) => next(),
-}));
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("ListUsersController", () => {
+  let nestApplication: INestApplication;
+  let unauthorizedApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp();
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.listUsersUseCase.execute;
+
+    const unauthorizedTestingApp = await createUsersControllerTestingApp({
+      overrideJwt: false,
+    });
+    unauthorizedApplication = unauthorizedTestingApp.nestApplication;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+    await unauthorizedApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -52,16 +51,16 @@ describe("ListUsersController", () => {
       totalPages: 1,
     };
 
-    mockListUsersUseCase.execute.mockResolvedValue(mockResponse);
+    mockExecute.mockResolvedValue(mockResponse);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/list/1/10")
       .query({ page: 1, limit: 10, search: "João" })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockResponse);
-    expect(mockListUsersUseCase.execute).toHaveBeenCalledWith({
+    expect(mockExecute).toHaveBeenCalledWith({
       page: 1,
       limit: 10,
       search: "João",
@@ -70,7 +69,9 @@ describe("ListUsersController", () => {
   });
 
   it("should return 401 without authorization token", async () => {
-    const response = await request(app).get("/users/list/1/10");
+    const response = await request(unauthorizedApplication.getHttpServer()).get(
+      "/users/list/1/10"
+    );
 
     expect(response.status).toBe(401);
   });

@@ -1,28 +1,25 @@
-import { Request, Response } from "express";
-import { container } from "tsyringe";
+import { INestApplication } from "@nestjs/common";
+import request from "supertest";
 
 import { AppError } from "@shared/errors/AppError";
 
-import { CreateAddressController } from "./createAddressController";
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("CreateAddressController", () => {
-  let createAddressController: CreateAddressController;
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-  let statusMock: jest.Mock;
-  let jsonMock: jest.Mock;
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp({ userId: "123" });
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.createAddressUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
 
   beforeEach(() => {
-    createAddressController = new CreateAddressController();
-
-    statusMock = jest.fn().mockReturnThis();
-    jsonMock = jest.fn().mockReturnValue({} as Response);
-
-    mockResponse = {
-      status: statusMock,
-      json: jsonMock,
-    };
-
     jest.clearAllMocks();
   });
 
@@ -37,56 +34,42 @@ describe("CreateAddressController", () => {
       isDefault: true,
     };
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(mockCreatedAddress),
-    }));
+    mockExecute.mockResolvedValue(mockCreatedAddress);
 
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-      body: {
+    const response = await request(nestApplication.getHttpServer())
+      .post("/users/addresses")
+      .set("Authorization", "Bearer token")
+      .send({
         street: "Rua Teste",
         number: "123",
         reference: "Próximo ao shopping",
         local: "São Paulo",
-      },
-    };
+      });
 
-    await createAddressController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(statusMock).toHaveBeenCalledWith(201);
-    expect(jsonMock).toHaveBeenCalledWith(mockCreatedAddress);
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual(mockCreatedAddress);
   });
 
   it("should return 400 if useCase throws an error", async () => {
-    const mockError = new AppError({
-      message: "Usuário pode ter no máximo 5 endereços",
-      statusCode: 400,
-    });
+    mockExecute.mockRejectedValue(
+      new AppError({
+        message: "Usuário pode ter no máximo 5 endereços",
+        statusCode: 400,
+      })
+    );
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockRejectedValue(mockError),
-    }));
-
-    mockRequest = {
-      user: { id: "123", role: "USER" },
-      body: {
+    const response = await request(nestApplication.getHttpServer())
+      .post("/users/addresses")
+      .set("Authorization", "Bearer token")
+      .send({
         street: "Rua Teste",
         number: "123",
         reference: "Próximo ao shopping",
         local: "São Paulo",
-      },
-    };
+      });
 
-    await createAddressController.handle(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(statusMock).toHaveBeenCalledWith(400);
-    expect(jsonMock).toHaveBeenCalledWith({
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
       message: "Usuário pode ter no máximo 5 endereços",
     });
   });
