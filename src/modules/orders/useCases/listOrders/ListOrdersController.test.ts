@@ -1,30 +1,35 @@
 import { OrderProps } from "@modules/orders/types";
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
-
-import { mockListOrdersUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => ({
-    ensureAuthenticated: (req: any, res: any, next: any) => {
-      req.user = { id: "1" };
-      next();
-    },
-  })
-);
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAdminForAllScope",
-  () => ({
-    ensureAdminForAllScope: (req: any, res: any, next: any) => next(),
-  })
-);
+import {
+  createOrdersControllerTestingApp,
+  OrdersControllerTestAuthenticatedUser,
+  OrdersControllerTestMocks,
+} from "../orders-controller-test.helpers";
 
 describe("ListOrdersController", () => {
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+  let authenticatedUser: OrdersControllerTestAuthenticatedUser;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp({
+      authenticatedUser: { id: "1", role: "USER" },
+    });
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+    authenticatedUser = testingApp.authenticatedUser;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
+    authenticatedUser.id = "1";
+    authenticatedUser.role = "USER";
   });
 
   const mockOrders: OrderProps[] = [
@@ -108,7 +113,7 @@ describe("ListOrdersController", () => {
   ];
 
   it("should return paginated orders (scope=all)", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue({
+    mocks.listOrdersUseCase.execute.mockResolvedValue({
       items: [mockOrders[0]],
       pagination: {
         page: 1,
@@ -120,12 +125,12 @@ describe("ListOrdersController", () => {
       },
     });
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders")
       .query({ scope: "all", page: 0, limit: 1 })
       .set("Authorization", `Bearer token`);
 
-    expect(mockListOrdersUseCase.execute).toHaveBeenCalledWith(
+    expect(mocks.listOrdersUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         page: 1,
         limit: 1,
@@ -139,7 +144,7 @@ describe("ListOrdersController", () => {
   });
 
   it("should return second page (scope=all)", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue({
+    mocks.listOrdersUseCase.execute.mockResolvedValue({
       items: [mockOrders[1]],
       pagination: {
         page: 2,
@@ -151,7 +156,7 @@ describe("ListOrdersController", () => {
       },
     });
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders")
       .query({ scope: "all", page: 1, limit: 1 })
       .set("Authorization", `Bearer token`);
@@ -162,7 +167,7 @@ describe("ListOrdersController", () => {
   });
 
   it("should return empty array for out-of-bounds page (scope=all)", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue({
+    mocks.listOrdersUseCase.execute.mockResolvedValue({
       items: [],
       pagination: {
         page: 6,
@@ -174,7 +179,7 @@ describe("ListOrdersController", () => {
       },
     });
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders")
       .query({ scope: "all", page: 5, limit: 1 })
       .set("Authorization", `Bearer token`);
@@ -185,7 +190,7 @@ describe("ListOrdersController", () => {
   });
 
   it("should forward openAccounts=true to the use case", async () => {
-    mockListOrdersUseCase.execute.mockResolvedValue({
+    mocks.listOrdersUseCase.execute.mockResolvedValue({
       items: [],
       pagination: {
         page: 1,
@@ -197,13 +202,13 @@ describe("ListOrdersController", () => {
       },
     });
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders")
       .query({ scope: "me", page: 0, limit: 100, openAccounts: true })
       .set("Authorization", `Bearer token`);
 
     expect(response.status).toBe(200);
-    expect(mockListOrdersUseCase.execute).toHaveBeenCalledWith(
+    expect(mocks.listOrdersUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         openAccounts: true,
         userId: "1",

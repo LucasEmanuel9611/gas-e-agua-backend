@@ -1,6 +1,6 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { buildPaginatedResponse } from "@shared/types/pagination";
 
@@ -12,10 +12,10 @@ interface IRequest {
   openAccounts?: boolean;
 }
 
-@injectable()
+@Injectable()
 export class ListOrdersUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository
   ) {}
 

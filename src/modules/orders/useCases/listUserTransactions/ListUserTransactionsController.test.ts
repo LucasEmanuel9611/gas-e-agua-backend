@@ -1,24 +1,25 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
-
-import { mockListUserTransactionsUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => ({
-    ensureAuthenticated: (req: any, res: any, next: any) => {
-      req.user = { id: 1 };
-      next();
-    },
-  })
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
-  ensureAdmin: (req: any, res: any, next: any) => next(),
-}));
+import {
+  createOrdersControllerTestingApp,
+  OrdersControllerTestMocks,
+} from "../orders-controller-test.helpers";
 
 describe("ListUserTransactionsController", () => {
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp();
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -44,16 +45,16 @@ describe("ListUserTransactionsController", () => {
       },
     };
 
-    mockListUserTransactionsUseCase.execute.mockResolvedValue(mockResponse);
+    mocks.listUserTransactionsUseCase.execute.mockResolvedValue(mockResponse);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/1/transactions")
       .query({ page: 1, limit: 20, sort: "date_desc", order_id: 10 })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockResponse);
-    expect(mockListUserTransactionsUseCase.execute).toHaveBeenCalledWith({
+    expect(mocks.listUserTransactionsUseCase.execute).toHaveBeenCalledWith({
       userId: 1,
       page: 1,
       limit: 20,

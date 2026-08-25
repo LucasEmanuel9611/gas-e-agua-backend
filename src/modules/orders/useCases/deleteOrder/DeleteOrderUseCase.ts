@@ -1,15 +1,15 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { Order } from "@modules/orders/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 interface IRequest {
   order_id: number;
 }
 
-@injectable()
+@Injectable()
 export class DeleteOrderUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository
   ) {}
 

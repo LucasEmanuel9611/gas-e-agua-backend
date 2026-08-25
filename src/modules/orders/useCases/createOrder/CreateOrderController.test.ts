@@ -1,64 +1,46 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
 import { AppError } from "@shared/errors/AppError";
-import { app } from "@shared/infra/http/app";
 
 import {
-  mockCreateOrderUseCase,
-  mockExpoPushService,
-  mockGetStockUseCase,
-  mockListAdminUseCase,
-} from "../../../../../jest/mocks/useCaseMocks";
-import { CreateOrderController } from "./CreateOrderController";
-
-let mockUserRole = "USER";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-      registerSingleton: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 5, role: mockUserRole };
-        next();
-      },
-    };
-  }
-);
+  createOrdersControllerTestingApp,
+  OrdersControllerTestAuthenticatedUser,
+  OrdersControllerTestMocks,
+} from "../orders-controller-test.helpers";
 
 describe("CreateOrderController", () => {
-  beforeAll(() => {
-    const controller = new CreateOrderController();
-    app.post("/orders/", controller.handle.bind(controller));
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+  let authenticatedUser: OrdersControllerTestAuthenticatedUser;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp({
+      authenticatedUser: { id: "5", role: "USER" },
+    });
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+    authenticatedUser = testingApp.authenticatedUser;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    authenticatedUser.id = "5";
+    authenticatedUser.role = "USER";
+    mocks.expoPushService.sendPushToAdmins.mockResolvedValue({
+      success: true,
+      sent: 1,
+      failed: 0,
+      total: 1,
+      errors: [],
+    });
   });
 
   it("should create an order and notify admins, returning 201", async () => {
-    const adminUser = {
-      id: 1,
-      notificationTokens: [
-        { token: "token1", is_valid: true },
-        { token: "token2", is_valid: true },
-      ],
-    };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -85,9 +67,9 @@ describe("CreateOrderController", () => {
       ],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -98,7 +80,7 @@ describe("CreateOrderController", () => {
       })
       .set("Authorization", "Bearer token");
 
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+    expect(mocks.createOrderUseCase.execute).toHaveBeenCalledWith({
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 2 },
@@ -106,7 +88,7 @@ describe("CreateOrderController", () => {
       ],
       addons: [],
     });
-    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalled();
+    expect(mocks.expoPushService.sendPushToAdmins).toHaveBeenCalled();
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
@@ -115,12 +97,6 @@ describe("CreateOrderController", () => {
   }, 10000);
 
   it("should create an order with water bottle addon", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -162,9 +138,9 @@ describe("CreateOrderController", () => {
         },
       ],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -175,7 +151,7 @@ describe("CreateOrderController", () => {
       })
       .set("Authorization", "Bearer token");
 
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+    expect(mocks.createOrderUseCase.execute).toHaveBeenCalledWith({
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 1 },
@@ -191,12 +167,6 @@ describe("CreateOrderController", () => {
   });
 
   it("should create an order with gas bottle addon", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -238,9 +208,9 @@ describe("CreateOrderController", () => {
         },
       ],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -251,7 +221,7 @@ describe("CreateOrderController", () => {
       })
       .set("Authorization", "Bearer token");
 
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+    expect(mocks.createOrderUseCase.execute).toHaveBeenCalledWith({
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 2 },
@@ -267,12 +237,6 @@ describe("CreateOrderController", () => {
   });
 
   it("should create an order with both bottle addons", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -328,9 +292,9 @@ describe("CreateOrderController", () => {
         },
       ],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -344,7 +308,7 @@ describe("CreateOrderController", () => {
       })
       .set("Authorization", "Bearer token");
 
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+    expect(mocks.createOrderUseCase.execute).toHaveBeenCalledWith({
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 1 },
@@ -363,12 +327,6 @@ describe("CreateOrderController", () => {
   });
 
   it("should create an order with only water", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -386,9 +344,9 @@ describe("CreateOrderController", () => {
       ],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [{ id: 2, type: "WATER", quantity: 2 }],
@@ -404,12 +362,6 @@ describe("CreateOrderController", () => {
   });
 
   it("should create an order with only gas", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -427,9 +379,9 @@ describe("CreateOrderController", () => {
       ],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [{ id: 1, type: "GAS", quantity: 2 }],
@@ -445,7 +397,7 @@ describe("CreateOrderController", () => {
   });
 
   it("should return 400 when no items are provided", async () => {
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({ items: [], addons: [] })
       .set("Authorization", "Bearer token");
@@ -455,17 +407,13 @@ describe("CreateOrderController", () => {
   });
 
   it("should return 400 if gas stock is insufficient", async () => {
-    mockListAdminUseCase.execute.mockResolvedValue({
-      id: 1,
-      notificationTokens: [],
-    });
-    mockCreateOrderUseCase.execute.mockRejectedValue(
+    mocks.createOrderUseCase.execute.mockRejectedValue(
       new AppError({
         message: "Estoque insuficiente de Gás. Disponível: 1, Solicitado: 2",
       })
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [{ id: 1, type: "GAS", quantity: 2 }],
@@ -478,17 +426,13 @@ describe("CreateOrderController", () => {
   });
 
   it("should return 400 if water stock is insufficient", async () => {
-    mockListAdminUseCase.execute.mockResolvedValue({
-      id: 1,
-      notificationTokens: [],
-    });
-    mockCreateOrderUseCase.execute.mockRejectedValue(
+    mocks.createOrderUseCase.execute.mockRejectedValue(
       new AppError({
         message: "Estoque insuficiente de Água. Disponível: 1, Solicitado: 2",
       })
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [{ id: 2, type: "WATER", quantity: 2 }],
@@ -501,17 +445,13 @@ describe("CreateOrderController", () => {
   });
 
   it("should return 400 if both stocks are insufficient", async () => {
-    mockListAdminUseCase.execute.mockResolvedValue({
-      id: 1,
-      notificationTokens: [],
-    });
-    mockCreateOrderUseCase.execute.mockRejectedValue(
+    mocks.createOrderUseCase.execute.mockRejectedValue(
       new AppError({
         message: "Estoque insuficiente de Gás. Disponível: 1, Solicitado: 2",
       })
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -528,24 +468,39 @@ describe("CreateOrderController", () => {
 });
 
 describe("CreateOrderController - Policy Tests", () => {
-  beforeAll(() => {
-    const controller = new CreateOrderController();
-    app.post("/orders/", controller.handle.bind(controller));
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+  let authenticatedUser: OrdersControllerTestAuthenticatedUser;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp({
+      authenticatedUser: { id: "5", role: "USER" },
+    });
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+    authenticatedUser = testingApp.authenticatedUser;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    authenticatedUser.id = "5";
+    authenticatedUser.role = "USER";
+    mocks.expoPushService.sendPushToAdmins.mockResolvedValue({
+      success: true,
+      sent: 1,
+      failed: 0,
+      total: 1,
+      errors: [],
+    });
   });
 
   it("should validate admin fields correctly", async () => {
-    mockUserRole = "ADMIN";
+    authenticatedUser.role = "ADMIN";
 
-    const adminUser = { id: 1, notificationTokens: ["token1"], role: "ADMIN" };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 123,
@@ -574,9 +529,9 @@ describe("CreateOrderController - Policy Tests", () => {
       ],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -591,7 +546,7 @@ describe("CreateOrderController - Policy Tests", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+    expect(mocks.createOrderUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 123,
         status: "FINALIZADO",
@@ -606,9 +561,9 @@ describe("CreateOrderController - Policy Tests", () => {
   });
 
   it("should reject non-admin user trying to use admin fields", async () => {
-    mockUserRole = "USER";
+    authenticatedUser.role = "USER";
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -627,14 +582,8 @@ describe("CreateOrderController - Policy Tests", () => {
   });
 
   it("should allow regular user to send only basic fields", async () => {
-    mockUserRole = "USER";
+    authenticatedUser.role = "USER";
 
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -661,9 +610,9 @@ describe("CreateOrderController - Policy Tests", () => {
       ],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -682,14 +631,8 @@ describe("CreateOrderController - Policy Tests", () => {
   });
 
   it("should allow regular user to send intended_payment_method", async () => {
-    mockUserRole = "USER";
+    authenticatedUser.role = "USER";
 
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -698,9 +641,9 @@ describe("CreateOrderController - Policy Tests", () => {
       orderItems: [],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -713,7 +656,7 @@ describe("CreateOrderController - Policy Tests", () => {
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+    expect(mocks.createOrderUseCase.execute).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: 5,
         intended_payment_method: "PIX",
@@ -722,12 +665,6 @@ describe("CreateOrderController - Policy Tests", () => {
   });
 
   it("should return success message when notification succeeds", async () => {
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -755,9 +692,9 @@ describe("CreateOrderController - Policy Tests", () => {
       orderAddons: [],
     };
 
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
@@ -777,15 +714,6 @@ describe("CreateOrderController - Policy Tests", () => {
   });
 
   it("should return failure message when notification fails", async () => {
-    const adminUser = {
-      id: 1,
-      notificationTokens: [{ token: "token1", is_valid: true }],
-    };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
     const mockOrder = {
       id: 1,
       user_id: 5,
@@ -812,12 +740,12 @@ describe("CreateOrderController - Policy Tests", () => {
       ],
       orderAddons: [],
     };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-    mockExpoPushService.sendPushToAdmins.mockRejectedValueOnce(
+    mocks.createOrderUseCase.execute.mockResolvedValue(mockOrder);
+    mocks.expoPushService.sendPushToAdmins.mockRejectedValueOnce(
       new Error("Falha na notificação")
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .post("/orders/")
       .send({
         items: [
