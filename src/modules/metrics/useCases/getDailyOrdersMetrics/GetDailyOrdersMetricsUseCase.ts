@@ -1,13 +1,13 @@
 import dayjs from "@config/dayjs.config";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { IDailyOrdersMetrics } from "../../types";
 
-@injectable()
+@Injectable()
 export class GetDailyOrdersMetricsUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository
   ) {}
 
