@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -48,7 +47,6 @@ function getTrimmedBroadcastField(
 }
 
 @Injectable()
-@injectable()
 export class SendNotificationUseCase {
   async sendOrderNotification(
     orderId: number,

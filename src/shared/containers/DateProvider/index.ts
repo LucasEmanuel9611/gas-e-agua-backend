@@ -1,6 +1,9 @@
+import { Injectable } from "@nestjs/common";
+
 import dayjs from "../../../config/dayjs.config";
 import { IDateProvider } from "./IDateProvider";
 
+@Injectable()
 export class DayjsDateProvider implements IDateProvider {
   isSameHour(start_date: Date, end_date: Date): boolean {
     const end_date_utc = this.convertToUTC(end_date);

@@ -1,10 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { injectable } from "tsyringe";
 
 import { INotificationTemplate, NotificationCategory } from "../types";
 
 @Injectable()
-@injectable()
 export class NotificationTemplateService {
   private templates: Map<string, INotificationTemplate> = new Map();
 

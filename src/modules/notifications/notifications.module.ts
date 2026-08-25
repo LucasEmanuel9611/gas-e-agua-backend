@@ -2,16 +2,14 @@ import { UserNotificationTokensRepository } from "@modules/accounts/repositories
 import { UsersRepository } from "@modules/accounts/repositories/implementations/UsersRepository";
 import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { OrdersRepository } from "@modules/orders/repositories/implementations/OrdersRepository";
 import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
-import { ScheduleModule } from "@nestjs/schedule";
 
 import { redisConnection } from "@shared/infra/redis/redisConnection";
 import { CleanInvalidTokensTask } from "@shared/infra/tasks/cleanInvalidTokens";
 import { ProcessScheduledNotificationsTask } from "@shared/infra/tasks/processScheduledNotifications";
 import { SendOrderPaymentNotificationsTask } from "@shared/infra/tasks/sendOrderPaymentNotifications";
-import { UpdateOrderValueAddInterestTask } from "@shared/infra/tasks/updateOrderValueAddInterest";
-import { UpdateOverdueOrdersTask } from "@shared/infra/tasks/updateOverdueOrders";
 
 import { NotificationWorker } from "./infra/queues/workers/NotificationWorker";
 import { NotificationsController } from "./notifications.controller";
@@ -23,6 +21,9 @@ import { NotificationTemplateService } from "./services/NotificationTemplateServ
 import { CleanInvalidTokensUseCase } from "./useCases/cleanInvalidTokens/cleanInvalidTokensUseCase";
 import { GetUserNotificationHistoryUseCase } from "./useCases/getUserNotificationHistory/getUserNotificationHistoryUseCase";
 import { ManageScheduledNotificationsUseCase } from "./useCases/manageScheduledNotifications/manageScheduledNotificationsUseCase";
+import { SendPaymentDueIn5DaysNotificationsUseCase } from "./useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
+import { SendPaymentDueTomorrowNotificationsUseCase } from "./useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
+import { SendPaymentLateNotificationsUseCase } from "./useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
 import { SendNotificationUseCase } from "./useCases/sendNotification/sendNotificationUseCase";
 
 @Module({
@@ -33,7 +34,6 @@ import { SendNotificationUseCase } from "./useCases/sendNotification/sendNotific
     BullModule.registerQueue({
       name: "notifications",
     }),
-    ScheduleModule.forRoot(),
   ],
   controllers: [NotificationsController],
   providers: [
@@ -41,14 +41,16 @@ import { SendNotificationUseCase } from "./useCases/sendNotification/sendNotific
     GetUserNotificationHistoryUseCase,
     CleanInvalidTokensUseCase,
     ManageScheduledNotificationsUseCase,
+    SendPaymentDueIn5DaysNotificationsUseCase,
+    SendPaymentDueTomorrowNotificationsUseCase,
+    SendPaymentLateNotificationsUseCase,
     NotificationTemplateService,
     NotificationWorker,
     CleanInvalidTokensTask,
     ProcessScheduledNotificationsTask,
     SendOrderPaymentNotificationsTask,
-    UpdateOrderValueAddInterestTask,
-    UpdateOverdueOrdersTask,
     { provide: "UsersRepository", useClass: UsersRepository },
+    { provide: "OrdersRepository", useClass: OrdersRepository },
     {
       provide: "UserNotificationTokensRepository",
       useClass: UserNotificationTokensRepository,

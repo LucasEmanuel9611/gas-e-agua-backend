@@ -1,7 +1,7 @@
 import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { Inject, Injectable } from "@nestjs/common";
 import { Expo, ExpoPushMessage, ExpoPushTicket } from "expo-server-sdk";
-import { inject, injectable } from "tsyringe";
 
 import { LoggerService } from "@shared/services/LoggerService";
 import { metricsService } from "@shared/services/MetricsService";
@@ -10,16 +10,16 @@ import { INotificationHistoryRepository } from "../repositories/INotificationHis
 import { IPushNotificationPayload } from "../types";
 import { NotificationStatus } from "../types/notificationHistory";
 
-@injectable()
+@Injectable()
 export class ExpoPushService {
   private expo: Expo;
 
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository,
-    @inject("UserNotificationTokensRepository")
+    @Inject("UserNotificationTokensRepository")
     private tokenRepository: IUserNotificationTokensRepository,
-    @inject("NotificationHistoryRepository")
+    @Inject("NotificationHistoryRepository")
     private historyRepository: INotificationHistoryRepository
   ) {
     this.expo = new Expo({

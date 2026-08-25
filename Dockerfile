@@ -26,7 +26,7 @@ RUN npx prisma generate
 # Compilar TypeScript para JavaScript
 RUN npm run build
 
-# Copiar swagger.json para o dist (Babel não copia arquivos da raiz)
+# Copiar swagger.json para o dist (import relativo em app.ts aponta à raiz)
 RUN cp swagger.json dist/
 
 # Stage de produção - imagem final menor

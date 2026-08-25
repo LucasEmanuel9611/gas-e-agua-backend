@@ -3,10 +3,15 @@ import { SendPaymentDueTomorrowNotificationsUseCase } from "@modules/notificatio
 import { SendPaymentLateNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { container } from "tsyringe";
 
 @Injectable()
 export class SendOrderPaymentNotificationsTask {
+  constructor(
+    private readonly sendPaymentDueIn5DaysNotificationsUseCase: SendPaymentDueIn5DaysNotificationsUseCase,
+    private readonly sendPaymentDueTomorrowNotificationsUseCase: SendPaymentDueTomorrowNotificationsUseCase,
+    private readonly sendPaymentLateNotificationsUseCase: SendPaymentLateNotificationsUseCase
+  ) {}
+
   @Cron("0 12 * * *")
   async handle() {
     console.log("[CRON] Iniciando verificação de notificações de pagamento...");
@@ -17,22 +22,12 @@ export class SendOrderPaymentNotificationsTask {
       "  ⚠️  PAYMENT_LATE: Pedidos em atraso (a cada 5 dias após vencimento)"
     );
 
-    const sendPaymentDueIn5DaysNotificationsUseCase = container.resolve(
-      SendPaymentDueIn5DaysNotificationsUseCase
-    );
-    const sendPaymentDueTomorrowNotificationsUseCase = container.resolve(
-      SendPaymentDueTomorrowNotificationsUseCase
-    );
-    const sendPaymentLateNotificationsUseCase = container.resolve(
-      SendPaymentLateNotificationsUseCase
-    );
-
     try {
       const [dueIn5DaysResult, dueTomorrowResult, lateResult] =
         await Promise.all([
-          sendPaymentDueIn5DaysNotificationsUseCase.execute(),
-          sendPaymentDueTomorrowNotificationsUseCase.execute(),
-          sendPaymentLateNotificationsUseCase.execute(),
+          this.sendPaymentDueIn5DaysNotificationsUseCase.execute(),
+          this.sendPaymentDueTomorrowNotificationsUseCase.execute(),
+          this.sendPaymentLateNotificationsUseCase.execute(),
         ]);
 
       const totalNotifications =

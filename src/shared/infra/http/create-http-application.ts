@@ -14,7 +14,8 @@ import { app } from "./app";
 export async function createHttpApplication(): Promise<NestExpressApplication> {
   const nestApplication = await NestFactory.create<NestExpressApplication>(
     AppModule,
-    new ExpressAdapter(app)
+    new ExpressAdapter(app),
+    { bodyParser: false }
   );
 
   nestApplication.useGlobalPipes(

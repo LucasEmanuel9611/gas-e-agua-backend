@@ -1,11 +1,11 @@
 import { OrderProps } from "@modules/orders/types";
+import { Injectable } from "@nestjs/common";
 import dayjs from "dayjs";
-import { injectable } from "tsyringe";
 
 import { NotificationType } from "../../types/NotificationTypes";
 import { BasePaymentNotificationUseCase } from "../base/BasePaymentNotificationUseCase";
 
-@injectable()
+@Injectable()
 export class SendPaymentDueIn5DaysNotificationsUseCase extends BasePaymentNotificationUseCase {
   protected async getOrders(): Promise<OrderProps[]> {
     const start = dayjs().subtract(25, "days").startOf("day").toDate();

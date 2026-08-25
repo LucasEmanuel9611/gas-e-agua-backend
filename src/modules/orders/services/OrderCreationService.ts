@@ -6,7 +6,6 @@ import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { StockItem } from "@modules/stock/types";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { Inject, Injectable } from "@nestjs/common";
-import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -16,23 +15,17 @@ import {
 } from "./IOrderCreationService";
 
 @Injectable()
-@injectable()
 export class OrderCreationService implements IOrderCreationService {
   constructor(
     @Inject("OrdersRepository")
-    @inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
     @Inject("UsersRepository")
-    @inject("UsersRepository")
     private usersRepository: IUsersRepository,
     @Inject("StockRepository")
-    @inject("StockRepository")
     private stockRepository: IStockRepository,
     @Inject("TransactionsRepository")
-    @inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository,
     @Inject("UserAddressRepository")
-    @inject("UserAddressRepository")
     private userAddressRepository: IUserAddressRepository
   ) {}
 

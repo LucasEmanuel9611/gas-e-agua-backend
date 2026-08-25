@@ -1,6 +1,6 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
-import { inject } from "tsyringe";
+import { Inject } from "@nestjs/common";
 
 import { LoggerService } from "@shared/services/LoggerService";
 
@@ -22,7 +22,7 @@ export interface IPaymentNotificationResult {
 
 export abstract class BasePaymentNotificationUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     protected ordersRepository: IOrdersRepository,
     protected sendNotificationUseCase: SendNotificationUseCase
   ) {}

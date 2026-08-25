@@ -1,20 +1,19 @@
 import { CleanInvalidTokensUseCase } from "@modules/notifications/useCases/cleanInvalidTokens/cleanInvalidTokensUseCase";
 import { Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { container } from "tsyringe";
 
 @Injectable()
 export class CleanInvalidTokensTask {
+  constructor(
+    private readonly cleanInvalidTokensUseCase: CleanInvalidTokensUseCase
+  ) {}
+
   @Cron("0 3 * * *")
   async handle() {
     console.log("[CRON] Iniciando limpeza de tokens inválidos...");
 
-    const cleanInvalidTokensUseCase = container.resolve(
-      CleanInvalidTokensUseCase
-    );
-
     try {
-      const result = await cleanInvalidTokensUseCase.execute(90);
+      const result = await this.cleanInvalidTokensUseCase.execute(90);
 
       if (result.tokensRemoved > 0) {
         console.log(
