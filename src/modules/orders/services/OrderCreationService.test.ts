@@ -84,14 +84,21 @@ describe(OrderCreationService.name, () => {
       findByEmail: jest.fn(),
       update: jest.fn(),
       findAll: jest.fn(),
+      findByIdWithAccountSummary: jest.fn(),
       findAdmin: jest.fn(),
+      findAdmins: jest.fn(),
+      deleteAddress: jest.fn(),
+      createAddress: jest.fn(),
+      updateAddress: jest.fn(),
     };
 
     mockOrdersRepository = {
       create: jest.fn(),
       findById: jest.fn(),
+      findByIdWithDetails: jest.fn(),
       findByUser: jest.fn(),
       findAll: jest.fn(),
+      findAllPaginated: jest.fn(),
       updateById: jest.fn(),
       delete: jest.fn(),
       findByDay: jest.fn(),
@@ -106,6 +113,7 @@ describe(OrderCreationService.name, () => {
       getStockData: jest.fn(),
       findByIdWithPayments: jest.fn(),
       findOrdersByDateRange: jest.fn(),
+      findAllOrdersByDateRange: jest.fn(),
       findOrdersByPaymentState: jest.fn(),
       updateOrderItems: jest.fn(),
       updateOrderAddons: jest.fn(),
@@ -121,6 +129,9 @@ describe(OrderCreationService.name, () => {
       create: jest.fn(),
       findById: jest.fn(),
       findByOrderId: jest.fn(),
+      findByUserIdPaginated: jest.fn(),
+      sumPaymentsByDateRange: jest.fn(),
+      deleteById: jest.fn(),
     };
 
     mockUserAddressRepository = {
@@ -208,6 +219,7 @@ describe(OrderCreationService.name, () => {
         ],
         total: expectedTotal,
         payment_state: "PENDENTE",
+        intended_payment_method: undefined,
         interest_allowed: true,
       });
     });
@@ -258,6 +270,45 @@ describe(OrderCreationService.name, () => {
           quantity: 3,
         },
       });
+    });
+
+    it("should persist intended_payment_method when provided", async () => {
+      const items = [{ id: 1, type: "WATER", quantity: 1 }];
+
+      const mockOrder = {
+        id: 1,
+        user_id: mockedUser.id,
+        total: WATER_VALUE,
+        status: "PENDENTE" as const,
+        payment_state: "PENDENTE" as const,
+        intended_payment_method: "DINHEIRO" as const,
+        created_at: new Date(),
+        updated_at: new Date(),
+        address: mockedUser.addresses.find((addr) => addr.isDefault),
+        interest_allowed: true,
+        orderItems: [],
+        orderAddons: [],
+      };
+
+      mockUsersRepository.findById.mockResolvedValue(mockedUser);
+      mockStockRepository.findAll.mockResolvedValue(mockedStockItems);
+      mockOrdersRepository.create.mockResolvedValue(mockOrder);
+      mockOrdersRepository.getAddonsByIds.mockResolvedValue([]);
+
+      const orderData: IOrderCreationData = {
+        user_id: mockedUser.id,
+        items,
+        addons: [],
+        intended_payment_method: "DINHEIRO",
+      };
+
+      await orderCreationService.createOrder(orderData);
+
+      expect(mockOrdersRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          intended_payment_method: "DINHEIRO",
+        })
+      );
     });
 
     it("should create an order with custom status and payment_state", async () => {

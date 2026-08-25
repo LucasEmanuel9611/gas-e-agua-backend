@@ -14,6 +14,14 @@ inputs:
   vps-user:
     description: "VPS user"
     required: true
+  mysql-root-password:
+    description: "MySQL root password (preferred over .env on disk)"
+    required: false
+    default: ""
+  mysql-database:
+    description: "MySQL database name"
+    required: false
+    default: ""
 
 outputs:
   backup-file:
@@ -26,12 +34,22 @@ runs:
     - name: Create database backup
       id: backup
       shell: bash
+      env:
+        MYSQL_ROOT_PASSWORD: ${{ inputs.mysql-root-password }}
+        MYSQL_DATABASE: ${{ inputs.mysql-database }}
       run: |
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} << 'EOF'
-          set -e
-          cd /home/deploy/gas-e-agua-backend
-          chmod +x scripts/*.sh
-          BACKUP_FILE=$(./scripts/backup-db.sh ${{ inputs.environment }} | grep "Backup created:" | awk '{print $3}')
-          echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
-          echo "✅ Backup created: $BACKUP_FILE"
+        set -e
+
+        echo "📦 Executando backup no ambiente: ${{ inputs.environment }}"
+        echo ""
+
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ inputs.vps-user }}@${{ inputs.vps-host }} bash <<EOF
+        set -e
+        cd /home/deploy/gas-e-agua-backend
+        export MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
+        export MYSQL_DATABASE="$MYSQL_DATABASE"
+        bash ./scripts/deploy/backup-db.sh ${{ inputs.environment }}
         EOF
+
+        echo ""
+        echo "✅ Backup concluído com sucesso!"

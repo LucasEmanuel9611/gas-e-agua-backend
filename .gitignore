@@ -3,6 +3,8 @@ node_modules
 tmp/*
 coverage
 .env*
+!.env.example
+!.env.test.example
 !tmp/.gitkeep
 dist
 ormconfig.json
@@ -10,3 +12,4 @@ ormconfig.json
 logs/
 *.log
 monitoring/data/
+.deploy-history/

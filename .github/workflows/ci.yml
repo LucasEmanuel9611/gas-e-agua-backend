@@ -14,12 +14,12 @@ jobs:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: gas_e_agua_test
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot123 --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -36,17 +36,34 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Definir DATABASE_URL para o container MySQL
-        run: echo "DATABASE_URL=mysql://root:root@localhost:3306/test_db" >> $GITHUB_ENV
+      - name: Instalar cliente MySQL
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Configurar ambiente de teste
+        env:
+          ENV_TEST_FILE: |
+            DATABASE_URL="mysql://root:root123@127.0.0.1:3306/gas_e_agua_test"
+            REDIS_HOST=127.0.0.1
+            REDIS_PORT=6379
+            NODE_ENV=test
+            PORT=3333
+            JWT_SECRET=test-jwt-secret-minimum-32-characters-long
+            JWT_REFRESH_SECRET=test-jwt-refresh-secret-minimum-32-characters-long
+            JWT_EXPIRES_IN=15m
+            JWT_REFRESH_EXPIRES_IN=7d
+        run: echo "$ENV_TEST_FILE" > .env.test
+
+      - name: Exportar variáveis de teste
+        run: |
+          echo "DATABASE_URL=mysql://root:root123@127.0.0.1:3306/gas_e_agua_test" >> $GITHUB_ENV
+          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_ROOT_PASSWORD=root123" >> $GITHUB_ENV
+          echo "TEST_DATABASE_NAME=gas_e_agua_test" >> $GITHUB_ENV
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
 
       - name: Gerar client do Prisma
         run: npx prisma generate
-
-      - name: Rodar migrations no banco
-        run: npx prisma migrate deploy
-
-      - name: Rodar seeds no banco
-        run: npx prisma db seed
 
       - name: Rodar linter
         run: npm run lint --if-present

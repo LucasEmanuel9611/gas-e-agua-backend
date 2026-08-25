@@ -3,9 +3,17 @@ import { ICreateOrderDTO, OrderProps } from "@modules/orders/types";
 export interface IOrdersRepository {
   create(data: ICreateOrderDTO): Promise<OrderProps>;
   findById(id: number): Promise<OrderProps>;
+  findByIdWithDetails(id: number): Promise<OrderProps | null>;
   findByIdWithPayments(id: number): Promise<OrderProps>;
   findByUser(user_id: string): Promise<OrderProps[]>;
   findAll(): Promise<OrderProps[]>;
+  findAllPaginated(params: {
+    page: number;
+    limit: number;
+    userId?: string;
+    date?: Date;
+    openAccounts?: boolean;
+  }): Promise<{ items: OrderProps[]; total: number }>;
   findByDay(date: Date): Promise<OrderProps[]>;
   updateById(id: number, data: Partial<OrderProps>): Promise<OrderProps>;
   delete(id: number): Promise<void>;
@@ -25,6 +33,10 @@ export interface IOrdersRepository {
     startDate: Date;
     endDate: Date;
     paymentState: string;
+  }): Promise<OrderProps[]>;
+  findAllOrdersByDateRange(params: {
+    startDate: Date;
+    endDate: Date;
   }): Promise<OrderProps[]>;
   findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]>;
 

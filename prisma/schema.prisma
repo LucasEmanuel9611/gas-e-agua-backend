@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -18,15 +18,16 @@ enum UserRole {
 enum TransactionType {
   PAYMENT
   INTEREST
+  ADJUSTMENT
 }
 
 model User {
   id                 Int                 @id @default(autoincrement())
   username           String
-  email              String
+  email              String              @unique
   password           String
   role               UserRole            @default(USER)
-  telephone          String
+  telephone          String              @unique
   created_at         DateTime            @default(now())
   updated_at         DateTime            @updatedAt
   addresses          Address[]
@@ -35,12 +36,15 @@ model User {
 }
 
 model NotificationToken {
-  id      Int    @id @default(autoincrement())
-  token   String
-  user_id Int
-  user    User   @relation(fields: [user_id], references: [id])
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  user_id    Int
+  is_valid   Boolean  @default(true)
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id])
 
   @@index([user_id], map: "NotificationToken_user_id_fkey")
+  @@index([is_valid])
 }
 
 model Address {
@@ -66,6 +70,7 @@ model Order {
   total            Float
   status           String
   payment_state    String        @default("PENDENTE")
+  intended_payment_method String?
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
   address          Address       @relation(fields: [address_id], references: [id])
@@ -77,6 +82,10 @@ model Order {
 
   @@index([address_id], map: "Order_address_id_fkey")
   @@index([user_id], map: "Order_user_id_fkey")
+  @@index([payment_state, created_at])
+  @@index([created_at, payment_state])
+  @@index([interest_allowed, user_id])
+  @@index([user_id, created_at])
 }
 
 model Transaction {
@@ -115,17 +124,20 @@ model Addons {
 }
 
 model OrderItems {
-  id         Int   @id @default(autoincrement())
-  order      Order @relation(fields: [orderId], references: [id])
+  id         Int    @id @default(autoincrement())
+  order      Order  @relation(fields: [orderId], references: [id])
   orderId    Int
-  stock      Stock @relation(fields: [stockId], references: [id])
+  stock      Stock  @relation(fields: [stockId], references: [id])
   stockId    Int
   quantity   Int
   unitValue  Float
   totalValue Float
+  type       String
 
   @@index([orderId], map: "OrderItems_orderId_fkey")
   @@index([stockId], map: "OrderItems_stockId_fkey")
+  @@index([orderId, stockId])
+  @@index([stockId, quantity])
 }
 
 model OrderAddons {
@@ -137,7 +149,54 @@ model OrderAddons {
   quantity   Int
   unitValue  Float
   totalValue Float
+  type       String
 
   @@index([orderId], map: "OrderAddons_orderId_fkey")
   @@index([addonId], map: "OrderAddons_addonId_fkey")
+  @@index([orderId, addonId])
+}
+
+model ScheduledNotification {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  body               String
+  target_users       String?
+  target_roles       String?
+  scheduled_for      DateTime
+  recurrence_pattern String?
+  timezone           String?
+  is_active          Boolean   @default(true)
+  last_sent_at       DateTime?
+  next_run_at        DateTime?
+  created_by         Int
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  data               String?
+
+  @@index([scheduled_for])
+  @@index([is_active])
+}
+
+model PaymentSettings {
+  id             Int      @id @default(1)
+  pix_key        String   @default("")
+  recipient_name String   @default("")
+  updated_at     DateTime @updatedAt
+}
+
+model NotificationHistory {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  type         String
+  title        String
+  body         String
+  status       String
+  sent_at      DateTime  @default(now())
+  delivered_at DateTime?
+  error        String?
+  data         String?
+
+  @@index([user_id])
+  @@index([sent_at])
+  @@index([status])
 }

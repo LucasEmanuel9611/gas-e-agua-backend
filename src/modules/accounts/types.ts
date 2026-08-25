@@ -1,6 +1,8 @@
 export type NotificationTokenProps = {
   id: number;
   token: string;
+  is_valid: boolean;
+  created_at: Date;
 };
 
 export type AddressDates = {
@@ -28,14 +30,15 @@ export type UserDates = {
 };
 
 export type ICreateUserTokenDTO = {
-  user_id: string;
+  user_id: number;
   expires_date: Date;
   refresh_token: string;
 };
 
 export class UserTokens {
-  id: string;
-  user_id: string;
+  id: number;
+  user_id: number;
+  refresh_token: string;
   user: UserDates;
   expires_date: Date;
   created_at: Date;
@@ -48,6 +51,29 @@ export interface IUserResponseDTO {
   notificationTokens: NotificationTokenProps[];
   role: UserRole;
 }
+
+export type AccountSummary = {
+  openBalance: number;
+  openAccountsCount: number;
+  overdueAccountsCount: number;
+};
+
+export type UserListSortOption = "highest_debt_first" | "name_asc";
+
+export type UserWithAccountSummary = UserDates & {
+  accountSummary: AccountSummary;
+};
+
+export type AdminUserListItem = {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+  telephone: string;
+  created_at: Date;
+  addresses: AddressDates[];
+  accountSummary: AccountSummary;
+};
 
 export type OrderStatusTextProps = "APROVADO" | "REPROVADO" | "AGUARDANDO";
 
@@ -64,7 +90,6 @@ export interface IUpdateUserDTO {
   id: number;
   username?: string;
   telephone?: string;
-  addresses?: Partial<AddressDates>[];
 }
 
 export interface ICreateAddressDTO {
@@ -75,4 +100,15 @@ export interface ICreateAddressDTO {
   number: string;
   user_id: number;
   isDefault?: boolean;
+}
+
+export interface ICreateAddressRequestDTO {
+  userId: number;
+  address: Omit<AddressDates, "id" | "user_id" | "isDefault">;
+}
+
+export interface IUpdateAddressRequestDTO {
+  userId: number;
+  addressId: number;
+  address: Partial<Omit<AddressDates, "id" | "user_id">>;
 }

@@ -1,11 +1,10 @@
-import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
+import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
 
 import { handleControllerError } from "@shared/utils/controller";
 import { validateSchema } from "@shared/utils/schema";
 
-import { SendNotificationUseCase } from "../sendNewOrderNotificationAdmin/SendNewOrderNotificationAdminUseCase";
 import { EditOrderUseCase } from "./EditOrderUseCase";
 import { editOrderSchema } from "./schema";
 
@@ -41,7 +40,7 @@ export class EditOrderController {
         }>,
       });
 
-      await this.notifyAdmins();
+      await this.notifyAdmins(Number(order_id));
 
       return response.status(200).json(order);
     } catch (error) {
@@ -49,14 +48,16 @@ export class EditOrderController {
     }
   }
 
-  private async notifyAdmins() {
-    const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
-    const adminUser = await listAdminUserUseCase.execute();
-    const sendNotificationUseCase = container.resolve(SendNotificationUseCase);
-    await sendNotificationUseCase.execute({
-      notificationTokens: adminUser.notificationTokens,
-      notificationTitle: "Pedido editado",
-      notificationBody: "Um pedido foi editado no app",
-    });
+  private async notifyAdmins(orderId: number) {
+    try {
+      const expoPushService = container.resolve(ExpoPushService);
+      await expoPushService.sendPushToAdmins({
+        title: "Pedido editado",
+        body: "Um pedido foi editado no app",
+        data: { notificationType: "order_edited", orderId },
+      });
+    } catch (err) {
+      console.error("Notificação não enviada:", err);
+    }
   }
 }

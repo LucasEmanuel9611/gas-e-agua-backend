@@ -1,0 +1,368 @@
+name: 🔄 Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to rollback"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prd
+      rollback_type:
+        description: "Type of rollback"
+        required: true
+        type: choice
+        options:
+          - image_only
+          - database_only
+          - full_rollback
+      image_tag:
+        description: "Image tag to rollback to (e.g., develop-a1b2c3d, develop-20241020-120000)"
+        required: false
+        type: string
+      backup_file:
+        description: "Backup file name (for database rollback, e.g., backup-20251009-120000.sql)"
+        required: false
+        type: string
+      confirm:
+        description: "Type CONFIRM to proceed"
+        required: true
+        type: string
+
+jobs:
+  validate:
+    name: Validate Input
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "CONFIRM" ]; then
+            echo "::error::You must type CONFIRM to proceed"
+            exit 1
+          fi
+          echo "✅ Confirmation validated"
+
+      - name: Validate rollback type and parameters
+        run: |
+          ROLLBACK_TYPE="${{ github.event.inputs.rollback_type }}"
+
+          if [ "$ROLLBACK_TYPE" = "image_only" ] || [ "$ROLLBACK_TYPE" = "full_rollback" ]; then
+            if [ -z "${{ github.event.inputs.image_tag }}" ]; then
+              echo "::warning::image_tag not provided, will use backup-latest"
+            fi
+          fi
+
+          if [ "$ROLLBACK_TYPE" = "database_only" ] || [ "$ROLLBACK_TYPE" = "full_rollback" ]; then
+            if [ -z "${{ github.event.inputs.backup_file }}" ]; then
+              echo "::error::backup_file is required for database rollback"
+              exit 1
+            fi
+          fi
+
+          echo "✅ Parameters validated"
+
+  rollback:
+    name: Execute Rollback
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Execute Rollback - Image Only
+        if: github.event.inputs.rollback_type == 'image_only'
+        run: |
+          set -e
+
+          echo "::group::🔄 Rolling back Docker image"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Image Tag: ${{ github.event.inputs.image_tag || 'backup-latest' }}"
+          echo ""
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+            
+            # Se tag não fornecida, usar backup-latest (local)
+            if [ -z "$IMAGE_TAG" ]; then
+              echo "⚠️  No image tag provided, using local backup-latest"
+              USE_LOCAL_BACKUP=true
+            elif [[ "$IMAGE_TAG" == *"-"* ]]; then
+              # Tag do GHCR (ex: develop-a1b2c3d)
+              echo "📦 Using GHCR image tag: $IMAGE_TAG"
+              USE_LOCAL_BACKUP=false
+            else
+              # Timestamp local (ex: 20241020-120000)
+              echo "📦 Using local backup image: $IMAGE_TAG"
+              USE_LOCAL_BACKUP=true
+            fi
+            
+            if [ "$ENV" = "dev" ]; then
+              PROJECT="gas-e-agua-dev"
+              COMPOSE_FILE="docker-compose.dev.yml"
+            else
+              PROJECT="gas-e-agua-prd"
+              COMPOSE_FILE="docker-compose.app.yml"
+            fi
+            
+            echo "🔄 Stopping current containers..."
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" down app
+            
+            if [ "$USE_LOCAL_BACKUP" = "true" ]; then
+              # Rollback local (imagem já existe na VPS)
+              if [ -z "$IMAGE_TAG" ]; then
+                TAG="backup-latest"
+              else
+                TAG="$IMAGE_TAG"
+              fi
+              
+              LOCAL_IMAGE="${PROJECT}-app:${TAG}"
+              echo "🏷️  Using local image: $LOCAL_IMAGE"
+              
+              if ! docker images | grep -q "$LOCAL_IMAGE"; then
+                echo "::error::Image $LOCAL_IMAGE not found locally!"
+                exit 1
+              fi
+              
+              # Tag local image como latest para o compose usar
+              docker tag "$LOCAL_IMAGE" "${PROJECT}-app:latest"
+              export APP_IMAGE="${PROJECT}-app:latest"
+            else
+              # Rollback do GHCR: baixa uma tag anterior da mesma imagem do deploy
+              echo "🔐 Logging into GHCR..."
+              echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+              
+              # Mesma regra do deploy: nome do repositório em minúsculas para o docker pull
+              DOCKER_IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+              FULL_IMAGE="${DOCKER_IMAGE}:${IMAGE_TAG}"
+              
+              echo "📥 Pulling image: $FULL_IMAGE"
+              if ! docker pull "$FULL_IMAGE"; then
+                echo "::error::Failed to pull $FULL_IMAGE"
+                exit 1
+              fi
+              
+              export APP_IMAGE="$FULL_IMAGE"
+            fi
+            
+            echo "🚀 Starting containers with rollback image..."
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d app --no-build
+            
+            echo "⏳ Waiting 10 seconds for startup..."
+            sleep 10
+            
+            echo "✅ Rollback completed!"
+          EOF
+
+          echo "::endgroup::"
+
+      - name: Execute Rollback - Database Only
+        if: github.event.inputs.rollback_type == 'database_only'
+        run: |
+          set -e
+
+          echo "::group::🗄️ Rolling back database"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Backup File: ${{ github.event.inputs.backup_file }}"
+          echo ""
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            BACKUP_FILE="${{ github.event.inputs.backup_file }}"
+            
+            if [ "$ENV" = "dev" ]; then
+              BACKUP_DIR="../backups/dev"
+            else
+              BACKUP_DIR="../backups/prd"
+            fi
+            
+            BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
+            
+            if [ ! -f "$BACKUP_PATH" ]; then
+              echo "::error::Backup file not found: $BACKUP_PATH"
+              exit 1
+            fi
+            
+            echo "📦 Creating safety backup before restore..."
+            bash ./scripts/deploy/backup-db.sh "$ENV"
+            
+            echo "🗄️ Restoring database from: $BACKUP_PATH"
+            bash ./scripts/deploy/rollback.sh "$ENV" "$BACKUP_PATH"
+            
+            echo "✅ Database rollback completed!"
+          EOF
+
+          echo "::endgroup::"
+
+      - name: Execute Rollback - Full
+        if: github.event.inputs.rollback_type == 'full_rollback'
+        run: |
+          set -e
+
+          echo "::group::🔄 Full rollback (Image + Database)"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Image Tag: ${{ github.event.inputs.image_tag || 'backup-latest' }}"
+          echo "Backup File: ${{ github.event.inputs.backup_file }}"
+          echo ""
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+            
+            ENV="${{ github.event.inputs.environment }}"
+            IMAGE_TAG="${{ github.event.inputs.image_tag }}"
+            BACKUP_FILE="${{ github.event.inputs.backup_file }}"
+            
+            # Determinar tipo de backup de imagem
+            if [ -z "$IMAGE_TAG" ]; then
+              USE_LOCAL_BACKUP=true
+              IMAGE_TAG="backup-latest"
+            elif [[ "$IMAGE_TAG" == *"-"* ]]; then
+              USE_LOCAL_BACKUP=false
+            else
+              USE_LOCAL_BACKUP=true
+            fi
+            
+            if [ "$ENV" = "dev" ]; then
+              PROJECT="gas-e-agua-dev"
+              COMPOSE_FILE="docker-compose.dev.yml"
+              BACKUP_DIR="../backups/dev"
+            else
+              PROJECT="gas-e-agua-prd"
+              COMPOSE_FILE="docker-compose.app.yml"
+              BACKUP_DIR="../backups/prd"
+            fi
+            
+            BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
+            
+            if [ ! -f "$BACKUP_PATH" ]; then
+              echo "::error::Backup file not found: $BACKUP_PATH"
+              exit 1
+            fi
+            
+            # 1. Safety backup
+            echo "📦 Creating safety backup..."
+            bash ./scripts/deploy/backup-db.sh "$ENV"
+            
+            # 2. Stop containers
+            echo "🛑 Stopping containers..."
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" down app
+            
+            # 3. Restore database
+            echo "🗄️ Restoring database from: $BACKUP_PATH"
+            # Restaurar DB diretamente (sem rollback.sh para evitar restart de containers)
+            if [ "$ENV" = "dev" ]; then
+              MYSQL_CONTAINER="gas-e-agua-mysql-dev"
+            else
+              MYSQL_CONTAINER="gas-e-agua-mysql"
+            fi
+            
+            # Carregar env vars
+            if [ "$ENV" = "dev" ]; then
+              set -a; source .env.dev; set +a
+            else
+              set -a; source .env; set +a
+            fi
+            
+            docker exec -i "$MYSQL_CONTAINER" mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" "$MYSQL_DATABASE" < "$BACKUP_PATH"
+            echo "✅ Database restored"
+            
+            # 4. Restore image
+            if [ "$USE_LOCAL_BACKUP" = "true" ]; then
+              LOCAL_IMAGE="${PROJECT}-app:${IMAGE_TAG}"
+              echo "🏷️  Using local image: $LOCAL_IMAGE"
+              docker tag "$LOCAL_IMAGE" "${PROJECT}-app:latest"
+              export APP_IMAGE="${PROJECT}-app:latest"
+            else
+              echo "🔐 Logging into GHCR..."
+              echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+              
+              # Mesma regra do deploy: nome do repositório em minúsculas para o docker pull
+              DOCKER_IMAGE="ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+              FULL_IMAGE="${DOCKER_IMAGE}:${IMAGE_TAG}"
+              
+              echo "📥 Pulling image: $FULL_IMAGE"
+              docker pull "$FULL_IMAGE"
+              export APP_IMAGE="$FULL_IMAGE"
+            fi
+            
+            # 5. Start containers
+            echo "🚀 Starting containers..."
+            docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d app --no-build
+            
+            sleep 10
+            echo "✅ Full rollback completed!"
+          EOF
+
+          echo "::endgroup::"
+
+      - name: Health check after rollback
+        run: |
+          echo "::group::🏥 Health check"
+
+          ENV="${{ github.event.inputs.environment }}"
+          if [ "$ENV" = "dev" ]; then
+            PORT="3334"
+          else
+            PORT="3333"
+          fi
+
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << EOF
+            echo "Checking health endpoint..."
+            sleep 5
+            
+            for i in {1..5}; do
+              if curl -f http://localhost:$PORT/health 2>&1; then
+                echo "✅ Application is healthy!"
+                exit 0
+              fi
+              echo "Attempt \$i/5 failed, retrying..."
+              sleep 5
+            done
+            
+            echo "::error::Health check failed after rollback"
+            exit 1
+          EOF
+
+          echo "::endgroup::"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🔄 Rollback Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Type:** ${{ github.event.inputs.rollback_type }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            echo "**Image Tag:** \`${{ github.event.inputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -n "${{ github.event.inputs.backup_file }}" ]; then
+            echo "**Backup File:** \`${{ github.event.inputs.backup_file }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ **Status:** Rollback completed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status:** Rollback failed!" >> $GITHUB_STEP_SUMMARY
+          fi

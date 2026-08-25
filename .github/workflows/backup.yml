@@ -1,0 +1,89 @@
+name: Database Backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment (dev or prd)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prd
+  schedule:
+    - cron: "0 5 * * *" # 5h UTC = 2h BRT (horário de Brasília)
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "🔑 SSH key configured"
+
+          echo "🔍 Adding VPS to known hosts..."
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || echo "⚠️ ssh-keyscan warning (ignorado)"
+          echo "✅ SSH setup complete"
+
+      - name: Execute Backup
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+          MYSQL_ROOT_PASSWORD_DEV: ${{ secrets.MYSQL_ROOT_PASSWORD_DEV }}
+          MYSQL_ROOT_PASSWORD_PRD: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
+        run: |
+          echo "📦 Iniciando backup no ambiente: ${ENVIRONMENT}"
+          echo "🔗 Conectando em ${VPS_USER}@${VPS_HOST}..."
+          echo ""
+
+          if [ "$ENVIRONMENT" = "prd" ]; then
+            MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD_PRD"
+            MYSQL_DATABASE="gas_e_agua"
+          else
+            MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD_DEV"
+            MYSQL_DATABASE="gas_e_agua_dev"
+          fi
+
+          # Executa o backup e mostra output em tempo real
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${VPS_USER}@${VPS_HOST} bash <<EOF | tee /tmp/backup_output.txt
+          set -e
+          cd /home/deploy/gas-e-agua-backend
+          export MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD"
+          export MYSQL_DATABASE="$MYSQL_DATABASE"
+          bash ./scripts/deploy/backup-db.sh ${ENVIRONMENT}
+          EOF
+
+          SSH_EXIT_CODE=${PIPESTATUS[0]}
+
+          echo ""
+          echo "🔍 SSH exit code: $SSH_EXIT_CODE"
+
+          if [ $SSH_EXIT_CODE -ne 0 ]; then
+            echo "❌ Erro na conexão SSH ou execução do script (exit code: $SSH_EXIT_CODE)"
+            exit 1
+          fi
+
+          # Procura pelo caminho do arquivo no output
+          BACKUP_FILE=$(grep "📁 File:" /tmp/backup_output.txt | awk '{print $3}')
+
+          if [ -z "$BACKUP_FILE" ]; then
+            echo "⚠️ Aviso: Não foi possível extrair o caminho do arquivo de backup"
+            echo "📋 Output completo salvo em /tmp/backup_output.txt"
+          else
+            echo ""
+            echo "✅ Backup criado com sucesso!"
+            echo "📁 Arquivo: $BACKUP_FILE"
+            echo "file=$BACKUP_FILE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_rsa
+          echo "🧹 SSH key removida"

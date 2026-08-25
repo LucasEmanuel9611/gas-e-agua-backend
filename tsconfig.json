@@ -21,6 +21,14 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
+    "types": ["jest", "node"],
     "skipLibCheck": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "jest/**/*",
+    "jest.config.ts",
+    "jest.setup.ts",
+    "jest.global-setup.ts"
+  ]
 }

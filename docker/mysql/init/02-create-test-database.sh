@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+TEST_DATABASE_NAME="gas_e_agua_test"
+
+if [ -z "$MYSQL_ROOT_PASSWORD" ] || [ -z "$MYSQL_USER" ]; then
+  exit 0
+fi
+
+mysql -uroot -p"$MYSQL_ROOT_PASSWORD" <<-EOSQL
+  CREATE DATABASE IF NOT EXISTS \`${TEST_DATABASE_NAME}\`;
+  GRANT ALL PRIVILEGES ON \`${TEST_DATABASE_NAME}\`.* TO '${MYSQL_USER}'@'%';
+  FLUSH PRIVILEGES;
+EOSQL

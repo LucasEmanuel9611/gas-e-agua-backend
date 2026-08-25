@@ -1,3 +1,4 @@
+import dayjs from "@config/dayjs.config";
 import {
   ICreateOrderDTO,
   OrderProps,
@@ -6,7 +7,6 @@ import {
 
 import { prisma } from "@shared/infra/database/prisma";
 
-import dayjs from "../../../../config/dayjs.config";
 import { IOrdersRepository } from "../IOrdersRepository";
 
 export class OrdersRepository implements IOrdersRepository {
@@ -21,6 +21,7 @@ export class OrdersRepository implements IOrdersRepository {
     status,
     created_at,
     payment_state,
+    intended_payment_method,
   }: ICreateOrderDTO): Promise<OrderProps> {
     const createdOrderProps = await prisma.order.create({
       data: {
@@ -30,12 +31,14 @@ export class OrdersRepository implements IOrdersRepository {
         status,
         created_at,
         payment_state,
+        intended_payment_method,
         orderItems: {
           create: items.map((item) => ({
             stockId: item.id,
             quantity: item.quantity,
             unitValue: item.unitValue || 0,
             totalValue: item.totalValue || 0,
+            type: item.type,
           })),
         },
         orderAddons: {
@@ -44,6 +47,7 @@ export class OrdersRepository implements IOrdersRepository {
             quantity: addon.quantity,
             unitValue: addon.unitValue || 0,
             totalValue: addon.totalValue || 0,
+            type: addon.type,
           })),
         },
       },
@@ -94,15 +98,20 @@ export class OrdersRepository implements IOrdersRepository {
   }
 
   async addAddonsToOrder(orderId: number, addonIds: number[]) {
+    const addons = await prisma.addons.findMany({
+      where: { id: { in: addonIds } },
+    });
+
     await Promise.all(
-      addonIds.map((addonId) =>
+      addons.map((addon) =>
         prisma.orderAddons.create({
           data: {
             orderId,
-            addonId,
+            addonId: addon.id,
             quantity: 1,
             unitValue: 0,
             totalValue: 0,
+            type: addon.type,
           },
         })
       )
@@ -118,6 +127,14 @@ export class OrdersRepository implements IOrdersRepository {
     });
 
     if (!existingAddon) {
+      const addon = await prisma.addons.findUnique({
+        where: { id: addonId },
+      });
+
+      if (!addon) {
+        throw new Error(`Addon with id ${addonId} not found`);
+      }
+
       await prisma.orderAddons.create({
         data: {
           orderId,
@@ -125,6 +142,7 @@ export class OrdersRepository implements IOrdersRepository {
           quantity: 1,
           unitValue: 0,
           totalValue: 0,
+          type: addon.type,
         },
       });
     }
@@ -187,6 +205,37 @@ export class OrdersRepository implements IOrdersRepository {
     return orders as OrderProps[];
   }
 
+  async findAllOrdersByDateRange(params: {
+    startDate: Date;
+    endDate: Date;
+  }): Promise<OrderProps[]> {
+    const orders = await prisma.order.findMany({
+      where: {
+        created_at: {
+          gte: params.startDate,
+          lt: params.endDate,
+        },
+      },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+          },
+        },
+        transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
+      },
+    });
+
+    return orders as OrderProps[];
+  }
+
   async findOrdersByPaymentState(paymentState: string): Promise<OrderProps[]> {
     const orders = await prisma.order.findMany({
       where: {
@@ -233,6 +282,38 @@ export class OrdersRepository implements IOrdersRepository {
     });
 
     return foundOrderProps as OrderProps;
+  }
+
+  async findByIdWithDetails(id: number): Promise<OrderProps | null> {
+    const foundOrder = await prisma.order.findFirst({
+      where: { id },
+      include: {
+        address: true,
+        user: {
+          select: {
+            username: true,
+            telephone: true,
+          },
+        },
+        transactions: {
+          orderBy: {
+            created_at: "asc",
+          },
+        },
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
+        orderAddons: {
+          include: {
+            addon: true,
+          },
+        },
+      },
+    });
+
+    return foundOrder as OrderProps | null;
   }
 
   async findByIdWithPayments(id: number): Promise<OrderProps> {
@@ -301,6 +382,57 @@ export class OrdersRepository implements IOrdersRepository {
     return foundUserOrderPropss as OrderProps[];
   }
 
+  async findAllPaginated(params: {
+    page: number;
+    limit: number;
+    userId?: string;
+    date?: Date;
+    openAccounts?: boolean;
+  }): Promise<{ items: OrderProps[]; total: number }> {
+    const { page, limit, userId, date, openAccounts } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (userId) {
+      where.user_id = Number(userId);
+    }
+
+    if (date) {
+      where.updated_at = {
+        gte: dayjs(date).startOf("day").toDate(),
+        lt: dayjs(date).endOf("day").toDate(),
+      };
+    }
+
+    if (openAccounts) {
+      where.payment_state = { not: "PAGO" };
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          updated_at: "desc",
+        },
+        include: {
+          address: true,
+          user: {
+            select: {
+              username: true,
+              telephone: true,
+            },
+          },
+        },
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return { items: items as OrderProps[], total };
+  }
+
   async findByDay(date: Date): Promise<OrderProps[]> {
     const OrderPropss = await prisma.order.findMany({
       where: {
@@ -318,6 +450,11 @@ export class OrdersRepository implements IOrdersRepository {
           },
         },
         transactions: true,
+        orderItems: {
+          include: {
+            stock: true,
+          },
+        },
       },
       orderBy: {
         updated_at: "desc",
@@ -419,6 +556,7 @@ export class OrdersRepository implements IOrdersRepository {
           quantity: item.quantity,
           unitValue: item.unitValue,
           totalValue: item.totalValue,
+          type: item.type,
         })),
       });
     }
@@ -446,6 +584,7 @@ export class OrdersRepository implements IOrdersRepository {
           quantity: addon.quantity,
           unitValue: addon.unitValue,
           totalValue: addon.totalValue,
+          type: addon.type,
         })),
       });
     }

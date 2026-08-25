@@ -90,6 +90,7 @@ describe(CreateOrderUseCase.name, () => {
       addons: [],
       status: undefined,
       payment_state: undefined,
+      intended_payment_method: undefined,
       total: undefined,
       interest_allowed: undefined,
       overdue_amount: undefined,
@@ -180,6 +181,7 @@ describe(CreateOrderUseCase.name, () => {
       overdue_amount: 5,
       overdue_description: "Débito anterior",
       due_date: new Date(),
+      intended_payment_method: "PIX" as const,
     };
 
     await createOrderUseCase.execute(request);
@@ -196,6 +198,7 @@ describe(CreateOrderUseCase.name, () => {
       ],
       status: "FINALIZADO",
       payment_state: "PAGO",
+      intended_payment_method: "PIX",
       total: 20,
       interest_allowed: false,
       overdue_amount: 5,

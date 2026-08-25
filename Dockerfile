@@ -33,7 +33,7 @@ RUN cp swagger.json dist/
 FROM node:18-alpine AS production
 
 # Instalar dependências de runtime
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init openssl
 
 # Criar usuário não-root para segurança
 RUN addgroup -g 1001 -S nodejs

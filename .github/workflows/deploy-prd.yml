@@ -1,28 +1,79 @@
-# Nome do workflow que aparecerá na aba "Actions" do GitHub
 name: Deploy to VPS (PRD)
 
-# Quando esse workflow será executado
+# Dispara após o build da imagem em master, ou manualmente (workflow_dispatch)
 on:
-  push:
+  workflow_run:
+    workflows: ["🏗️ Build and Push to GHCR"]
+    types:
+      - completed
     branches:
-      - master # dispara após merge na master
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: vps-deploy-prd
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # Job rodará em máquina virtual Ubuntu
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       # Etapa 1: Fazer checkout (clonar) o código do repositório
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Etapa 2: Configurar SSH para conectar na VPS
       - name: Setup SSH
         run: |
-          mkdir -p ~/.ssh  # Cria diretório .ssh se não existir
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa  # Salva chave privada
-          chmod 600 ~/.ssh/id_rsa  # Define permissões corretas (segurança)
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts  # Adiciona VPS aos hosts conhecidos
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      # Copia compose, scripts de deploy e schema Prisma para a VPS (deploy usa esses arquivos lá)
+      - name: Sync configuration files to VPS
+        run: |
+          echo "📦 Syncing docker-compose and scripts to VPS..."
+
+          # Sync docker-compose files
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            docker-compose.app.yml \
+            docker-compose.monitoring-prd.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Sync monitoring configs (Promtail/Loki/Grafana leem esses arquivos por bind mount)
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "mkdir -p /home/deploy/gas-e-agua-backend/monitoring"
+
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
+            monitoring/alertmanager \
+            monitoring/grafana \
+            monitoring/loki \
+            monitoring/prometheus \
+            monitoring/promtail \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/monitoring/
+
+          # Sync essential scripts
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            scripts/deploy/deploy.sh \
+            scripts/deploy/backup-db.sh \
+            scripts/deploy/sync-mysql-credentials.sh \
+            scripts/deploy/rollback.sh \
+            scripts/deploy/cleanup-old-versions.sh \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/scripts/deploy/
+
+          # Sync Prisma files (for migrations)
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r \
+            prisma \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/gas-e-agua-backend/
+
+          # Set permissions
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "chmod +x /home/deploy/gas-e-agua-backend/scripts/deploy/*.sh"
+
+          echo "✅ Configuration synced"
 
       # Etapa 3: Criar backup do banco ANTES do deploy (CRÍTICO em produção)
       - name: Backup database
@@ -32,17 +83,61 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
+          mysql-root-password: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
+          mysql-database: gas_e_agua
 
-      # Etapa 4: Deploy em PRODUÇÃO (build, migrations, containers)
+      # Etapa 4: Deploy em PRODUÇÃO (login GHCR, .env temporário, script deploy.sh na VPS)
       - name: Deploy application
         id: deploy
-        uses: ./.github/actions/deploy
-        with:
-          environment: prd
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          vps-host: ${{ secrets.VPS_HOST }}
-          vps-user: ${{ secrets.VPS_USER }}
-          branch: master
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPO: ${{ github.repository }}
+          MYSQL_ROOT_PASSWORD_PRD: ${{ secrets.MYSQL_ROOT_PASSWORD_PRD }}
+          MYSQL_PASSWORD_PRD: ${{ secrets.MYSQL_PASSWORD_PRD }}
+          JWT_SECRET_PRD: ${{ secrets.JWT_SECRET_PRD }}
+          JWT_REFRESH_SECRET_PRD: ${{ secrets.JWT_REFRESH_SECRET_PRD }}
+          GRAFANA_ADMIN_PASSWORD_PRD: ${{ secrets.GRAFANA_ADMIN_PASSWORD_PRD }}
+          GRAFANA_SECRET_KEY_PRD: ${{ secrets.GRAFANA_SECRET_KEY_PRD }}
+        run: |
+          # Docker/GHCR exigem owner do repositório em minúsculas (github.repository pode vir com maiúsculas)
+          GITHUB_REPOSITORY_LOWER=$(echo "$GITHUB_REPO" | tr '[:upper:]' '[:lower:]')
+
+          # Heredoc (<< EOF): o runner expande variáveis de env e envia o script para a VPS via SSH
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash << EOF
+            set -e
+            cd /home/deploy/gas-e-agua-backend
+
+            # Autentica na VPS para baixar a imagem publicada pelo workflow Build and Push
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+            # Monta .env na VPS; deploy.sh lê DOCKER_IMAGE + IMAGE_TAG e faz pull/compose/migrations
+            printf '%s\n' \
+              "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD_PRD" \
+              "MYSQL_DATABASE=gas_e_agua" \
+              "MYSQL_USER=gas_e_agua" \
+              "MYSQL_PASSWORD=$MYSQL_PASSWORD_PRD" \
+              "NODE_ENV=production" \
+              "LOG_FORMAT=json" \
+              "PORT=3333" \
+              "JWT_SECRET=$JWT_SECRET_PRD" \
+              "JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET_PRD" \
+              "REDIS_URL=redis://redis:6379" \
+              "REDIS_HOST=redis" \
+              "REDIS_PORT=6379" \
+              "GRAFANA_ADMIN_USER=admin" \
+              "GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD_PRD" \
+              "GRAFANA_SECRET_KEY=$GRAFANA_SECRET_KEY_PRD" \
+              "DOCKER_IMAGE=ghcr.io/$GITHUB_REPOSITORY_LOWER" \
+              "IMAGE_TAG=master-latest" \
+              > .env
+
+            bash ./scripts/deploy/deploy.sh prd
+
+            # Remove credenciais do disco após o deploy (segurança)
+            rm -f .env
+            echo "✅ Deploy completed and .env removed from disk"
+          EOF
 
       # Etapa 5: Verificar saúde da aplicação (10 tentativas em produção)
       - name: Health check
@@ -52,7 +147,6 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           vps-host: ${{ secrets.VPS_HOST }}
           vps-user: ${{ secrets.VPS_USER }}
-          max-retries: "10" # Mais tentativas em produção
 
       # Etapa 6: Notificar sucesso (Discord + Slack)
       - name: Notify success
@@ -61,9 +155,8 @@ jobs:
         with:
           status: success
           environment: prd
-          message: "Production deploy completed in ${{ steps.deploy.outputs.deploy-time }}s"
+          message: "Deploy completed successfully"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       # Etapa 7: Notificar FALHA CRÍTICA em produção (Discord + Slack)
       - name: Notify failure
@@ -72,6 +165,5 @@ jobs:
         with:
           status: failure
           environment: prd
-          message: "🚨 PRODUCTION DEPLOY FAILED - Immediate action required!"
+          message: "Deploy failed - check logs for details"
           discord-webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}

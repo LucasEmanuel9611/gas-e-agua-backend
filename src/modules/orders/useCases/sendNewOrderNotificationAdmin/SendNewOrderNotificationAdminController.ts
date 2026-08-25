@@ -1,4 +1,4 @@
-import { ListAdminUserUseCase } from "@modules/accounts/useCases/listAdminUser/ListAdminUserUseCase";
+import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
 
@@ -6,7 +6,6 @@ import { handleControllerError } from "@shared/utils/controller";
 import { validateSchema } from "@shared/utils/schema";
 
 import { sendNotificationSchema } from "./schema";
-import { SendNotificationUseCase } from "./SendNewOrderNotificationAdminUseCase";
 
 export class SendNewOrderNotificationAdminController {
   async handle(request: Request, response: Response) {
@@ -16,19 +15,22 @@ export class SendNewOrderNotificationAdminController {
         request.body
       );
 
-      const SendNotification = container.resolve(SendNotificationUseCase);
-      const listAdminUserUseCase = container.resolve(ListAdminUserUseCase);
-      const user = await listAdminUserUseCase.execute();
-
-      const pushTokens = user.notificationTokens;
-
-      await SendNotification.execute({
-        notificationTokens: pushTokens,
-        notificationTitle: title,
-        notificationBody: message,
+      const expoPushService = container.resolve(ExpoPushService);
+      const result = await expoPushService.sendPushToAdmins({
+        title,
+        body: message,
+        data: { notificationType: "admin_notification" },
       });
 
-      return response.status(200).json();
+      if (result.sent === 0) {
+        return response.status(400).json({ error: "No valid tokens found" });
+      }
+
+      return response.status(200).json({
+        sent: result.sent,
+        failed: result.failed,
+        total: result.total,
+      });
     } catch (error) {
       return handleControllerError(error, response);
     }
