@@ -1,12 +1,18 @@
 # Migração NestJS — manual do agente
 
-Este arquivo é a **lei**. As fatias executáveis estão em [`nest-migration-slices/`](./nest-migration-slices/).
+**Estado:** fila S0.1–S9 **concluída**. Não execute fatia `S*`. Pós-cutover: [`nest-migration-slices/POST-S9-plano.md`](./nest-migration-slices/POST-S9-plano.md). `@nestjs/swagger` (antigo S10) **recusado** — swagger continua `swagger.json` estático.
+
+Este arquivo é a **lei histórica** de como as fatias foram executadas. As fatias `S*.md` permanecem como registro; não reexecutar.
 
 Você não precisa (e não deve) ler todas as fatias de uma vez.
 
 ---
 
 ## Como trabalhar (obrigatório)
+
+Se `PROGRESS.md` não tiver fatia `S*` desmarcada: **não** reexecute S0.1–S9. Siga [`POST-S9-plano.md`](./nest-migration-slices/POST-S9-plano.md).
+
+Enquanto a fila S* existia:
 
 1. Abra [`nest-migration-slices/PROGRESS.md`](./nest-migration-slices/PROGRESS.md).
 2. Execute **somente** a primeira fatia com `- [ ]`.
@@ -112,4 +118,4 @@ A ordem está em [`PROGRESS.md`](./nest-migration-slices/PROGRESS.md). Não pule
 | S8 | [S8-notifications.md](./nest-migration-slices/S8-notifications.md) | Notifications + filas + cron |
 | S9 | [S9-cutover.md](./nest-migration-slices/S9-cutover.md) | Express morto, nest build |
 
-S10 (`@nestjs/swagger`, testes com mock de módulo) **não está na fila**. Só se o humano pedir depois de S9.
+S10 (`@nestjs/swagger`, testes com mock de módulo) **recusado** depois de S9. Swagger = JSON estático. Pós-cutover H1–H3 **feitas**: [`POST-S9-plano.md`](./nest-migration-slices/POST-S9-plano.md).

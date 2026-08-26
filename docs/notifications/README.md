@@ -229,6 +229,23 @@ POST /notifications/send/bulk
 }
 ```
 
+#### Broadcast para usuários (`USER`)
+```http
+POST /notifications/send/users
+{
+  "title": "Aviso",
+  "message": "Mensagem do admin"
+}
+```
+
+Resposta **202**: `{ success, sent, failed, total, jobId, errors }`. Título máx. 100 caracteres; mensagem máx. 500. Spec HTTP: `swagger.json`.
+
+#### Pedido / aniversário
+```http
+POST /notifications/send/order
+POST /notifications/send/birthday
+```
+
 #### Histórico de Usuário
 ```http
 GET /notifications/history/:userId
@@ -345,7 +362,7 @@ abstract class BasePaymentNotificationUseCase {
 }
 
 // Implementação específica
-@injectable()
+@Injectable()
 export class SendPaymentDueIn5DaysNotificationsUseCase extends BasePaymentNotificationUseCase {
   protected async getOrders(): Promise<OrderProps[]> {
     const date = dayjs().subtract(25, "days");
@@ -382,22 +399,24 @@ Repositories (Prisma)
 Database (MySQL) / Queue (Redis + BullMQ)
 ```
 
-### Dependency Injection (tsyringe)
+### Dependency Injection (Nest)
+
+Use cases, services e worker são `providers` de `NotificationsModule`. Tokens de repositório continuam strings (`"OrdersRepository"`, etc.).
 
 ```typescript
-// Repositories
-container.registerSingleton("ScheduledNotificationRepository", ScheduledNotificationRepository);
-container.registerSingleton("NotificationHistoryRepository", NotificationHistoryRepository);
-
-// Services
-container.registerSingleton(ExpoPushService);
-container.registerSingleton(NotificationTemplateService);
-container.registerSingleton(NotificationWorker);
-
-// UseCases
-container.registerSingleton(SendPaymentDueIn5DaysNotificationsUseCase);
-container.registerSingleton(SendPaymentDueTomorrowNotificationsUseCase);
-container.registerSingleton(SendPaymentLateNotificationsUseCase);
+@Module({
+  controllers: [NotificationsController],
+  providers: [
+    SendPaymentDueIn5DaysNotificationsUseCase,
+    SendPaymentDueTomorrowNotificationsUseCase,
+    SendPaymentLateNotificationsUseCase,
+    ExpoPushService,
+    NotificationWorker,
+    { provide: "ScheduledNotificationRepository", useClass: ScheduledNotificationRepository },
+    { provide: "NotificationHistoryRepository", useClass: NotificationHistoryRepository },
+  ],
+})
+export class NotificationsModule {}
 ```
 
 ### BullMQ Configuration
@@ -477,7 +496,7 @@ model NotificationHistory {
 **1. Criar UseCase** (~30 linhas):
 
 ```typescript
-@injectable()
+@Injectable()
 export class SendPaymentDueIn3DaysNotificationsUseCase extends BasePaymentNotificationUseCase {
   protected async getOrders(): Promise<OrderProps[]> {
     const date = dayjs().subtract(27, "days");
@@ -502,20 +521,32 @@ export class SendPaymentDueIn3DaysNotificationsUseCase extends BasePaymentNotifi
 }
 ```
 
-**2. Registrar no container** (`src/shared/containers/index.ts`):
+**2. Registrar no módulo** (`src/modules/notifications/notifications.module.ts`):
 ```typescript
-container.registerSingleton(SendPaymentDueIn3DaysNotificationsUseCase);
+providers: [
+  // ...existing
+  SendPaymentDueIn3DaysNotificationsUseCase,
+]
 ```
 
-**3. Adicionar no cron** (`src/shared/infra/tasks/sendOrderPaymentNotifications.ts`):
+**3. Injetar no cron** (`src/shared/infra/tasks/sendOrderPaymentNotifications.ts`):
 ```typescript
-const [dueIn5DaysResult, dueIn3DaysResult, dueTomorrowResult, lateResult] = 
+constructor(
+  private readonly sendPaymentDueIn5DaysNotificationsUseCase: SendPaymentDueIn5DaysNotificationsUseCase,
+  private readonly sendPaymentDueIn3DaysNotificationsUseCase: SendPaymentDueIn3DaysNotificationsUseCase,
+  private readonly sendPaymentDueTomorrowNotificationsUseCase: SendPaymentDueTomorrowNotificationsUseCase,
+  private readonly sendPaymentLateNotificationsUseCase: SendPaymentLateNotificationsUseCase
+) {}
+
+@Cron("0 12 * * *")
+async handle() {
   await Promise.all([
-    sendPaymentDueIn5DaysUseCase.execute(),
-    sendPaymentDueIn3DaysUseCase.execute(), // ← NOVO
-    sendPaymentDueTomorrowUseCase.execute(),
-    sendPaymentLateNotificationsUseCase.execute(),
+    this.sendPaymentDueIn5DaysNotificationsUseCase.execute(),
+    this.sendPaymentDueIn3DaysNotificationsUseCase.execute(),
+    this.sendPaymentDueTomorrowNotificationsUseCase.execute(),
+    this.sendPaymentLateNotificationsUseCase.execute(),
   ]);
+}
 ```
 
 ✅ **Pronto! Sem modificar código existente (Open/Closed Principle)**
