@@ -2,9 +2,9 @@ import auth, { getRefreshExpiresInMs } from "@config/auth";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IUsersTokensRepository } from "@modules/accounts/repositories/interfaces/IUserTokensRepository";
 import { AddressDates, UserRole } from "@modules/accounts/types";
+import { Inject, Injectable } from "@nestjs/common";
 import { compare } from "bcrypt";
 import { sign, SignOptions } from "jsonwebtoken";
-import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -25,12 +25,12 @@ interface IResponse {
   refreshToken: string;
 }
 
-@injectable()
+@Injectable()
 export class AuthenticateUserUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository,
-    @inject("UserTokensRepository")
+    @Inject("UserTokensRepository")
     private userTokensRepository: IUsersTokensRepository
   ) {}
 

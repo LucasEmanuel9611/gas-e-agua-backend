@@ -1,16 +1,18 @@
-import cron from "node-cron";
-import { container } from "tsyringe";
+import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 
 import { UpdateTotalWithInterestJob } from "../../../modules/orders/jobs/UpdateTotalWithInterestJob";
 
-export function scheduleUpdateOrderValueAddInterest() {
-  cron.schedule("0 1 * * *", async () => {
-    const updateTotalWithInterestJob = container.resolve(
-      UpdateTotalWithInterestJob
-    );
+@Injectable()
+export class UpdateOrderValueAddInterestTask {
+  constructor(
+    private readonly updateTotalWithInterestJob: UpdateTotalWithInterestJob
+  ) {}
 
-    await updateTotalWithInterestJob.execute();
+  @Cron("0 1 * * *")
+  async handle() {
+    await this.updateTotalWithInterestJob.execute();
 
     console.log("Running job: Update totals with interest...");
-  });
+  }
 }

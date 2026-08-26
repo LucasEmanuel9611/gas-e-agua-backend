@@ -21,8 +21,11 @@
 |-----------|--------------------------|
 | **[setup.md](./development/setup.md)** | Setup completo do ambiente local, variáveis de ambiente, estrutura do projeto |
 | **[database.md](./development/database.md)** | Fluxo de migrations com Prisma, comandos úteis, boas práticas |
+| **[nest-migration-playbook.md](./development/nest-migration-playbook.md)** | Histórico da migração Express → NestJS (S0.1–S9 concluídas) |
+| **[POST-S9-plano.md](./development/nest-migration-slices/POST-S9-plano.md)** | O que foi feito no cutover, papel Nest vs Express, H1–H3 feitas |
+| **[PROGRESS.md](./development/nest-migration-slices/PROGRESS.md)** | Checklist S0.1–S9 (todas feitas) + link do PR #77 |
 
-**Quando usar**: Desenvolvimento local, alterações no banco de dados
+**Quando usar**: Desenvolvimento local, alterações no banco de dados, entender o cutover Nest
 
 ---
 
@@ -132,7 +135,9 @@ docs/
 │
 ├── development/          👨‍💻 Desenvolvimento
 │   ├── setup.md         Setup local
-│   └── database.md      Prisma & Migrations
+│   ├── database.md      Prisma & Migrations
+│   ├── nest-migration-playbook.md
+│   └── nest-migration-slices/   S0.1–S9 (histórico) + POST-S9-plano.md + PROGRESS.md
 │
 ├── deployment/          🚀 Deploy & Produção
 │   ├── guide.md        Deploy completo
@@ -163,15 +168,13 @@ docs/
 
 ## 📅 Última Atualização
 
-**Data**: 30/10/2025  
-**Versão**: 3.0  
+**Data**: 26/08/2026  
+**Versão**: 3.1  
 
 **Mudanças recentes**:
-- ✅ Reorganização completa da estrutura
-- ✅ Consolidação de docs de notificações (3→1)
-- ✅ Adição de documentação de CI/CD
-- ✅ Correção de todos os links internos
-- ✅ Apenas README.md na raiz
+- ✅ Cutover Nest (S0.1–S9) documentado; S10 `@nestjs/swagger` recusado
+- ✅ Setup e notificações deixam de ensinar Zod/tsyringe como padrão atual
+- ✅ H2 higiene de deps; H3 `swagger.json` alinhado ao runtime (sem Prometheus `GET /metrics`)
 
 ---
 

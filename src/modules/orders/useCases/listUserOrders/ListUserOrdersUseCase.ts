@@ -1,6 +1,6 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import {
   AccountSortOption,
@@ -12,10 +12,10 @@ interface IRequest {
   sort?: AccountSortOption;
 }
 
-@injectable()
+@Injectable()
 export class ListUserOrdersUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository
   ) {}
 

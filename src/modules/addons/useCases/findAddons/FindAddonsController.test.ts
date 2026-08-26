@@ -1,44 +1,59 @@
+import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
 import request from "supertest";
-import { container } from "tsyringe";
 
-import { app } from "@shared/infra/http/app";
+import { AppErrorFilter } from "@shared/filters/app-error.filter";
+import { UnhandledErrorFilter } from "@shared/filters/unhandled-error.filter";
+import { validationExceptionFactory } from "@shared/filters/validation.exception-factory";
+import { JwtAuthGuard } from "@shared/guards/jwt-auth.guard";
+import { RolesGuard } from "@shared/guards/roles.guard";
 
-import { FindAddonsController } from "./FindAddonsController";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-      registerSingleton: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => ({
-    ensureAuthenticated: (req: any, res: any, next: any) => next(),
-  })
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
-  ensureAdmin: (req: any, res: any, next: any) => next(),
-}));
+import { AddonsController } from "../../addons.controller";
+import { CreateAddonUseCase } from "../createAddon/CreateAddonUseCase";
+import { UpdateAddonUseCase } from "../updateAddon/UpdateAddonUseCase";
+import { FindAddonsUseCase } from "./FindAddonsUseCase";
 
 describe("FindAddonsController", () => {
+  let nestApplication: INestApplication;
   const mockExecute = jest.fn();
   const mockFindAddonsUseCase = { execute: mockExecute };
 
-  beforeAll(() => {
-    const controller = new FindAddonsController();
-    app.get("/addons", (req, res) => controller.handle(req, res));
+  beforeAll(async () => {
+    const testingModule = await Test.createTestingModule({
+      controllers: [AddonsController],
+      providers: [
+        { provide: CreateAddonUseCase, useValue: { execute: jest.fn() } },
+        { provide: FindAddonsUseCase, useValue: mockFindAddonsUseCase },
+        { provide: UpdateAddonUseCase, useValue: { execute: jest.fn() } },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    nestApplication = testingModule.createNestApplication();
+    nestApplication.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        exceptionFactory: validationExceptionFactory,
+      })
+    );
+    nestApplication.useGlobalFilters(
+      new AppErrorFilter(),
+      new UnhandledErrorFilter()
+    );
+    await nestApplication.init();
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (container.resolve as jest.Mock).mockReturnValue(mockFindAddonsUseCase);
   });
 
   it("should return all addons with status 200", async () => {
@@ -57,7 +72,7 @@ describe("FindAddonsController", () => {
 
     mockExecute.mockResolvedValue(mockAddons);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/addons")
       .set("Authorization", "Bearer valid-token");
 

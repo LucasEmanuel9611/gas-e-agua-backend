@@ -178,6 +178,67 @@ describe(SendNotificationUseCase.name, () => {
     });
   });
 
+  describe("sendBroadcastToUsers", () => {
+    it("should enqueue a high priority bulk notification to USER role", async () => {
+      mockAddBulkNotification.mockResolvedValue({ id: "broadcast-job-1" });
+
+      const result = await useCase.sendBroadcastToUsers(
+        "Promoção de gás",
+        "Entrega grátis hoje"
+      );
+
+      expect(mockAddBulkNotification).toHaveBeenCalledWith(
+        "admin_broadcast",
+        undefined,
+        ["USER"],
+        {
+          title: "Promoção de gás",
+          body: "Entrega grátis hoje",
+          notificationType: "admin_broadcast",
+        },
+        NotificationPriority.HIGH
+      );
+      expect(result.success).toBe(true);
+      expect(result.jobId).toBe("broadcast-job-1");
+    });
+
+    it("should trim title and message before enqueueing", async () => {
+      await useCase.sendBroadcastToUsers("  Aviso  ", "  Mensagem do admin  ");
+
+      expect(mockAddBulkNotification).toHaveBeenCalledWith(
+        "admin_broadcast",
+        undefined,
+        ["USER"],
+        {
+          title: "Aviso",
+          body: "Mensagem do admin",
+          notificationType: "admin_broadcast",
+        },
+        NotificationPriority.HIGH
+      );
+    });
+
+    it("should reject empty title", async () => {
+      await expect(
+        useCase.sendBroadcastToUsers("   ", "Mensagem")
+      ).rejects.toMatchObject({
+        message: "O título da notificação é obrigatório",
+        statusCode: 400,
+      });
+      expect(mockAddBulkNotification).not.toHaveBeenCalled();
+    });
+
+    it("should reject empty message", async () => {
+      await expect(
+        useCase.sendBroadcastToUsers("Título", "")
+      ).rejects.toMatchObject({
+        message: "A mensagem da notificação é obrigatória",
+        statusCode: 400,
+      });
+      expect(mockAddBulkNotification).not.toHaveBeenCalled();
+    });
+  });
+
   describe("sendBirthdayNotification", () => {
     it("should send birthday notification successfully", async () => {
       mockAddBirthdayNotification.mockResolvedValue({ id: "birthday-job-123" });

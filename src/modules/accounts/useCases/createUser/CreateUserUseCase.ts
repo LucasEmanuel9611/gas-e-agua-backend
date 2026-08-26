@@ -1,14 +1,14 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { ICreateUserDTO } from "@modules/accounts/types";
+import { Inject, Injectable } from "@nestjs/common";
 import { hash } from "bcrypt";
-import { inject, injectable } from "tsyringe";
 
 import { AppError } from "@shared/errors/AppError";
 
-@injectable()
+@Injectable()
 export class CreateUserUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

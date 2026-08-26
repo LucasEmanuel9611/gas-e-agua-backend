@@ -1,11 +1,11 @@
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { ITransaction } from "@modules/transactions/types/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class FindTransactionByIdUseCase {
   constructor(
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository
   ) {}
 

@@ -1,11 +1,19 @@
 import { SendPaymentDueIn5DaysNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueIn5DaysNotifications/sendPaymentDueIn5DaysNotificationsUseCase";
 import { SendPaymentDueTomorrowNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentDueTomorrowNotifications/sendPaymentDueTomorrowNotificationsUseCase";
 import { SendPaymentLateNotificationsUseCase } from "@modules/notifications/useCases/sendPaymentLateNotifications/sendPaymentLateNotificationsUseCase";
-import cron from "node-cron";
-import { container } from "tsyringe";
+import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 
-export function scheduleSendOrderPaymentNotifications() {
-  cron.schedule("0 12 * * *", async () => {
+@Injectable()
+export class SendOrderPaymentNotificationsTask {
+  constructor(
+    private readonly sendPaymentDueIn5DaysNotificationsUseCase: SendPaymentDueIn5DaysNotificationsUseCase,
+    private readonly sendPaymentDueTomorrowNotificationsUseCase: SendPaymentDueTomorrowNotificationsUseCase,
+    private readonly sendPaymentLateNotificationsUseCase: SendPaymentLateNotificationsUseCase
+  ) {}
+
+  @Cron("0 12 * * *")
+  async handle() {
     console.log("[CRON] Iniciando verificação de notificações de pagamento...");
     console.log("[CRON] Tipos de notificações que serão verificadas:");
     console.log("  📅 PAYMENT_DUE_IN_5_DAYS: Pedidos que vencem em 5 dias");
@@ -14,22 +22,12 @@ export function scheduleSendOrderPaymentNotifications() {
       "  ⚠️  PAYMENT_LATE: Pedidos em atraso (a cada 5 dias após vencimento)"
     );
 
-    const sendPaymentDueIn5DaysNotificationsUseCase = container.resolve(
-      SendPaymentDueIn5DaysNotificationsUseCase
-    );
-    const sendPaymentDueTomorrowNotificationsUseCase = container.resolve(
-      SendPaymentDueTomorrowNotificationsUseCase
-    );
-    const sendPaymentLateNotificationsUseCase = container.resolve(
-      SendPaymentLateNotificationsUseCase
-    );
-
     try {
       const [dueIn5DaysResult, dueTomorrowResult, lateResult] =
         await Promise.all([
-          sendPaymentDueIn5DaysNotificationsUseCase.execute(),
-          sendPaymentDueTomorrowNotificationsUseCase.execute(),
-          sendPaymentLateNotificationsUseCase.execute(),
+          this.sendPaymentDueIn5DaysNotificationsUseCase.execute(),
+          this.sendPaymentDueTomorrowNotificationsUseCase.execute(),
+          this.sendPaymentLateNotificationsUseCase.execute(),
         ]);
 
       const totalNotifications =
@@ -70,5 +68,5 @@ export function scheduleSendOrderPaymentNotifications() {
     } catch (error) {
       console.error("[CRON - Notificações de pagamento] - Erro geral:", error);
     }
-  });
+  }
 }

@@ -1,19 +1,19 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { IDateProvider } from "@shared/containers/DateProvider/IDateProvider";
 
 import dayjs from "../../../../config/dayjs.config";
 
-@injectable()
+@Injectable()
 export class UpdateTotalWithInterestUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository,
-    @inject("DayjsDateProvider")
+    @Inject("DayjsDateProvider")
     private dayjsDateProvider: IDateProvider
   ) {}
 

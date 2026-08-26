@@ -3,7 +3,7 @@ import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepositor
 import { OrderProps } from "@modules/orders/types";
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 const BUSINESS_TIMEZONE = "America/Recife";
 
@@ -16,14 +16,14 @@ export type AdminHomeDashboardData = {
   totalRevenueToday: number;
 };
 
-@injectable()
+@Injectable()
 export class GetAdminHomeDashboardUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
-    @inject("StockRepository")
+    @Inject("StockRepository")
     private stockRepository: IStockRepository,
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository
   ) {}
 

@@ -3,7 +3,7 @@
 > Sistema completo de gerenciamento de pedidos de gás e água com autenticação JWT, controle de estoque, monitoramento em tempo real e deploy automatizado via CI/CD.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-18+-green.svg" alt="Node.js">
+  <img src="https://img.shields.io/badge/Node.js-22+-green.svg" alt="Node.js">
   <img src="https://img.shields.io/badge/TypeScript-5.0+-blue.svg" alt="TypeScript">
   <img src="https://img.shields.io/badge/Docker-Ready-blue.svg" alt="Docker">
   <img src="https://img.shields.io/badge/Tests-84%25-brightgreen.svg" alt="Coverage">
@@ -65,7 +65,7 @@ Docker Containers (GHCR)
 - 🔐 Autenticação JWT com refresh tokens
 - 🔑 Secrets rotacionados automaticamente (quarterly)
 - 🛡️ Rate limiting com Redis
-- 🚨 Validação de dados com Zod
+- 🚨 Validação de dados com class-validator
 - 📝 Logs de auditoria
 
 ---
@@ -74,9 +74,9 @@ Docker Containers (GHCR)
 
 | Camada | Tecnologia |
 |--------|------------|
-| **Runtime** | Node.js 18+ |
+| **Runtime** | Node.js 22+ |
 | **Linguagem** | TypeScript 5.0+ |
-| **Framework** | Express |
+| **Framework** | NestJS 11 (Express como motor HTTP) |
 | **ORM** | Prisma |
 | **Banco de Dados** | MySQL 8.0 |
 | **Cache** | Redis |
@@ -86,14 +86,14 @@ Docker Containers (GHCR)
 | **Monitoramento** | Prometheus, Grafana, Loki |
 | **Testes** | Jest (84% coverage) |
 | **Linting** | ESLint |
-| **Validação** | Zod |
+| **Validação** | class-validator + ValidationPipe |
 
 ---
 
 ## 🚀 Quick Start
 
 ### Pré-requisitos
-- Node.js 18+
+- Node.js 22+
 - Docker e Docker Compose
 - Git
 
@@ -142,7 +142,7 @@ npm run dev
 | Controle de transações/pagamentos | ✅ |
 | Rate limiting | ✅ |
 | Logs estruturados (Winston) | ✅ |
-| Validação de dados (Zod) | ✅ |
+| Validação de dados (class-validator) | ✅ |
 | Sistema de notificações profissional | ✅ |
 | - Notificações automáticas de pagamento | ✅ |
 | - Agendamento com recorrência | ✅ |

@@ -1,15 +1,19 @@
 import { UpdateOverdueOrdersJob } from "@modules/orders/jobs/UpdateOverdueOrdersJob";
-import cron from "node-cron";
-import { container } from "tsyringe";
+import { Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 
-export function scheduleUpdateOverdueOrders() {
-  cron.schedule("0 0 * * *", async () => {
-    const updateOverdueOrdersJob = container.resolve(UpdateOverdueOrdersJob);
+@Injectable()
+export class UpdateOverdueOrdersTask {
+  constructor(
+    private readonly updateOverdueOrdersJob: UpdateOverdueOrdersJob
+  ) {}
 
-    const updatedCount = await updateOverdueOrdersJob.execute();
+  @Cron("0 0 * * *")
+  async handle() {
+    const updatedCount = await this.updateOverdueOrdersJob.execute();
 
     console.log(
       `[CRON - Atualizacao de status para produtos vencidos (mais de 30 dias)] - ${updatedCount} pedidos vencidos atualizados.`
     );
-  });
+  }
 }

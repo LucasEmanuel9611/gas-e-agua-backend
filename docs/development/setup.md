@@ -2,7 +2,7 @@
 
 ## 📖 Visão Geral
 
-Backend para sistema de gerenciamento de pedidos de gás e água, construído com Node.js, TypeScript, Express e Prisma.
+Backend para sistema de gerenciamento de pedidos de gás e água, construído com Node.js, TypeScript, NestJS (Express como motor HTTP) e Prisma.
 
 **Esta documentação é focada em desenvolvimento local.** Para deploy em produção, consulte [`docs/deployment/guide.md`](../deployment/guide.md).
 
@@ -12,7 +12,7 @@ Backend para sistema de gerenciamento de pedidos de gás e água, construído co
 
 ### Pré-requisitos
 
-- Node.js 18+
+- Node.js 22+
 - Docker e Docker Compose
 - Git
 
@@ -117,10 +117,11 @@ Cada módulo segue uma estrutura padrão:
 
 ```
 modules/nomeDoModulo/
-├── controllers/    # Controladores que lidam com requisições HTTP
+├── *.module.ts     # Módulo Nest (controllers + providers)
+├── *.controller.ts # Rotas HTTP Nest
+├── dto/            # DTOs class-validator (body/params/query)
 ├── useCases/       # Casos de uso (lógica de negócio)
-├── repositories/   # Acesso ao banco de dados
-└── schemas/        # Schemas de validação
+└── repositories/   # Acesso ao banco (Prisma)
 ```
 
 ### 3. Fluxo de Dados
@@ -144,34 +145,18 @@ modules/nomeDoModulo/
 Vamos ver como funciona um fluxo completo usando o exemplo de criar um pedido:
 
 ```typescript
-// 1. Controller recebe a requisição
-class CreateOrderController {
-  async handle(request: Request, response: Response) {
-    // Valida os dados
-    const data = validateSchema(createOrderSchema, request.body);
-    
-    // Chama o caso de uso
-    const result = await createOrderUseCase.execute(data);
-    
-    // Retorna a resposta
-    return response.json(result);
-  }
-}
+@Controller("orders")
+export class OrdersController {
+  constructor(private readonly createOrderUseCase: CreateOrderUseCase) {}
 
-// 2. UseCase contém a lógica
-class CreateOrderUseCase {
-  async execute(data: CreateOrderData) {
-    // Valida regras de negócio
-    // Cria o pedido
-    // Atualiza o estoque
-    return order;
-  }
-}
+  @Post()
+  @HttpCode(201)
+  async createOrder(@Body() createOrderDto: CreateOrderDto) {
+    const order = await this.createOrderUseCase.execute({
+      items: createOrderDto.items,
+      addons: createOrderDto.addons ?? [],
+    });
 
-// 3. Repository acessa o banco
-class OrdersRepository {
-  async create(data: CreateOrderData) {
-    // Salva no banco de dados
     return order;
   }
 }
@@ -181,19 +166,16 @@ class OrdersRepository {
 
 ### 1. Utils
 
-O diretório `shared/utils` contém funções úteis usadas em todo o projeto:
+O diretório `shared/` contém código usado em todo o projeto:
 
-- `schema.ts`: Funções para validação de dados
-- `date-fns.ts`: Funções para manipulação de datas
-- `errors.ts`: Definição de erros personalizados
+- `filters/` — `AppErrorFilter` e `UnhandledErrorFilter` (API de domínio)
+- `guards/` — `JwtAuthGuard` (global via `APP_GUARD`) e `RolesGuard`
+- `infra/http/app.ts` — Express: health, Prometheus `GET /metrics`, swagger UI (`swagger.json` estático em `/swagger`; segue o runtime, não corrige HTTP), rate limit, timeout, morgan
+- `infra/http/middlewares/` — logging, metrics, rate limiter, timeout (não `ensureAuthenticated` / `ensureAdmin`; esses saíram no cutover)
 
-### 2. Middlewares
+### 2. Auth HTTP
 
-Middlewares são funções que executam antes das requisições chegarem aos controllers:
-
-- `ensureAuthenticated.ts`: Verifica se o usuário está autenticado
-- `ensureAdmin.ts`: Verifica se o usuário é administrador
-- `rateLimiter.ts`: Limita o número de requisições por IP
+Rotas de domínio: `@UseGuards` / `APP_GUARD` + `@Public()` em login, create user e refresh-token. Não use middlewares Express `ensureAuthenticated` / `ensureAdmin` em rota nova.
 
 #### Rate Limiter
 
@@ -252,8 +234,8 @@ O rate limiter está configurado no `app.ts` e é aplicado globalmente antes de 
 ## Boas Práticas
 
 1. **Validação de Dados**
-   - Use schemas para validar dados de entrada
-   - Valide tanto no controller quanto no useCase
+   - Use DTOs `class-validator` no controller Nest
+   - Regras de negócio ficam no use case (`AppError`)
 
 2. **Tratamento de Erros**
    - Use `AppError` para erros conhecidos
@@ -381,129 +363,45 @@ Veja [`scripts/README.md`](./scripts/README.md) para mais detalhes.
 - **[`DEPLOY_MONITORING.md`](./DEPLOY_MONITORING.md)** - Deploy e monitoramento em produção
 - **[`scripts/README.md`](./scripts/README.md)** - Referência dos scripts
 - **[`prisma-flow.md`](./prisma-flow.md)** - Fluxo de migrations do Prisma
-- [Documentação do Express](https://expressjs.com/)
+- [Documentação do NestJS](https://docs.nestjs.com/)
+- [Documentação do Express](https://expressjs.com/) (motor HTTP sob o Nest)
 - [Documentação do TypeScript](https://www.typescriptlang.org/)
 - [Documentação do Prisma](https://www.prisma.io/docs)
 
 ## Tratamento de Erros e Validação
 
-### 1. Tratamento Centralizado de Erros
+A API de domínio usa o kernel Nest: `ValidationPipe` + DTOs `class-validator`, e filters (`AppErrorFilter`, `UnhandledErrorFilter`). Erro 400 continua `{ "message": "<string>" }` (não array). `AppError` lançado no use case ou no guard vira o status HTTP correspondente.
 
-O projeto utiliza um padrão centralizado de tratamento de erros através do `handleControllerError`. Este padrão garante que todos os erros sejam tratados de forma consistente e retornem respostas HTTP apropriadas.
+Infra em `app.ts` (`/health`, Prometheus `GET /metrics`, `/swagger`) ainda usa o error handler Express. Alguns endpoints de fila em `notifications.controller.ts` ainda chamam `handleControllerError` via `@Res()` — resquício, não o padrão para rota nova.
+
+### 1. Validação (DTO + ValidationPipe)
 
 ```typescript
-// Exemplo de uso em um controller
-class CreateOrderController {
-  async handle(request: Request, response: Response) {
-    try {
-      const data = validateSchema(createOrderSchema, request.body);
-      const result = await createOrderUseCase.execute(data);
-      return response.json(result);
-    } catch (error) {
-      return handleControllerError(error, response);
-    }
-  }
+export class CreateStockItemDto {
+  @IsNumber({}, { message: "A quantidade deve ser um número" })
+  @Min(0, { message: "A quantidade deve ser maior que 0" })
+  quantity: number;
+
+  @IsString({ message: "O nome deve ser uma string" })
+  @MinLength(2, { message: "O nome não pode ser vazio" })
+  name: string;
 }
 ```
 
-O `handleControllerError` trata diferentes tipos de erros:
+### 2. Erros de domínio (`AppError`)
 
-- `AppError`: Erros conhecidos da aplicação
-  - Retorna status code específico
-  - Mensagem de erro amigável
-- `ZodError`: Erros de validação
-  - Status 400 (Bad Request)
-  - Mensagens de erro detalhadas
-- Erros inesperados
-  - Status 500 (Internal Server Error)
-  - Mensagem genérica para o usuário
-  - Log detalhado no console
-
-### 2. Validação com Schemas
-
-O projeto utiliza Zod para validação de dados. A validação é feita em duas camadas:
-
-1. **Schemas de Validação**
 ```typescript
-// Exemplo de schema para criar um pedido
-const createOrderSchema = z.object({
-  clientId: z.string().uuid(),
-  items: z.array(z.object({
-    productId: z.string().uuid(),
-    quantity: z.number().positive()
-  })),
-  deliveryDate: z.string().datetime()
+throw new AppError({
+  message: "Pedido não encontrado",
+  statusCode: 404,
 });
 ```
 
-2. **Função de Validação**
-```typescript
-// Função utilitária para validação
-const validateSchema = <T>(schema: ZodSchema<T>, data: unknown): T => {
-  try {
-    return schema.parse(data);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      console.error(error.errors); // Log detalhado
-      throw new AppError(error.errors[0].message);
-    }
-    throw error;
-  }
-};
-```
+O filter responde `{ "message": "Pedido não encontrado" }` com o status informado. 500 de domínio: `{ message: "Erro interno do servidor", unexpectedErrorMsg }`.
 
-### 3. Boas Práticas de Validação
+### 3. Boas práticas
 
-1. **Validação em Camadas**
-   - Controller: Valida formato dos dados
-   - UseCase: Valida regras de negócio
-   - Repository: Valida integridade dos dados
-
-2. **Mensagens de Erro**
-   - Sejam claras e específicas
-   - Em português
-   - Indiquem o campo com problema
-   - Sugiram correções quando possível
-
-3. **Logs de Erro**
-   - Mantenham logs detalhados no console
-   - Incluam stack trace para erros inesperados
-   - Não exponham informações sensíveis
-
-### 4. Exemplo Completo
-
-```typescript
-// Schema de validação
-const createOrderSchema = z.object({
-  clientId: z.string().uuid({
-    message: "ID do cliente inválido"
-  }),
-  items: z.array(z.object({
-    productId: z.string().uuid({
-      message: "ID do produto inválido"
-    }),
-    quantity: z.number().positive({
-      message: "Quantidade deve ser maior que zero"
-    })
-  })).min(1, {
-    message: "Pedido deve ter pelo menos um item"
-  })
-});
-
-// Controller com tratamento de erros
-class CreateOrderController {
-  async handle(request: Request, response: Response) {
-    try {
-      // Validação dos dados
-      const data = validateSchema(createOrderSchema, request.body);
-      
-      // Execução do caso de uso
-      const result = await createOrderUseCase.execute(data);
-      
-      return response.json(result);
-    } catch (error) {
-      return handleControllerError(error, response);
-    }
-  }
-}
-``` 
+1. Controller: DTO + `@HttpCode` iguais ao contrato atual. Não “corrigir” GET `/stock` 201 para 200.
+2. Use case: regras de negócio; lança `AppError`.
+3. Mensagens de validação em português, no decorator.
+4. Rota nova de domínio: DTO Nest + `ValidationPipe`. **Não** usar `handleControllerError` no controller Nest.

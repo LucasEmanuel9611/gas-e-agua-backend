@@ -1,36 +1,27 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { container } from "tsyringe";
 
-import { app } from "@shared/infra/http/app";
-
-import { ConcludeOrderController } from "./ConcludeOrderController";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: "123", role: "ADMIN" };
-        next();
-      },
-    };
-  }
-);
+import {
+  createOrdersControllerTestingApp,
+  OrdersControllerTestMocks,
+} from "../orders-controller-test.helpers";
 
 describe("ConcludeOrderController", () => {
-  beforeAll(() => {
-    const controller = new ConcludeOrderController();
-    app.put("/orders/:id/conclude", controller.handle.bind(controller));
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp();
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it("should update order status successfully", async () => {
@@ -55,11 +46,9 @@ describe("ConcludeOrderController", () => {
       },
     };
 
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest.fn().mockResolvedValue(mockOrder),
-    }));
+    mocks.concludeOrderUseCase.execute.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/orders/123/conclude")
       .set("Authorization", "Bearer token")
       .send({
@@ -71,7 +60,7 @@ describe("ConcludeOrderController", () => {
   });
 
   it("should return 400 if status is invalid", async () => {
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/orders/123/conclude")
       .set("Authorization", "Bearer token")
       .send({
@@ -84,13 +73,11 @@ describe("ConcludeOrderController", () => {
   });
 
   it("should return 500 if useCase throws an error", async () => {
-    jest.spyOn(container, "resolve").mockImplementation(() => ({
-      execute: jest
-        .fn()
-        .mockRejectedValue(new Error("Erro interno do servidor")),
-    }));
+    mocks.concludeOrderUseCase.execute.mockRejectedValue(
+      new Error("Erro interno do servidor")
+    );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .put("/orders/123/conclude")
       .set("Authorization", "Bearer token")
       .send({

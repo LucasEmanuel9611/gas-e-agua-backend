@@ -2,7 +2,7 @@ import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepositor
 import { OrderProps } from "@modules/orders/types";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { ITransaction } from "@modules/transactions/types/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -20,12 +20,12 @@ const REOPEN_PARTIAL_DEFAULT_NOTES =
 const REOPEN_PAID_ORDER_MESSAGE =
   "Para reabrir um pedido quitado com pagamento registrado, informe o saldo restante (Parcialmente pago)";
 
-@injectable()
+@Injectable()
 export class UpdatePaymentStateUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository
   ) {}
 

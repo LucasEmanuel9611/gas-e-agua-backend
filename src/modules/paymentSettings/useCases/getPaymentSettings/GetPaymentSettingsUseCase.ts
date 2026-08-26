@@ -1,11 +1,11 @@
 import { IPaymentSettingsRepository } from "@modules/paymentSettings/repositories/IPaymentSettingsRepository";
 import { PaymentSettings } from "@modules/paymentSettings/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class GetPaymentSettingsUseCase {
   constructor(
-    @inject("PaymentSettingsRepository")
+    @Inject("PaymentSettingsRepository")
     private paymentSettingsRepository: IPaymentSettingsRepository
   ) {}
 

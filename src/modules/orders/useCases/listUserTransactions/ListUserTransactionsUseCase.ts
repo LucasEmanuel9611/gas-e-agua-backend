@@ -1,6 +1,6 @@
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
 import { TransactionSortOption } from "@modules/transactions/types/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { buildPaginatedResponse } from "@shared/types/pagination";
 
@@ -12,10 +12,10 @@ interface IRequest {
   orderId?: number;
 }
 
-@injectable()
+@Injectable()
 export class ListUserTransactionsUseCase {
   constructor(
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository
   ) {}
 

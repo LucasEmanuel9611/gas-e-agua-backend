@@ -1,24 +1,24 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
+import { AppError } from "@shared/errors/AppError";
 
-import { mockGetUserByIdAdminUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => ({
-    ensureAuthenticated: (req: any, res: any, next: any) => {
-      req.user = { id: 1 };
-      next();
-    },
-  })
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
-  ensureAdmin: (req: any, res: any, next: any) => next(),
-}));
+import { createUsersControllerTestingApp } from "../users-controller-test.helpers";
 
 describe("GetUserByIdAdminController", () => {
+  let nestApplication: INestApplication;
+  let mockExecute: jest.Mock;
+
+  beforeAll(async () => {
+    const testingApp = await createUsersControllerTestingApp();
+    nestApplication = testingApp.nestApplication;
+    mockExecute = testingApp.mocks.getUserByIdAdminUseCase.execute;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -39,28 +39,26 @@ describe("GetUserByIdAdminController", () => {
       },
     };
 
-    mockGetUserByIdAdminUseCase.execute.mockResolvedValue(mockUser);
+    mockExecute.mockResolvedValue(mockUser);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/1")
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual(mockUser);
-    expect(mockGetUserByIdAdminUseCase.execute).toHaveBeenCalledWith(1);
+    expect(mockExecute).toHaveBeenCalledWith(1);
   });
 
   it("should return 404 when user is not found", async () => {
-    const { AppError } = await import("@shared/errors/AppError");
-
-    mockGetUserByIdAdminUseCase.execute.mockRejectedValue(
+    mockExecute.mockRejectedValue(
       new AppError({
         message: "Usuário não encontrado",
         statusCode: 404,
       })
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/users/999")
       .set("Authorization", "Bearer token");
 

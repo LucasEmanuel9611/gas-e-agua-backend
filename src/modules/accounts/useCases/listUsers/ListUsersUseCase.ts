@@ -1,6 +1,6 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { AdminUserListItem, UserListSortOption } from "@modules/accounts/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { UserMap } from "../../mapper/UserMapper";
 
@@ -18,10 +18,10 @@ interface IResponse {
   totalPages: number;
 }
 
-@injectable()
+@Injectable()
 export class ListUsersUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

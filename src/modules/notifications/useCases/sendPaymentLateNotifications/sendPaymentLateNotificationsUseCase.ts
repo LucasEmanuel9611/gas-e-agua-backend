@@ -1,7 +1,7 @@
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
+import { Inject, Injectable } from "@nestjs/common";
 import dayjs from "dayjs";
-import { inject, injectable } from "tsyringe";
 
 import { LoggerService } from "@shared/services/LoggerService";
 
@@ -23,10 +23,10 @@ interface INotificationAttempt {
 
 type UserOrdersGroup = Map<number, OrderProps[]>;
 
-@injectable()
+@Injectable()
 export class SendPaymentLateNotificationsUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
     private sendNotificationUseCase: SendNotificationUseCase
   ) {}

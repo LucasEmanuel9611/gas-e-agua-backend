@@ -3,14 +3,14 @@ import {
   AddressDates,
   ICreateAddressRequestDTO,
 } from "@modules/accounts/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 
-@injectable()
+@Injectable()
 export class CreateAddressUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

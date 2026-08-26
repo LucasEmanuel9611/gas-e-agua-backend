@@ -1,11 +1,11 @@
 import { IUserNotificationTokensRepository } from "@modules/accounts/repositories/interfaces/IUserNotificationTokensRepository";
 import { NotificationTokenProps } from "@modules/accounts/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class UpdateUserNotificationTokensUseCase {
   constructor(
-    @inject("UserNotificationTokensRepository")
+    @Inject("UserNotificationTokensRepository")
     private userNotificationTokensRepository: IUserNotificationTokensRepository
   ) {}
 

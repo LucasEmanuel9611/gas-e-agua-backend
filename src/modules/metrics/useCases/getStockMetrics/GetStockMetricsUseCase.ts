@@ -1,12 +1,12 @@
 import { IStockRepository } from "@modules/stock/repositories/IStockRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { IStockMetrics } from "../../types";
 
-@injectable()
+@Injectable()
 export class GetStockMetricsUseCase {
   constructor(
-    @inject("StockRepository")
+    @Inject("StockRepository")
     private stockRepository: IStockRepository
   ) {}
 

@@ -75,10 +75,6 @@ describe(NotificationWorker.name, () => {
     );
   });
 
-  afterEach(async () => {
-    await worker.close();
-  });
-
   it("should send payment_due_tomorrow using the tomorrow template", async () => {
     await (
       worker as unknown as {

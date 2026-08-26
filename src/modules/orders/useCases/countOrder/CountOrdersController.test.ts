@@ -1,32 +1,25 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
-
-import { mockListOrdersUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        const authHeader = req.headers.authorization;
-
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          return res.status(401).json({ message: "Token de acesso requerido" });
-        }
-
-        req.user = { id: 5 };
-        return next();
-      },
-    };
-  }
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/ensureAdmin", () => ({
-  ensureAdmin: (req: any, res: any, next: any) => next(),
-}));
+import {
+  createOrdersControllerTestingApp,
+  OrdersControllerTestMocks,
+} from "../orders-controller-test.helpers";
 
 describe("CountOrderController", () => {
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp();
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -41,9 +34,9 @@ describe("CountOrderController", () => {
         total: 50,
       },
     ];
-    mockListOrdersUseCase.executeAll.mockResolvedValue(mockOrder);
+    mocks.listOrdersUseCase.executeAll.mockResolvedValue(mockOrder);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders/count")
       .set("Authorization", "Bearer token");
 

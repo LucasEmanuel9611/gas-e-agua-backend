@@ -5,16 +5,16 @@ import {
   IPartialPaymentDTO,
   PaymentMethod,
 } from "@modules/transactions/types/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 
-@injectable()
+@Injectable()
 export class PaymentUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository
   ) {}
 

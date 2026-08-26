@@ -3,8 +3,8 @@ import { notificationQueue } from "@modules/notifications/infra/queues/Notificat
 import { IScheduledNotificationRepository } from "@modules/notifications/repositories/IScheduledNotificationRepository";
 import { NotificationPriority } from "@modules/notifications/types/NotificationTypes";
 import { RecurrencePattern } from "@modules/notifications/types/scheduledNotification";
-import cron from "node-cron";
-import { container } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
 
 function calculateNextRun(currentDate: Date, pattern: RecurrencePattern): Date {
   const next = new Date(currentDate);
@@ -30,22 +30,23 @@ function calculateNextRun(currentDate: Date, pattern: RecurrencePattern): Date {
   return next;
 }
 
-export function scheduleProcessScheduledNotifications() {
-  cron.schedule("*/5 * * * *", async () => {
-    console.log("[CRON] Verificando notificações agendadas...");
+@Injectable()
+export class ProcessScheduledNotificationsTask {
+  constructor(
+    @Inject("ScheduledNotificationRepository")
+    private readonly scheduledNotificationRepository: IScheduledNotificationRepository,
+    @Inject("UsersRepository")
+    private readonly usersRepository: IUsersRepository
+  ) {}
 
-    const scheduledNotificationRepository =
-      container.resolve<IScheduledNotificationRepository>(
-        "ScheduledNotificationRepository"
-      );
-    const usersRepository =
-      container.resolve<IUsersRepository>("UsersRepository");
+  @Cron("*/5 * * * *")
+  async handle() {
+    console.log("[CRON] Verificando notificações agendadas...");
 
     try {
       const now = new Date();
-      const dueNotifications = await scheduledNotificationRepository.findDue(
-        now
-      );
+      const dueNotifications =
+        await this.scheduledNotificationRepository.findDue(now);
 
       if (dueNotifications.length === 0) {
         console.log(
@@ -67,7 +68,7 @@ export function scheduleProcessScheduledNotifications() {
               targetUsers = JSON.parse(scheduled.target_users);
             } else if (scheduled.target_roles) {
               const roles = JSON.parse(scheduled.target_roles);
-              const { users } = await usersRepository.findAll({
+              const { users } = await this.usersRepository.findAll({
                 page: 1,
                 limit: 10000,
                 offset: 0,
@@ -103,7 +104,7 @@ export function scheduleProcessScheduledNotifications() {
               })
             );
 
-            await scheduledNotificationRepository.updateLastSentAt(
+            await this.scheduledNotificationRepository.updateLastSentAt(
               scheduled.id,
               now
             );
@@ -113,7 +114,7 @@ export function scheduleProcessScheduledNotifications() {
                 now,
                 scheduled.recurrence_pattern as RecurrencePattern
               );
-              await scheduledNotificationRepository.updateNextRunAt(
+              await this.scheduledNotificationRepository.updateNextRunAt(
                 scheduled.id,
                 nextRunAt
               );
@@ -121,7 +122,7 @@ export function scheduleProcessScheduledNotifications() {
                 `[CRON - Notificações Agendadas] - Notificação ID ${scheduled.id} reagendada para ${nextRunAt}`
               );
             } else {
-              await scheduledNotificationRepository.update({
+              await this.scheduledNotificationRepository.update({
                 id: scheduled.id,
                 is_active: false,
               });
@@ -144,5 +145,5 @@ export function scheduleProcessScheduledNotifications() {
     } catch (error) {
       console.error("[CRON - Notificações Agendadas] - Erro geral:", error);
     }
-  });
+  }
 }

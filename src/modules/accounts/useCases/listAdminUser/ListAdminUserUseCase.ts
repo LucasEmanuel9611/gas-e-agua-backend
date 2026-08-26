@@ -1,12 +1,12 @@
 import { UserMap } from "@modules/accounts/mapper/UserMapper";
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
 import { IUserResponseDTO } from "@modules/accounts/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class ListAdminUserUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

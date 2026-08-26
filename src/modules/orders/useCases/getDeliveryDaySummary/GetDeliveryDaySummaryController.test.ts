@@ -1,24 +1,25 @@
+import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
-
-import { mockGetDeliveryDaySummaryUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => ({
-    ensureAuthenticated: (req: any, _res: any, next: any) => {
-      req.user = { id: "1", role: "DELIVERY_MAN" };
-      next();
-    },
-  })
-);
-
-jest.mock("../../../../shared/infra/http/middlewares/checkRole", () => ({
-  checkRole: () => (_req: any, _res: any, next: any) => next(),
-}));
+import {
+  createOrdersControllerTestingApp,
+  OrdersControllerTestMocks,
+} from "../orders-controller-test.helpers";
 
 describe("GetDeliveryDaySummaryController", () => {
+  let nestApplication: INestApplication;
+  let mocks: OrdersControllerTestMocks;
+
+  beforeAll(async () => {
+    const testingApp = await createOrdersControllerTestingApp();
+    nestApplication = testingApp.nestApplication;
+    mocks = testingApp.mocks;
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -31,9 +32,9 @@ describe("GetDeliveryDaySummaryController", () => {
       completedCount: 2,
     };
 
-    mockGetDeliveryDaySummaryUseCase.execute.mockResolvedValue(summaryData);
+    mocks.getDeliveryDaySummaryUseCase.execute.mockResolvedValue(summaryData);
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders/delivery/summary")
       .set("Authorization", "Bearer token");
 
@@ -42,11 +43,11 @@ describe("GetDeliveryDaySummaryController", () => {
   });
 
   it("should return 500 on internal error", async () => {
-    mockGetDeliveryDaySummaryUseCase.execute.mockRejectedValue(
+    mocks.getDeliveryDaySummaryUseCase.execute.mockRejectedValue(
       new Error("unexpected")
     );
 
-    const response = await request(app)
+    const response = await request(nestApplication.getHttpServer())
       .get("/orders/delivery/summary")
       .set("Authorization", "Bearer token");
 

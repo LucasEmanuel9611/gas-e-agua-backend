@@ -3,17 +3,6 @@ import { AddonItem } from "@modules/addons/types";
 
 import { FindAddonsUseCase } from "./FindAddonsUseCase";
 
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-      registerSingleton: jest.fn(),
-    },
-  };
-});
-
 describe("FindAddonsUseCase", () => {
   let findAddonsUseCase: FindAddonsUseCase;
   let mockAddonsRepository: jest.Mocked<IAddonsRepository>;

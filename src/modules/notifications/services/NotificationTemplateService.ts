@@ -1,8 +1,8 @@
-import { injectable } from "tsyringe";
+import { Injectable } from "@nestjs/common";
 
 import { INotificationTemplate, NotificationCategory } from "../types";
 
-@injectable()
+@Injectable()
 export class NotificationTemplateService {
   private templates: Map<string, INotificationTemplate> = new Map();
 
@@ -220,6 +220,17 @@ export class NotificationTemplateService {
         isActive: true,
         priority: "high",
         data: { type: "system", reason: "maintenance" },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "admin_broadcast",
+        title: "Gás e Água",
+        body: "Você tem um novo aviso.",
+        category: NotificationCategory.SYSTEM,
+        isActive: true,
+        priority: "high",
+        data: { type: "admin_broadcast" },
         createdAt: new Date(),
         updatedAt: new Date(),
       },

@@ -1,12 +1,12 @@
 import { UpdateOverdueOrdersUseCase } from "@modules/orders/useCases/updateOverdueOrders/updateOverdueOrdersUseCase";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { JobService } from "@shared/services/JobService";
 
-@injectable()
+@Injectable()
 export class UpdateOverdueOrdersJob {
   constructor(
-    @inject("UpdateOverdueOrdersUseCase")
+    @Inject("UpdateOverdueOrdersUseCase")
     private updateOverdueOrdersUseCase: UpdateOverdueOrdersUseCase
   ) {}
 

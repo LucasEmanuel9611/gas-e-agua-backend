@@ -14,7 +14,6 @@ import swaggerUi from "swagger-ui-express";
 import { AppError } from "@shared/errors/AppError";
 
 import swaggerFile from "../../../../swagger.json";
-import "../../containers/index";
 import { LoggerService } from "../../services/LoggerService";
 import { metricsService } from "../../services/MetricsService";
 import { sanitizeForLog } from "../../utils/sanitizeLog";
@@ -22,7 +21,6 @@ import { loggingMiddleware } from "./middlewares/loggingMiddleware";
 import { metricsMiddleware } from "./middlewares/metricsMiddleware";
 import rateLimiterMiddleware from "./middlewares/rateLimiter";
 import { timeoutMiddleware } from "./middlewares/timeoutMiddleware";
-import { router } from "./routes";
 
 const app = express();
 
@@ -70,8 +68,6 @@ if (process.env.NODE_ENV !== "test") {
 
 app.use(express.json());
 app.use(cors());
-
-app.use(router);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

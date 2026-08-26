@@ -1,10 +1,10 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
-@injectable()
+@Injectable()
 export class DeleteAddressUseCase {
   constructor(
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository
   ) {}
 

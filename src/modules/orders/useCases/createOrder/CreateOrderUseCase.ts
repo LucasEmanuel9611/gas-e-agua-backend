@@ -1,15 +1,15 @@
 import { OrderProps } from "@modules/orders/types";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import {
   IOrderCreationData,
   IOrderCreationService,
 } from "../../services/IOrderCreationService";
 
-@injectable()
+@Injectable()
 export class CreateOrderUseCase {
   constructor(
-    @inject("OrderCreationService")
+    @Inject("OrderCreationService")
     private orderCreationService: IOrderCreationService
   ) {}
 

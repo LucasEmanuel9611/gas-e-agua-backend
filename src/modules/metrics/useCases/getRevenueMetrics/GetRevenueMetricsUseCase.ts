@@ -2,7 +2,7 @@ import dayjs from "@config/dayjs.config";
 import { IOrdersRepository } from "@modules/orders/repositories/IOrdersRepository";
 import { OrderProps } from "@modules/orders/types";
 import { ITransactionsRepository } from "@modules/transactions/repositories/ITransactionsRepository";
-import { inject, injectable } from "tsyringe";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { AppError } from "@shared/errors/AppError";
 
@@ -10,12 +10,12 @@ import { IRevenueMetrics } from "../../types";
 
 const BUSINESS_TIMEZONE = "America/Recife";
 
-@injectable()
+@Injectable()
 export class GetRevenueMetricsUseCase {
   constructor(
-    @inject("OrdersRepository")
+    @Inject("OrdersRepository")
     private ordersRepository: IOrdersRepository,
-    @inject("TransactionsRepository")
+    @Inject("TransactionsRepository")
     private transactionsRepository: ITransactionsRepository
   ) {}
 

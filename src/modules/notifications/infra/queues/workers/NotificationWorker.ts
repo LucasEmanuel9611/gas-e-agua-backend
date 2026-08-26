@@ -1,9 +1,8 @@
 import { IUsersRepository } from "@modules/accounts/repositories/interfaces/IUserRepository";
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq";
+import { Inject, Injectable, OnModuleDestroy } from "@nestjs/common";
 import { Job } from "bullmq";
-import { inject, injectable } from "tsyringe";
 
-import { BaseWorker } from "@shared/infra/queues/BaseWorker";
-import { redisConnection } from "@shared/infra/redis/redisConnection";
 import { LoggerService } from "@shared/services/LoggerService";
 
 import { ExpoPushService } from "../../../services/ExpoPushService";
@@ -15,40 +14,99 @@ import {
   NotificationJobType,
 } from "../../../types/queueTypes";
 
-@injectable()
-export class NotificationWorker extends BaseWorker<
+type NotificationJobData =
   | IOrderNotificationJobData
   | IBulkNotificationJobData
-  | IBirthdayNotificationJobData
-> {
+  | IBirthdayNotificationJobData;
+
+@Injectable()
+@Processor("notifications", {
+  concurrency: 10,
+  removeOnComplete: { count: 200 },
+  removeOnFail: { count: 100 },
+})
+export class NotificationWorker extends WorkerHost implements OnModuleDestroy {
   constructor(
-    @inject(ExpoPushService)
     private expoPushService: ExpoPushService,
-    @inject("UsersRepository")
+    @Inject("UsersRepository")
     private usersRepository: IUsersRepository,
-    @inject(NotificationTemplateService)
     private templateService: NotificationTemplateService
   ) {
-    super(
-      "notifications",
-      async (job) => {
-        await this.processNotificationJob(job);
-      },
-      {
-        connection: redisConnection,
-        concurrency: 10,
-        removeOnComplete: { count: 200 },
-        removeOnFail: { count: 100 },
-      }
+    super();
+  }
+
+  async process(job: Job<NotificationJobData>): Promise<void> {
+    try {
+      LoggerService.info(`Processing job ${job.id} in notifications-worker`);
+      await this.processNotificationJob(job);
+      LoggerService.info(
+        `Job ${job.id} processed successfully in notifications-worker`
+      );
+    } catch (error) {
+      LoggerService.error(
+        `Error processing job ${job.id} in notifications-worker:`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.close();
+  }
+
+  async close(): Promise<void> {
+    await this.worker.close();
+    LoggerService.info("Worker notifications-worker closed");
+  }
+
+  @OnWorkerEvent("ready")
+  onReady() {
+    LoggerService.info("Worker notifications-worker is ready");
+  }
+
+  @OnWorkerEvent("error")
+  onError(error: Error) {
+    LoggerService.error("Worker notifications-worker error:", error);
+  }
+
+  @OnWorkerEvent("failed")
+  onFailed(job: Job | undefined, error: Error) {
+    LoggerService.error(
+      `Job ${job?.id} failed in worker notifications-worker:`,
+      error
     );
   }
 
+  @OnWorkerEvent("stalled")
+  onStalled(jobId: string) {
+    LoggerService.warn(`Job ${jobId} stalled in worker notifications-worker`);
+  }
+
+  @OnWorkerEvent("completed")
+  onCompleted(job: Job) {
+    LoggerService.info(
+      `Job ${job.id} completed in worker notifications-worker`
+    );
+  }
+
+  @OnWorkerEvent("active")
+  onActive(job: Job) {
+    LoggerService.info(`Job ${job.id} started in worker notifications-worker`);
+  }
+
+  @OnWorkerEvent("closing")
+  onClosing() {
+    LoggerService.info("Worker notifications-worker is closing");
+  }
+
+  @OnWorkerEvent("closed")
+  onClosed() {
+    LoggerService.info("Worker notifications-worker closed");
+  }
+
   private async processNotificationJob(
-    job: Job<
-      | IOrderNotificationJobData
-      | IBulkNotificationJobData
-      | IBirthdayNotificationJobData
-    >
+    job: Job<NotificationJobData>
   ): Promise<void> {
     const jobType = job.name as NotificationJobType;
 

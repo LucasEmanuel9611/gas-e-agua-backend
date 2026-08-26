@@ -1,32 +1,57 @@
+import { INestApplication, ValidationPipe } from "@nestjs/common";
+import { Test } from "@nestjs/testing";
 import request from "supertest";
 
-import { app } from "@shared/infra/http/app";
+import { AppErrorFilter } from "@shared/filters/app-error.filter";
+import { UnhandledErrorFilter } from "@shared/filters/unhandled-error.filter";
+import { validationExceptionFactory } from "@shared/filters/validation.exception-factory";
+import { JwtAuthGuard } from "@shared/guards/jwt-auth.guard";
+import { RolesGuard } from "@shared/guards/roles.guard";
 
-import { mockGetStockUseCase } from "../../../../../jest/mocks/useCaseMocks";
-
-jest.mock("tsyringe", () => {
-  const actual = jest.requireActual("tsyringe");
-  return {
-    ...actual,
-    container: {
-      resolve: jest.fn(),
-    },
-  };
-});
-
-jest.mock(
-  "../../../../shared/infra/http/middlewares/ensureAuthenticated",
-  () => {
-    return {
-      ensureAuthenticated: (req: any, res: any, next: any) => {
-        req.user = { id: 5 };
-        next();
-      },
-    };
-  }
-);
+import { StockController } from "../../stock.controller";
+import { CreateStockItemUseCase } from "../createItem/CreateStockItemUseCase";
+import { UpdateStockUseCase } from "../updateStock/UpdateStockUseCase";
+import { GetStockUseCase } from "./GetStockUseCase";
 
 describe("GetStockController", () => {
+  let nestApplication: INestApplication;
+  const mockExecute = jest.fn();
+  const mockGetStockUseCase = { execute: mockExecute };
+
+  beforeAll(async () => {
+    const testingModule = await Test.createTestingModule({
+      controllers: [StockController],
+      providers: [
+        { provide: CreateStockItemUseCase, useValue: { execute: jest.fn() } },
+        { provide: GetStockUseCase, useValue: mockGetStockUseCase },
+        { provide: UpdateStockUseCase, useValue: { execute: jest.fn() } },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    nestApplication = testingModule.createNestApplication();
+    nestApplication.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        exceptionFactory: validationExceptionFactory,
+      })
+    );
+    nestApplication.useGlobalFilters(
+      new AppErrorFilter(),
+      new UnhandledErrorFilter()
+    );
+    await nestApplication.init();
+  });
+
+  afterAll(async () => {
+    await nestApplication.close();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -37,10 +62,10 @@ describe("GetStockController", () => {
       { id: 2, name: "Água", quantity: 20, value: 5.0 },
     ];
 
-    mockGetStockUseCase.execute.mockResolvedValue(items);
+    mockExecute.mockResolvedValue(items);
 
-    const response = await request(app)
-      .get("/stock/")
+    const response = await request(nestApplication.getHttpServer())
+      .get("/stock")
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
@@ -48,10 +73,10 @@ describe("GetStockController", () => {
   });
 
   it("should return empty array when no items exist", async () => {
-    mockGetStockUseCase.execute.mockResolvedValue(undefined);
+    mockExecute.mockResolvedValue(undefined);
 
-    const response = await request(app)
-      .get("/stock/")
+    const response = await request(nestApplication.getHttpServer())
+      .get("/stock")
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(201);
@@ -59,10 +84,10 @@ describe("GetStockController", () => {
   });
 
   it("should return 500 when UseCase throws an error", async () => {
-    mockGetStockUseCase.execute.mockRejectedValue(new Error("Unexpected"));
+    mockExecute.mockRejectedValue(new Error("Unexpected"));
 
-    const response = await request(app)
-      .get("/stock/")
+    const response = await request(nestApplication.getHttpServer())
+      .get("/stock")
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(500);

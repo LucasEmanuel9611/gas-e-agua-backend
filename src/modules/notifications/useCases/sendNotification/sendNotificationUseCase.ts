@@ -1,4 +1,6 @@
-import { injectable } from "tsyringe";
+import { Injectable } from "@nestjs/common";
+
+import { AppError } from "@shared/errors/AppError";
 
 import { notificationQueue } from "../../infra/queues/NotificationQueue";
 import { INotificationResult } from "../../types/index";
@@ -7,7 +9,44 @@ import {
   NotificationType,
 } from "../../types/NotificationTypes";
 
-@injectable()
+const CUSTOMER_BROADCAST_TEMPLATE_ID = "admin_broadcast";
+const CUSTOMER_TARGET_ROLE = "USER";
+const BROADCAST_TITLE_MAX_LENGTH = 100;
+const BROADCAST_MESSAGE_MAX_LENGTH = 500;
+
+function getTrimmedBroadcastField(
+  fieldValue: unknown,
+  emptyMessage: string,
+  maxLength: number,
+  tooLongMessage: string
+): string {
+  if (typeof fieldValue !== "string") {
+    throw new AppError({
+      message: emptyMessage,
+      statusCode: 400,
+    });
+  }
+
+  const trimmedFieldValue = fieldValue.trim();
+
+  if (!trimmedFieldValue) {
+    throw new AppError({
+      message: emptyMessage,
+      statusCode: 400,
+    });
+  }
+
+  if (trimmedFieldValue.length > maxLength) {
+    throw new AppError({
+      message: tooLongMessage,
+      statusCode: 400,
+    });
+  }
+
+  return trimmedFieldValue;
+}
+
+@Injectable()
 export class SendNotificationUseCase {
   async sendOrderNotification(
     orderId: number,
@@ -75,6 +114,36 @@ export class SendNotificationUseCase {
         errors: [error instanceof Error ? error.message : String(error)],
       };
     }
+  }
+
+  async sendBroadcastToUsers(
+    title: unknown,
+    message: unknown
+  ): Promise<INotificationResult> {
+    const broadcastTitle = getTrimmedBroadcastField(
+      title,
+      "O título da notificação é obrigatório",
+      BROADCAST_TITLE_MAX_LENGTH,
+      `O título deve ter no máximo ${BROADCAST_TITLE_MAX_LENGTH} caracteres`
+    );
+    const broadcastMessage = getTrimmedBroadcastField(
+      message,
+      "A mensagem da notificação é obrigatória",
+      BROADCAST_MESSAGE_MAX_LENGTH,
+      `A mensagem deve ter no máximo ${BROADCAST_MESSAGE_MAX_LENGTH} caracteres`
+    );
+
+    return this.sendBulkNotification(
+      CUSTOMER_BROADCAST_TEMPLATE_ID,
+      undefined,
+      [CUSTOMER_TARGET_ROLE],
+      {
+        title: broadcastTitle,
+        body: broadcastMessage,
+        notificationType: CUSTOMER_BROADCAST_TEMPLATE_ID,
+      },
+      NotificationPriority.HIGH
+    );
   }
 
   async sendBirthdayNotification(
