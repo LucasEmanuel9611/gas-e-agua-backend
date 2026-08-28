@@ -71,6 +71,24 @@
         }
       }
     },
+    "/privacidade": {
+      "get": {
+        "summary": "Retorna a política de privacidade",
+        "tags": ["Legal"],
+        "responses": {
+          "200": {
+            "description": "Página HTML da política de privacidade",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users": {
       "post": {
         "summary": "Cria um novo usuário",
