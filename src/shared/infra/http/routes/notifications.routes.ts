@@ -87,6 +87,10 @@ notificationsRoutes.post(
   sendNotificationController.sendBulkNotification
 );
 notificationsRoutes.post(
+  "/send/users",
+  sendNotificationController.sendBroadcastToUsers
+);
+notificationsRoutes.post(
   "/send/birthday",
   sendNotificationController.sendBirthdayNotification
 );

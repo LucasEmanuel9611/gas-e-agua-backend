@@ -1202,6 +1202,59 @@
           }
         }
       }
+    },
+    "/notifications/send/users": {
+      "post": {
+        "summary": "Envia broadcast para usuários (role USER)",
+        "tags": ["Notifications"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": ["title", "message"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Broadcast enfileirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSendResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Título ou mensagem inválidos"
+          },
+          "401": {
+            "description": "Não autorizado"
+          },
+          "403": {
+            "description": "Requer admin"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1279,6 +1332,20 @@
           "id": { "type": "integer" },
           "name": { "type": "string" },
           "value": { "type": "number" }
+        }
+      },
+      "NotificationSendResult": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "sent": { "type": "integer" },
+          "failed": { "type": "integer" },
+          "total": { "type": "integer" },
+          "jobId": { "type": "string" },
+          "errors": {
+            "type": "array",
+            "items": {}
+          }
         }
       },
       "DailyOrdersMetrics": {

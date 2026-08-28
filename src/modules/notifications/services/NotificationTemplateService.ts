@@ -223,6 +223,17 @@ export class NotificationTemplateService {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
+      {
+        id: "admin_broadcast",
+        title: "Gás e Água",
+        body: "Você tem um novo aviso.",
+        category: NotificationCategory.SYSTEM,
+        isActive: true,
+        priority: "high",
+        data: { type: "admin_broadcast" },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ];
 
     defaultTemplates.forEach((template) => {

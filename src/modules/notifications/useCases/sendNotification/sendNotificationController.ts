@@ -66,6 +66,31 @@ export class SendNotificationController {
     }
   }
 
+  async sendBroadcastToUsers(
+    request: Request,
+    response: Response
+  ): Promise<Response> {
+    try {
+      const { title, message } = request.body;
+
+      const result = await this.sendNotificationUseCase.sendBroadcastToUsers(
+        title,
+        message
+      );
+
+      return response.status(202).json({
+        success: result.success,
+        sent: result.sent,
+        failed: result.failed,
+        total: result.total,
+        jobId: result.jobId,
+        errors: result.errors,
+      });
+    } catch (error) {
+      return handleControllerError(error, response);
+    }
+  }
+
   async sendBirthdayNotification(
     request: Request,
     response: Response
