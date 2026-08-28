@@ -89,6 +89,24 @@
         }
       }
     },
+    "/exclusao-de-conta": {
+      "get": {
+        "summary": "Retorna a página para solicitar exclusão da conta e dos dados",
+        "tags": ["Legal"],
+        "responses": {
+          "200": {
+            "description": "Página HTML com os contatos para pedir exclusão da conta",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users": {
       "post": {
         "summary": "Cria um novo usuário",

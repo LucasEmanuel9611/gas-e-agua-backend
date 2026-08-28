@@ -1,7 +1,10 @@
 export const PRIVACY_POLICY_CONTACT_EMAIL = "eduardogas2013@hotmail.com";
 export const PRIVACY_POLICY_CONTACT_PHONE_DISPLAY = "(81) 99732-67792";
+export const PRIVACY_POLICY_CONTACT_WHATSAPP_URL =
+  "https://wa.me/55819973267792";
 export const PRIVACY_POLICY_LAST_UPDATED_LABEL = "28 de agosto de 2026";
 export const PRIVACY_POLICY_ANDROID_PACKAGE_NAME = "com.gaseagua.app";
+export const ACCOUNT_DELETION_REQUEST_PATH = "/exclusao-de-conta";
 
 export function buildPrivacyPolicyHtml(): string {
   return `<!DOCTYPE html>
@@ -38,7 +41,7 @@ export function buildPrivacyPolicyHtml(): string {
   <p>Só com serviços necessários ao app: hospedagem da API, Google Play e Firebase Cloud Messaging. Não compartilhamos com anunciantes.</p>
 
   <h2>5. Por quanto tempo</h2>
-  <p>Enquanto a conta existir e pelo tempo necessário para cumprir obrigações legais. Você pode pedir exclusão da conta e dos dados pelo contato acima.</p>
+  <p>Enquanto a conta existir e pelo tempo necessário para cumprir obrigações legais. Você pode pedir exclusão da conta e dos dados em <a href="${ACCOUNT_DELETION_REQUEST_PATH}">solicitar exclusão da conta e dos dados</a>.</p>
 
   <h2>6. Seus direitos (LGPD)</h2>
   <p>Acessar, corrigir, atualizar ou pedir exclusão dos dados, além de informações sobre o tratamento. Fale conosco pelo telefone ou e-mail acima.</p>

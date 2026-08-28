@@ -1,10 +1,10 @@
-import request from "supertest";
-
 import {
   PRIVACY_POLICY_ANDROID_PACKAGE_NAME,
   PRIVACY_POLICY_CONTACT_EMAIL,
   PRIVACY_POLICY_CONTACT_PHONE_DISPLAY,
 } from "@modules/legal/privacyPolicyHtml";
+import request from "supertest";
+
 import { app } from "@shared/infra/http/app";
 
 describe("GetPrivacyPolicyController", () => {
@@ -18,5 +18,6 @@ describe("GetPrivacyPolicyController", () => {
     expect(response.text).toContain(PRIVACY_POLICY_CONTACT_PHONE_DISPLAY);
     expect(response.text).toContain(PRIVACY_POLICY_ANDROID_PACKAGE_NAME);
     expect(response.text).toContain("LGPD");
+    expect(response.text).toContain('href="/exclusao-de-conta"');
   });
 });
