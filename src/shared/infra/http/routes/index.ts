@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { addonsRoutes } from "./addons.routes";
 import { authenticateRoutes } from "./authenticate.routes";
+import { legalRoutes } from "./legal.routes";
 import { metricsRoutes } from "./metrics.routes";
 import { notificationsRoutes } from "./notifications.routes";
 import { orderRoutes } from "./orders.routes";
@@ -13,6 +14,7 @@ import { usersRoutes } from "./users.routes";
 const router = Router();
 
 router.use(authenticateRoutes);
+router.use(legalRoutes);
 router.use("/users", usersRoutes);
 router.use("/orders", orderRoutes);
 router.use("/stock", stockRoutes);
