@@ -62,4 +62,41 @@ describe(UserNotificationTokensRepository.name, () => {
     expect(storedToken?.user_id).toBe(secondUser.id);
     expect(storedToken?.is_valid).toBe(true);
   });
+
+  it("should delete a token that belongs to the authenticated user", async () => {
+    const user = await createUser("token-delete@test.com", "81911111114");
+    const pushToken = "ExponentPushToken[owned-device]";
+
+    await repository.update(user.id, pushToken);
+    await repository.deleteByToken(pushToken, user.id);
+
+    const storedToken = await prisma.notificationToken.findUnique({
+      where: { token: pushToken },
+    });
+
+    expect(storedToken).toBeNull();
+  });
+
+  it("should not delete a token that belongs to another user", async () => {
+    const owner = await createUser("token-owner@test.com", "81911111115");
+    const otherUser = await createUser("token-other@test.com", "81911111116");
+    const pushToken = "ExponentPushToken[other-device]";
+
+    await repository.update(owner.id, pushToken);
+    await repository.deleteByToken(pushToken, otherUser.id);
+
+    const storedToken = await prisma.notificationToken.findUnique({
+      where: { token: pushToken },
+    });
+
+    expect(storedToken?.user_id).toBe(owner.id);
+  });
+
+  it("should be a no-op when the token does not exist", async () => {
+    const user = await createUser("token-missing@test.com", "81911111117");
+
+    await expect(
+      repository.deleteByToken("ExponentPushToken[missing]", user.id)
+    ).resolves.toBeUndefined();
+  });
 });

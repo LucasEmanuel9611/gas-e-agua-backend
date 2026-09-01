@@ -1,6 +1,7 @@
 import { CreateAddressController } from "@modules/accounts/useCases/createAddress/createAddressController";
 import { CreateUserController } from "@modules/accounts/useCases/createUser/CreateUserController";
 import { DeleteAddressController } from "@modules/accounts/useCases/deleteAddress/deleteAddressController";
+import { DeleteUserNotificationTokenController } from "@modules/accounts/useCases/deleteUserNotificationToken/DeleteUserNotificationTokenController";
 import { GetUserByIdAdminController } from "@modules/accounts/useCases/getUserByIdAdmin/GetUserByIdAdminController";
 import { ListUserNotificationController } from "@modules/accounts/useCases/ListUserNotificationTokens/ListUserNotificationTokensController";
 import { ListUsersController } from "@modules/accounts/useCases/listUsers/ListUsersController";
@@ -34,6 +35,8 @@ const sendNotificationController =
   new SendNewOrderNotificationAdminController();
 const updateUserNotificationTokensController =
   new UpdateUserNotificationTokensController();
+const deleteUserNotificationTokenController =
+  new DeleteUserNotificationTokenController();
 const listUserNotificationController = new ListUserNotificationController();
 
 usersRoutes.post("/", createUserController.handle);
@@ -100,6 +103,12 @@ usersRoutes.post(
   "/notifications/token/register/admin",
   ensureAuthenticated,
   updateUserNotificationTokensController.handle
+);
+
+usersRoutes.delete(
+  "/notifications/token",
+  ensureAuthenticated,
+  deleteUserNotificationTokenController.handle
 );
 
 usersRoutes.get(
