@@ -217,9 +217,9 @@ export class UsersRepository implements IUsersRepository {
     const searchFilter = search
       ? {
           OR: [
-            { username: { contains: search, mode: "insensitive" as const } },
-            { email: { contains: search, mode: "insensitive" as const } },
-            { telephone: { contains: search, mode: "insensitive" as const } },
+            { username: { contains: search } },
+            { email: { contains: search } },
+            { telephone: { contains: search } },
           ],
         }
       : {};
