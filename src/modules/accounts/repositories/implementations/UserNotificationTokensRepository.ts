@@ -45,6 +45,15 @@ export class UserNotificationTokensRepository
     });
   }
 
+  async deleteByToken(token: string, userId: number): Promise<void> {
+    await prisma.notificationToken.deleteMany({
+      where: {
+        token,
+        user_id: userId,
+      },
+    });
+  }
+
   async markAsInvalid(tokenId: number): Promise<void> {
     await prisma.notificationToken.update({
       where: {
