@@ -1,6 +1,7 @@
 import { ExpoPushService } from "@modules/notifications/services/ExpoPushService";
 import { AdminFieldPolicy } from "@modules/orders/policies/AdminFieldPolicy";
 import { IOrderCreationData } from "@modules/orders/services/IOrderCreationService";
+import { IOrderItem, OrderProps } from "@modules/orders/types";
 import { Request, Response } from "express";
 import { container } from "tsyringe";
 
@@ -52,24 +53,40 @@ export class CreateOrderController {
     }
   };
 
-  private async notifyAdminNewOrder(isAdmin: boolean, order: any) {
-    const shouldNotifyAdmins = order && !isAdmin;
-
-    if (shouldNotifyAdmins) {
-      try {
-        const expoPushService = container.resolve(ExpoPushService);
-        const result = await expoPushService.sendPushToAdmins({
-          title: "Novo pedido",
-          body: "Novo pedido solicitado no app",
-          data: { notificationType: "new_order", orderId: order.id },
-        });
-
-        return { sent: result.sent > 0 };
-      } catch (err) {
-        console.error("Notificação não enviada:", err);
-        return { sent: false };
-      }
+  private async notifyAdminNewOrder(isAdmin: boolean, order: OrderProps) {
+    function getProductName({ stock }: IOrderItem): string | undefined {
+      if (stock?.type === "WATER") return "água";
+      if (stock?.type === "GAS") return "gás";
+      return stock?.name;
     }
-    return { sent: false };
+
+    function getNewOrderNotificationBody(items: IOrderItem[] = []): string {
+      const productNames = items.map(getProductName).filter(Boolean);
+      const uniqueProductNames = [...new Set(productNames)];
+
+      if (uniqueProductNames.length === 0) {
+        return "Novo pedido solicitado no app";
+      }
+
+      return `Novo pedido de ${uniqueProductNames.join(" e ")}`;
+    }
+
+    if (!order || isAdmin) {
+      return { sent: false };
+    }
+
+    try {
+      const expoPushService = container.resolve(ExpoPushService);
+      const result = await expoPushService.sendPushToAdmins({
+        title: "Novo pedido",
+        body: getNewOrderNotificationBody(order.orderItems),
+        data: { notificationType: "new_order", orderId: order.id },
+      });
+
+      return { sent: result.sent > 0 };
+    } catch (err) {
+      console.error("Notificação não enviada:", err);
+      return { sent: false };
+    }
   }
 }

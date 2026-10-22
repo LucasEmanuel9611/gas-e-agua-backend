@@ -59,9 +59,13 @@ export const createOrderSchema = z.object({
   payment_state: z
     .enum(["PENDENTE", "PAGO", "VENCIDO", "PARCIALMENTE_PAGO"])
     .optional(),
-  intended_payment_method: z
-    .enum(["DINHEIRO", "PIX", "CARTAO", "TRANSFERENCIA"])
-    .optional(),
+  intended_payment_method: z.enum(
+    ["DINHEIRO", "PIX", "CARTAO", "TRANSFERENCIA"],
+    {
+      required_error: "Selecione a forma de pagamento",
+      invalid_type_error: "Forma de pagamento inválida",
+    }
+  ),
   total: z
     .number({
       invalid_type_error: "Total deve ser um número",
