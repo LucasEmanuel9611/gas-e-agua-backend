@@ -44,6 +44,7 @@ describe("CreateOrderController", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUserRole = "USER";
   });
 
   it("should create an order and notify admins, returning 201", async () => {
@@ -90,6 +91,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 2 },
           { id: 2, type: "WATER", quantity: 3 },
@@ -99,6 +101,7 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+      intended_payment_method: "PIX",
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 2 },
@@ -106,7 +109,11 @@ describe("CreateOrderController", () => {
       ],
       addons: [],
     });
-    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalled();
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalledWith({
+      title: "Novo pedido",
+      body: "Novo pedido de gás e água",
+      data: { notificationType: "new_order", orderId: mockOrder.id },
+    });
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
@@ -167,6 +174,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 2 },
@@ -176,6 +184,7 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+      intended_payment_method: "PIX",
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 1 },
@@ -243,6 +252,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 2 },
           { id: 2, type: "WATER", quantity: 1 },
@@ -252,6 +262,7 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+      intended_payment_method: "PIX",
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 2 },
@@ -333,6 +344,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 1 },
@@ -345,6 +357,7 @@ describe("CreateOrderController", () => {
       .set("Authorization", "Bearer token");
 
     expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith({
+      intended_payment_method: "PIX",
       user_id: 5,
       items: [
         { id: 1, type: "GAS", quantity: 1 },
@@ -391,11 +404,17 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [{ id: 2, type: "WATER", quantity: 2 }],
         addons: [],
       })
       .set("Authorization", "Bearer token");
 
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalledWith({
+      title: "Novo pedido",
+      body: "Novo pedido de água",
+      data: { notificationType: "new_order", orderId: mockOrder.id },
+    });
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
@@ -432,11 +451,17 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [{ id: 1, type: "GAS", quantity: 2 }],
         addons: [],
       })
       .set("Authorization", "Bearer token");
 
+    expect(mockExpoPushService.sendPushToAdmins).toHaveBeenCalledWith({
+      title: "Novo pedido",
+      body: "Novo pedido de gás",
+      data: { notificationType: "new_order", orderId: mockOrder.id },
+    });
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       ...mockOrder,
@@ -444,10 +469,43 @@ describe("CreateOrderController", () => {
     });
   });
 
+  it.each(["USER", "ADMIN"])(
+    "should reject an order without a payment method for %s",
+    async (role) => {
+      mockUserRole = role;
+
+      const response = await request(app)
+        .post("/orders/")
+        .send({ items: [{ id: 1, type: "GAS", quantity: 1 }] })
+        .set("Authorization", "Bearer token");
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain("Selecione a forma de pagamento");
+      expect(mockCreateOrderUseCase.execute).not.toHaveBeenCalled();
+      expect(mockExpoPushService.sendPushToAdmins).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([null, "", "INVALIDO"])(
+    "should reject an invalid payment method: %s",
+    async (paymentMethod) => {
+      const response = await request(app)
+        .post("/orders/")
+        .send({
+          items: [{ id: 1, type: "GAS", quantity: 1 }],
+          intended_payment_method: paymentMethod,
+        })
+        .set("Authorization", "Bearer token");
+
+      expect(response.status).toBe(400);
+      expect(mockCreateOrderUseCase.execute).not.toHaveBeenCalled();
+    }
+  );
+
   it("should return 400 when no items are provided", async () => {
     const response = await request(app)
       .post("/orders/")
-      .send({ items: [], addons: [] })
+      .send({ items: [], addons: [], intended_payment_method: "PIX" })
       .set("Authorization", "Bearer token");
 
     expect(response.status).toBe(400);
@@ -468,6 +526,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [{ id: 1, type: "GAS", quantity: 2 }],
         addons: [],
       })
@@ -491,6 +550,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [{ id: 2, type: "WATER", quantity: 2 }],
         addons: [],
       })
@@ -514,6 +574,7 @@ describe("CreateOrderController", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 2 },
           { id: 2, type: "WATER", quantity: 2 },
@@ -535,6 +596,7 @@ describe("CreateOrderController - Policy Tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUserRole = "USER";
   });
 
   it("should validate admin fields correctly", async () => {
@@ -579,6 +641,7 @@ describe("CreateOrderController - Policy Tests", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 1 },
@@ -611,6 +674,7 @@ describe("CreateOrderController - Policy Tests", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 1 },
@@ -666,6 +730,7 @@ describe("CreateOrderController - Policy Tests", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 1 },
@@ -681,45 +746,48 @@ describe("CreateOrderController - Policy Tests", () => {
     });
   });
 
-  it("should allow regular user to send intended_payment_method", async () => {
-    mockUserRole = "USER";
+  it.each(["DINHEIRO", "PIX", "CARTAO", "TRANSFERENCIA"])(
+    "should allow payment method %s",
+    async (paymentMethod) => {
+      mockUserRole = "USER";
 
-    const adminUser = { id: 1, notificationTokens: ["token1"] };
-    mockListAdminUseCase.execute.mockResolvedValue(adminUser);
-    mockGetStockUseCase.execute.mockResolvedValue([
-      { name: "Gás", quantity: 10 },
-      { name: "Água", quantity: 20 },
-    ]);
-    const mockOrder = {
-      id: 1,
-      user_id: 5,
-      total: 30,
-      intended_payment_method: "PIX",
-      orderItems: [],
-      orderAddons: [],
-    };
-    mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
-
-    const response = await request(app)
-      .post("/orders/")
-      .send({
-        items: [
-          { id: 1, type: "GAS", quantity: 1 },
-          { id: 2, type: "WATER", quantity: 1 },
-        ],
-        addons: [],
-        intended_payment_method: "PIX",
-      })
-      .set("Authorization", "Bearer token");
-
-    expect(response.status).toBe(201);
-    expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
-      expect.objectContaining({
+      const adminUser = { id: 1, notificationTokens: ["token1"] };
+      mockListAdminUseCase.execute.mockResolvedValue(adminUser);
+      mockGetStockUseCase.execute.mockResolvedValue([
+        { name: "Gás", quantity: 10 },
+        { name: "Água", quantity: 20 },
+      ]);
+      const mockOrder = {
+        id: 1,
         user_id: 5,
-        intended_payment_method: "PIX",
-      })
-    );
-  });
+        total: 30,
+        intended_payment_method: paymentMethod,
+        orderItems: [],
+        orderAddons: [],
+      };
+      mockCreateOrderUseCase.execute.mockResolvedValue(mockOrder);
+
+      const response = await request(app)
+        .post("/orders/")
+        .send({
+          intended_payment_method: paymentMethod,
+          items: [
+            { id: 1, type: "GAS", quantity: 1 },
+            { id: 2, type: "WATER", quantity: 1 },
+          ],
+          addons: [],
+        })
+        .set("Authorization", "Bearer token");
+
+      expect(response.status).toBe(201);
+      expect(mockCreateOrderUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: 5,
+          intended_payment_method: paymentMethod,
+        })
+      );
+    }
+  );
 
   it("should return success message when notification succeeds", async () => {
     const adminUser = { id: 1, notificationTokens: ["token1"] };
@@ -760,6 +828,7 @@ describe("CreateOrderController - Policy Tests", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 1 },
@@ -820,6 +889,7 @@ describe("CreateOrderController - Policy Tests", () => {
     const response = await request(app)
       .post("/orders/")
       .send({
+        intended_payment_method: "PIX",
         items: [
           { id: 1, type: "GAS", quantity: 1 },
           { id: 2, type: "WATER", quantity: 1 },

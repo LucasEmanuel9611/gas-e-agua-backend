@@ -30,7 +30,7 @@ export function buildPrivacyPolicyHtml(): string {
   <h2>2. Quais dados coletamos</h2>
   <p>Cadastro: nome, e-mail, telefone e senha.</p>
   <p>Endereço de entrega (local, rua, número, referência).</p>
-  <p>Pedidos (produtos, quantidades, status) e forma de pagamento informada (Pix, dinheiro ou cartão) — esse campo é opcional.</p>
+  <p>Pedidos (produtos, quantidades, status) e forma de pagamento informada (Pix, dinheiro ou cartão).</p>
   <p>Token de notificação do aparelho (FCM), para avisos de pedido e mensagens do administrador.</p>
   <p>Não pedimos data de nascimento. Não vendemos dados.</p>
 
