@@ -7,6 +7,9 @@ jobs:
   test-ghcr:
     name: Test GitHub Container Registry
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout code
@@ -20,7 +23,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test - Pull and Push a test image
         run: |
