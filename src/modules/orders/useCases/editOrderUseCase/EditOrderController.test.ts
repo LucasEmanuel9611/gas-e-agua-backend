@@ -23,7 +23,7 @@ jest.mock("tsyringe", () => {
 describe("EditOrderController", () => {
   beforeAll(() => {
     const controller = new EditOrderController();
-    app.put("/orders/:id/edit", controller.handle.bind(controller));
+    app.put("/orders/:id/edit", controller.handle);
   });
 
   beforeEach(() => {

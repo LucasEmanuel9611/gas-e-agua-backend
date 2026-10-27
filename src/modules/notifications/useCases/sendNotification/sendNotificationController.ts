@@ -6,17 +6,19 @@ import { handleControllerError } from "@shared/utils/controller";
 import { SendNotificationUseCase } from "./sendNotificationUseCase";
 
 export class SendNotificationController {
-  private sendNotificationUseCase = container.resolve(SendNotificationUseCase);
-
   async sendOrderNotification(
     request: Request,
     response: Response
   ): Promise<Response> {
     try {
+      const sendNotificationUseCase = container.resolve(
+        SendNotificationUseCase
+      );
+
       const { orderId, userId, notificationType, status, customData } =
         request.body;
 
-      const result = await this.sendNotificationUseCase.sendOrderNotification(
+      const result = await sendNotificationUseCase.sendOrderNotification(
         orderId,
         userId,
         notificationType,
@@ -42,10 +44,14 @@ export class SendNotificationController {
     response: Response
   ): Promise<Response> {
     try {
+      const sendNotificationUseCase = container.resolve(
+        SendNotificationUseCase
+      );
+
       const { templateId, targetUsers, targetRoles, customData, priority } =
         request.body;
 
-      const result = await this.sendNotificationUseCase.sendBulkNotification(
+      const result = await sendNotificationUseCase.sendBulkNotification(
         templateId,
         targetUsers,
         targetRoles,
@@ -71,9 +77,13 @@ export class SendNotificationController {
     response: Response
   ): Promise<Response> {
     try {
+      const sendNotificationUseCase = container.resolve(
+        SendNotificationUseCase
+      );
+
       const { title, message } = request.body;
 
-      const result = await this.sendNotificationUseCase.sendBroadcastToUsers(
+      const result = await sendNotificationUseCase.sendBroadcastToUsers(
         title,
         message
       );
@@ -96,13 +106,16 @@ export class SendNotificationController {
     response: Response
   ): Promise<Response> {
     try {
+      const sendNotificationUseCase = container.resolve(
+        SendNotificationUseCase
+      );
+
       const { userId, customData } = request.body;
 
-      const result =
-        await this.sendNotificationUseCase.sendBirthdayNotification(
-          userId,
-          customData
-        );
+      const result = await sendNotificationUseCase.sendBirthdayNotification(
+        userId,
+        customData
+      );
 
       return response.status(202).json({
         success: result.success,

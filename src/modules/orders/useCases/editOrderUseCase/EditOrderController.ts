@@ -9,7 +9,7 @@ import { EditOrderUseCase } from "./EditOrderUseCase";
 import { editOrderSchema } from "./schema";
 
 export class EditOrderController {
-  async handle(request: Request, response: Response) {
+  handle = async (request: Request, response: Response) => {
     try {
       const { items, addons } = request.body;
       const { id } = request.params;
@@ -46,7 +46,7 @@ export class EditOrderController {
     } catch (error) {
       return handleControllerError(error, response);
     }
-  }
+  };
 
   private async notifyAdmins(orderId: number) {
     try {
